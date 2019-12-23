@@ -36,6 +36,7 @@ contains
         if (all(components%isotope%is(symbol))) then
             if (all(components%fraction > 0.0d0)) then
                 element%symbol = symbol
+                allocate(element%components, source = components)
             else
                 call errors%appendError(Internal( &
                         INVALID_ARGUMENT, &
@@ -59,10 +60,14 @@ contains
         type(IsotopeSymbol_t), intent(in) :: isotope
         double precision :: atomFraction
 
-        associate(a => self, b => isotope)
+        associate(a => isotope)
         end associate
 
-        atomFraction = 0.0d0
+        if (allocated(self%components)) then
+            atomFraction = self%components(1)%fraction
+        else
+            atomFraction = 0.0d0
+        end if
     end function atomFraction
 
     elemental function weightFraction(self, isotope)
@@ -70,9 +75,13 @@ contains
         type(IsotopeSymbol_t), intent(in) :: isotope
         double precision :: weightFraction
 
-        associate(a => self, b => isotope)
+        associate(a => isotope)
         end associate
 
-        weightFraction = 0.0d0
+        if (allocated(self%components)) then
+            weightFraction = self%components(1)%fraction
+        else
+            weightFraction = 0.0d0
+        end if
     end function weightFraction
 end module Element_m

@@ -7,7 +7,7 @@ module element_test
     use Isotope_symbol_m, only: H_1_SYM
     use Utilities_m, only: INVALID_ARGUMENT, MISMATCH_TYPE
     use Vegetables_m, only: &
-            Result_t, TestItem_t, assertEquals, assertThat, Describe, It
+            Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
 
     implicit none
     private
@@ -17,7 +17,7 @@ contains
     function test_element() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(3)
+        type(TestItem_t) :: individual_tests(4)
 
         individual_tests(1) = It( &
                 "Doesn't contain any isotopes when it's empty", checkEmpty)
@@ -27,6 +27,9 @@ contains
         individual_tests(3) = It( &
                 "Creating an element with negative fractions is an error", &
                 checkNegativeFractions)
+        individual_tests(4) = It( &
+                "A single isotope element is all that isotope", &
+                checkSingleIsotope)
         tests = Describe("Element_t", individual_tests)
     end function test_element
 
@@ -36,8 +39,10 @@ contains
         type(Element_t) :: empty
 
         result_ = &
-                assertEquals(0.0d0, empty%atomFraction(H_1_SYM), "atom fraction") &
-                .and.assertEquals(0.0d0, empty%weightFraction(H_1_SYM), "weight fraction")
+                assertEquals( &
+                        0.0d0, empty%atomFraction(H_1_SYM), "atom fraction") &
+                .and.assertEquals( &
+                        0.0d0, empty%weightFraction(H_1_SYM), "weight fraction")
     end function checkEmpty
 
     pure function checkDiffIsotopes() result(result_)
@@ -67,4 +72,28 @@ contains
         result_ = assertThat( &
                 errors.hasType.INVALID_ARGUMENT, errors%toString())
     end function checkNegativeFractions
+
+    pure function checkSingleIsotope() result(result_)
+        type(Result_t) :: result_
+
+        type(Element_t) :: element
+        type(ErrorList_t) :: errors
+        type(MessageList_t) :: messages
+
+        call fromAtomFractions( &
+                H, ElementComponent([H_1], [1.0d0]), messages, errors, element)
+        if (errors%hasAny()) then
+            result_ = fail(errors%toString())
+        else
+            result_ = &
+                    assertEquals( &
+                            1.0d0, &
+                            element%atomFraction(H_1_SYM), &
+                            "atom fraction from atom fraction") &
+                    .and.assertEquals( &
+                            1.0d0, &
+                            element%weightFraction(H_1_SYM), &
+                            "weight fraction from atom fraction")
+        end if
+    end function checkSingleIsotope
 end module element_test
