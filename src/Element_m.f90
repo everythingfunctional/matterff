@@ -5,7 +5,7 @@ module Element_m
     use iso_varying_string, only: operator(//)
     use Isotope_symbol_m, only: IsotopeSymbol_t
     use strff, only: join
-    use Utilities_m, only: MISMATCH_TYPE
+    use Utilities_m, only: INVALID_ARGUMENT, MISMATCH_TYPE
 
     implicit none
     private
@@ -34,7 +34,15 @@ contains
         character(len=*), parameter :: PROCEDURE_NAME = "fromAtomFractions"
 
         if (all(components%isotope%is(symbol))) then
-            element%symbol = symbol
+            if (all(components%fraction > 0.0d0)) then
+                element%symbol = symbol
+            else
+                call errors%appendError(Internal( &
+                        INVALID_ARGUMENT, &
+                        Module_(MODULE_NAME), &
+                        Procedure_(PROCEDURE_NAME), &
+                        "All fractions must be greater than 0."))
+            end if
         else
             call errors%appendError(Internal( &
                     MISMATCH_TYPE, &

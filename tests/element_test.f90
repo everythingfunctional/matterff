@@ -3,9 +3,9 @@ module element_test
     use Element_component_m, only: ElementComponent
     use Element_symbol_m, only: H
     use erloff, only: ErrorList_t, MessageList_t
-    use Isotope_m, only: He_3
+    use Isotope_m, only: H_1, He_3
     use Isotope_symbol_m, only: H_1_SYM
-    use Utilities_m, only: MISMATCH_TYPE
+    use Utilities_m, only: INVALID_ARGUMENT, MISMATCH_TYPE
     use Vegetables_m, only: &
             Result_t, TestItem_t, assertEquals, assertThat, Describe, It
 
@@ -17,13 +17,16 @@ contains
     function test_element() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(2)
+        type(TestItem_t) :: individual_tests(3)
 
         individual_tests(1) = It( &
                 "Doesn't contain any isotopes when it's empty", checkEmpty)
         individual_tests(2) = It( &
                 "Creating an element with isotopes of a different element is an error", &
                 checkDiffIsotopes)
+        individual_tests(3) = It( &
+                "Creating an element with negative fractions is an error", &
+                checkNegativeFractions)
         tests = Describe("Element_t", individual_tests)
     end function test_element
 
@@ -50,4 +53,18 @@ contains
         result_ = assertThat( &
                 errors.hasType.MISMATCH_TYPE, errors%toString())
     end function checkDiffIsotopes
+
+    pure function checkNegativeFractions() result(result_)
+        type(Result_t) :: result_
+
+        type(Element_t) :: element
+        type(ErrorList_t) :: errors
+        type(MessageList_t) :: messages
+
+        call fromAtomFractions( &
+                H, ElementComponent([H_1], [-1.0d0]), messages, errors, element)
+
+        result_ = assertThat( &
+                errors.hasType.INVALID_ARGUMENT, errors%toString())
+    end function checkNegativeFractions
 end module element_test
