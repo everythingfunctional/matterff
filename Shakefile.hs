@@ -158,6 +158,7 @@ sourceDirs =
     , "erloff" </> "src"
     , "iso_varying_string" </> "src"
     , "strff" </> "src"
+    , "quaff" </> "src"
     ]
 shakeDir = "_shake"
 buildDir = "build"
