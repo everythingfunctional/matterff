@@ -6,8 +6,8 @@ module Element_component_m
 
     type, public :: ElementComponent_t
         private
-        type(Isotope_t) :: isotope
-        double precision :: fraction
+        type(Isotope_t), public :: isotope
+        double precision, public :: fraction
     end type ElementComponent_t
 
     public :: ElementComponent
