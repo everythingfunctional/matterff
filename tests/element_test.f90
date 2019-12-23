@@ -4,7 +4,6 @@ module element_test
     use Element_symbol_m, only: H
     use erloff, only: ErrorList_t, MessageList_t
     use Isotope_m, only: H_1, He_3
-    use Isotope_symbol_m, only: H_1_SYM
     use Utilities_m, only: INVALID_ARGUMENT, MISMATCH_TYPE
     use Vegetables_m, only: &
             Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
@@ -40,9 +39,9 @@ contains
 
         result_ = &
                 assertEquals( &
-                        0.0d0, empty%atomFraction(H_1_SYM), "atom fraction") &
+                        0.0d0, empty%atomFraction(H_1), "atom fraction") &
                 .and.assertEquals( &
-                        0.0d0, empty%weightFraction(H_1_SYM), "weight fraction")
+                        0.0d0, empty%weightFraction(H_1), "weight fraction")
     end function checkEmpty
 
     pure function checkDiffIsotopes() result(result_)
@@ -88,11 +87,11 @@ contains
             result_ = &
                     assertEquals( &
                             1.0d0, &
-                            element%atomFraction(H_1_SYM), &
+                            element%atomFraction(H_1), &
                             "atom fraction from atom fraction") &
                     .and.assertEquals( &
                             1.0d0, &
-                            element%weightFraction(H_1_SYM), &
+                            element%weightFraction(H_1), &
                             "weight fraction from atom fraction")
         end if
     end function checkSingleIsotope

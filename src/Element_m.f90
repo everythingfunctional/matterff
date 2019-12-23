@@ -3,6 +3,7 @@ module Element_m
     use Element_symbol_m, only: ElementSymbol_t
     use erloff, only: ErrorList_t, MessageList_t, Internal, Module_, Procedure_
     use iso_varying_string, only: operator(//)
+    use Isotope_m, only: Isotope_t
     use Isotope_symbol_m, only: IsotopeSymbol_t
     use strff, only: join
     use Utilities_m, only: INVALID_ARGUMENT, MISMATCH_TYPE
@@ -16,8 +17,14 @@ module Element_m
         type(ElementComponent_t), allocatable :: components(:)
     contains
         private
-        procedure, public :: atomFraction
-        procedure, public :: weightFraction
+        procedure :: atomFractionFromIsotope
+        procedure :: atomFractionFromSymbol
+        generic, public :: atomFraction => &
+                atomFractionFromIsotope, atomFractionFromSymbol
+        procedure :: weightFractionFromIsotope
+        procedure :: weightFractionFromSymbol
+        generic, public :: weightFraction => &
+                weightFractionFromIsotope, weightFractionFromSymbol
     end type Element_t
 
     character(len=*), parameter :: MODULE_NAME = "Element_m"
@@ -55,33 +62,49 @@ contains
         end if
     end subroutine fromAtomFractions
 
-    elemental function atomFraction(self, isotope)
+    elemental function atomFractionFromIsotope(self, isotope) result(atom_fraction)
+        class(Element_t), intent(in) :: self
+        type(Isotope_t), intent(in) :: isotope
+        double precision :: atom_fraction
+
+        atom_fraction = self%atomFraction(isotope%symbol)
+    end function atomFractionFromIsotope
+
+    elemental function atomFractionFromSymbol(self, isotope) result(atom_fraction)
         class(Element_t), intent(in) :: self
         type(IsotopeSymbol_t), intent(in) :: isotope
-        double precision :: atomFraction
+        double precision :: atom_fraction
 
         associate(a => isotope)
         end associate
 
         if (allocated(self%components)) then
-            atomFraction = self%components(1)%fraction
+            atom_fraction = self%components(1)%fraction
         else
-            atomFraction = 0.0d0
+            atom_fraction = 0.0d0
         end if
-    end function atomFraction
+    end function atomFractionFromSymbol
 
-    elemental function weightFraction(self, isotope)
+    elemental function weightFractionFromIsotope(self, isotope) result(weight_fraction)
+        class(Element_t), intent(in) :: self
+        type(Isotope_t), intent(in) :: isotope
+        double precision :: weight_fraction
+
+        weight_fraction = self%weightFraction(isotope%symbol)
+    end function weightFractionFromIsotope
+
+    elemental function weightFractionFromSymbol(self, isotope) result(weight_fraction)
         class(Element_t), intent(in) :: self
         type(IsotopeSymbol_t), intent(in) :: isotope
-        double precision :: weightFraction
+        double precision :: weight_fraction
 
         associate(a => isotope)
         end associate
 
         if (allocated(self%components)) then
-            weightFraction = self%components(1)%fraction
+            weight_fraction = self%components(1)%fraction
         else
-            weightFraction = 0.0d0
+            weight_fraction = 0.0d0
         end if
-    end function weightFraction
+    end function weightFractionFromSymbol
 end module Element_m
