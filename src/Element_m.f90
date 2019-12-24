@@ -6,7 +6,7 @@ module Element_m
     use iso_varying_string, only: operator(//)
     use Isotope_m, only: Isotope_t, find
     use Isotope_symbol_m, only: IsotopeSymbol_t
-    use quaff, only: MolarMass_t, sum
+    use quaff, only: Amount_t, Mass_t, MolarMass_t, operator(/), sum
     use strff, only: join
     use Utilities_m, only: &
             operator(.sumsTo.), &
@@ -36,7 +36,11 @@ module Element_m
 
     character(len=*), parameter :: MODULE_NAME = "Element_m"
 
-    public :: fromAtomFractions, fromAtomFractionsUnsafe
+    public :: &
+            fromAtomFractions, &
+            fromAtomFractionsUnsafe, &
+            fromWeightFractions, &
+            fromWeightFractionsUnsafe
 contains
     pure subroutine fromAtomFractions(symbol, components, messages, errors, element)
         type(ElementSymbol_t), intent(in) :: symbol
@@ -112,6 +116,44 @@ contains
         call combineDuplicates(components, element%components)
         element%num_components = size(element%components)
     end subroutine fromAtomFractionsUnsafe
+
+    pure subroutine fromWeightFractions(symbol, components, messages, errors, element)
+        type(ElementSymbol_t), intent(in) :: symbol
+        type(ElementComponent_t), intent(in) :: components(:)
+        type(MessageList_t), intent(out) :: messages
+        type(ErrorList_t), intent(out) :: errors
+        type(Element_t), intent(out) :: element
+
+        character(len=*), parameter :: PROCEDURE_NAME = "fromWeightFractions"
+        type(ErrorList_t) :: errors_
+        type(ElementComponent_t) :: fixed_components(size(components))
+        type(MessageList_t) :: messages_
+
+        call errorChecking(symbol, components, messages_, errors_, fixed_components)
+        call messages%appendMessages( &
+                messages_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+        if (errors_%hasAny()) then
+            call errors%appendErrors( &
+                    errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+        else
+            call fromWeightFractionsUnsafe(symbol, fixed_components, element)
+        end if
+    end subroutine fromWeightFractions
+
+    pure subroutine fromWeightFractionsUnsafe(symbol, components, element)
+        type(ElementSymbol_t), intent(in) :: symbol
+        type(ElementComponent_t), intent(in) :: components(:)
+        type(Element_t), intent(out) :: element
+
+        type(Mass_t), parameter :: ONE_KILOGRAM = Mass_t(kilograms = 1.0d0)
+        type(Amount_t) :: amounts(size(components))
+
+        amounts = components%fraction * ONE_KILOGRAM / components%isotope%atomic_mass
+        call fromAtomFractionsUnsafe( &
+                symbol, &
+                ElementComponent(components%isotope, amounts / sum(amounts)), &
+                element)
+    end subroutine fromWeightFractionsUnsafe
 
     elemental function atomFractionFromIsotope(self, isotope) result(atom_fraction)
         class(Element_t), intent(in) :: self

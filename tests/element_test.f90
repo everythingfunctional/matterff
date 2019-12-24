@@ -1,9 +1,9 @@
 module element_test
-    use Element_m, only: Element_t, fromAtomFractions
+    use Element_m, only: Element_t, fromAtomFractions, fromWeightFractions
     use Element_component_m, only: ElementComponent
     use Element_symbol_m, only: H
     use erloff, only: ErrorList_t, MessageList_t
-    use Isotope_m, only: H_1, H_2, He_3
+    use Isotope_m, only: Isotope_t, H_1, H_2, He_3
     use Utilities_m, only: &
             INVALID_ARGUMENT_TYPE, MISMATCH_TYPE, NORMALIZED_FRACTIONS_TYPE
     use Vegetables_m, only: &
@@ -46,58 +46,102 @@ contains
         type(Result_t) :: result_
 
         type(Element_t) :: element
-        type(ErrorList_t) :: errors
+        type(ErrorList_t) :: errors_from_atom_fractions
+        type(ErrorList_t) :: errors_from_weight_fractions
         type(MessageList_t) :: messages
 
         call fromAtomFractions( &
-                H, [ElementComponent(He_3, 1.0d0)], messages, errors, element)
+                H, &
+                [ElementComponent(He_3, 1.0d0)], &
+                messages, &
+                errors_from_atom_fractions, &
+                element)
+        call fromWeightFractions( &
+                H, &
+                [ElementComponent(He_3, 1.0d0)], &
+                messages, &
+                errors_from_weight_fractions, &
+                element)
 
-        result_ = assertThat( &
-                errors.hasType.MISMATCH_TYPE, errors%toString())
+        result_ = &
+                assertThat( &
+                        errors_from_atom_fractions.hasType.MISMATCH_TYPE, &
+                        errors_from_atom_fractions%toString()) &
+                .and.assertThat( &
+                        errors_from_weight_fractions.hasType.MISMATCH_TYPE, &
+                        errors_from_weight_fractions%toString())
     end function checkDiffIsotopes
 
     pure function checkNegativeFractions() result(result_)
         type(Result_t) :: result_
 
         type(Element_t) :: element
-        type(ErrorList_t) :: errors
+        type(ErrorList_t) :: errors_from_atom_fractions
+        type(ErrorList_t) :: errors_from_weight_fractions
         type(MessageList_t) :: messages
 
         call fromAtomFractions( &
-                H, [ElementComponent(H_1, -1.0d0)], messages, errors, element)
+                H, &
+                [ElementComponent(H_1, -1.0d0)], &
+                messages, &
+                errors_from_atom_fractions, &
+                element)
+        call fromWeightFractions( &
+                H, &
+                [ElementComponent(H_1, -1.0d0)], &
+                messages, &
+                errors_from_weight_fractions, &
+                element)
 
-        result_ = assertThat( &
-                errors.hasType.INVALID_ARGUMENT_TYPE, errors%toString())
+        result_ = &
+                assertThat( &
+                        errors_from_atom_fractions.hasType.INVALID_ARGUMENT_TYPE, &
+                        errors_from_atom_fractions%toString()) &
+                .and.assertThat( &
+                        errors_from_weight_fractions.hasType.INVALID_ARGUMENT_TYPE, &
+                        errors_from_weight_fractions%toString())
     end function checkNegativeFractions
 
     pure function checkSingleIsotope() result(result_)
         type(Result_t) :: result_
 
-        type(Element_t) :: element
         type(ErrorList_t) :: errors
+        type(Element_t) :: from_atom_fractions
+        type(Element_t) :: from_weight_fractions
         type(MessageList_t) :: messages
 
         call fromAtomFractions( &
-                H, [ElementComponent(H_1, 1.0d0)], messages, errors, element)
+                H, &
+                [ElementComponent(H_1, 1.0d0)], &
+                messages, &
+                errors, &
+                from_atom_fractions)
         if (errors%hasAny()) then
             result_ = fail(errors%toString())
         else
-            result_ = &
-                    assertEquals( &
-                            1.0d0, &
-                            element%atomFraction(H_1), &
-                            "atom fraction from atom fraction") &
-                    .and.assertEquals( &
-                            1.0d0, &
-                            element%weightFraction(H_1), &
-                            "weight fraction from atom fraction")
+            call fromWeightFractions( &
+                    H, &
+                    [ElementComponent(H_1, 1.0d0)], &
+                    messages, &
+                    errors, &
+                    from_weight_fractions)
+            if (errors%hasAny()) then
+                result_ = fail(errors%toString())
+            else
+                result_ =  &
+                        assertAllIsotope( &
+                                H_1, from_atom_fractions, "atom fractions") &
+                        .and.assertAllIsotope( &
+                                H_1, from_weight_fractions, "weight fractions")
+            end if
         end if
     end function checkSingleIsotope
 
     pure function checkKeepsTrack() result(result_)
         type(Result_t) :: result_
 
-        type(Element_t) :: element
+        type(Element_t) :: from_atom_fractions
+        type(Element_t) :: from_weight_fractions
         type(ErrorList_t) :: errors
         type(MessageList_t) :: messages
 
@@ -106,20 +150,45 @@ contains
                 [ElementComponent(H_1, 0.6d0), ElementComponent(H_2, 0.4d0)], &
                 messages, &
                 errors, &
-                element)
+                from_atom_fractions)
         if (errors%hasAny()) then
             result_ = fail(errors%toString())
         else
-            result_ = &
-                    assertEquals(0.6d0, element%atomFraction(H_1)) &
-                    .and.assertEquals(0.4d0, element%atomFraction(H_2))
+            call fromWeightFractions( &
+                    H, &
+                    [ElementComponent(H_1, 0.6d0), ElementComponent(H_2, 0.4d0)], &
+                    messages, &
+                    errors, &
+                    from_weight_fractions)
+            if (errors%hasAny()) then
+                result_ = fail(errors%toString())
+            else
+                result_ = &
+                        assertEquals( &
+                                0.6d0, &
+                                from_atom_fractions%atomFraction(H_1), &
+                                "H-1 atom fraction") &
+                        .and.assertEquals( &
+                                0.4d0, &
+                                from_atom_fractions%atomFraction(H_2), &
+                                "H-2 atom fraction") &
+                        .and.assertEquals( &
+                                0.6d0, &
+                                from_weight_fractions%weightFraction(H_1), &
+                                "H-1 weight fraction") &
+                        .and.assertEquals( &
+                                0.4d0, &
+                                from_weight_fractions%weightFraction(H_2), &
+                                "H-2 weight fraction")
+            end if
         end if
     end function checkKeepsTrack
 
     pure function checkNormalizedFractions() result(result_)
         type(Result_t) :: result_
 
-        type(Element_t) :: element
+        type(Element_t) :: from_atom_fractions
+        type(Element_t) :: from_weight_fractions
         type(ErrorList_t) :: errors
         type(MessageList_t) :: messages
 
@@ -128,13 +197,37 @@ contains
                 [ElementComponent(H_1, 0.06d0), ElementComponent(H_2, 0.04d0)], &
                 messages, &
                 errors, &
-                element)
+                from_atom_fractions)
         if (errors%hasAny()) then
             result_ = fail(errors%toString())
         else
-            result_ = &
-                    assertEquals(0.6d0, element%atomFraction(H_1)) &
-                    .and.assertEquals(0.4d0, element%atomFraction(H_2))
+            call fromWeightFractions( &
+                    H, &
+                    [ElementComponent(H_1, 0.06d0), ElementComponent(H_2, 0.04d0)], &
+                    messages, &
+                    errors, &
+                    from_weight_fractions)
+            if (errors%hasAny()) then
+                result_ = fail(errors%toString())
+            else
+                result_ = &
+                        assertEquals( &
+                                0.6d0, &
+                                from_atom_fractions%atomFraction(H_1), &
+                                "H-1 atom fraction") &
+                        .and.assertEquals( &
+                                0.4d0, &
+                                from_atom_fractions%atomFraction(H_2), &
+                                "H-2 atom fraction") &
+                        .and.assertEquals( &
+                                0.6d0, &
+                                from_weight_fractions%weightFraction(H_1), &
+                                "H-1 weight fraction") &
+                        .and.assertEquals( &
+                                0.4d0, &
+                                from_weight_fractions%weightFraction(H_2), &
+                                "H-2 weight fraction")
+            end if
         end if
     end function checkNormalizedFractions
 
@@ -143,27 +236,43 @@ contains
 
         type(Element_t) :: element
         type(ErrorList_t) :: errors
-        type(MessageList_t) :: messages
+        type(MessageList_t) :: messages_from_atom_fractions
+        type(MessageList_t) :: messages_from_weight_fractions
 
         call fromAtomFractions( &
                 H, &
                 [ElementComponent(H_1, 0.06d0), ElementComponent(H_2, 0.04d0)], &
-                messages, &
+                messages_from_atom_fractions, &
                 errors, &
                 element)
         if (errors%hasAny()) then
             result_ = fail(errors%toString())
         else
-            result_ = assertThat( &
-                    messages.hasType.NORMALIZED_FRACTIONS_TYPE, &
-                    messages%toString())
+            call fromWeightFractions( &
+                    H, &
+                    [ElementComponent(H_1, 0.06d0), ElementComponent(H_2, 0.04d0)], &
+                    messages_from_weight_fractions, &
+                    errors, &
+                    element)
+            if (errors%hasAny()) then
+                result_ = fail(errors%toString())
+            else
+                result_ = &
+                        assertThat( &
+                                messages_from_atom_fractions.hasType.NORMALIZED_FRACTIONS_TYPE, &
+                                messages_from_atom_fractions%toString()) &
+                        .and.assertThat( &
+                                messages_from_weight_fractions.hasType.NORMALIZED_FRACTIONS_TYPE, &
+                                messages_from_weight_fractions%toString())
+            end if
         end if
     end function checkNormalizedMessage
 
     pure function checkDuplicates() result(result_)
         type(Result_t) :: result_
 
-        type(Element_t) :: element
+        type(Element_t) :: from_atom_fractions
+        type(Element_t) :: from_weight_fractions
         type(ErrorList_t) :: errors
         type(MessageList_t) :: messages
 
@@ -172,19 +281,42 @@ contains
                 [ElementComponent(H_1, 0.6d0), ElementComponent(H_1, 0.4d0)], &
                 messages, &
                 errors, &
-                element)
+                from_atom_fractions)
         if (errors%hasAny()) then
             result_ = fail(errors%toString())
         else
-            result_ = &
-                    assertEquals( &
-                            1.0d0, &
-                            element%atomFraction(H_1), &
-                            "atom fraction from atom fraction") &
-                    .and.assertEquals( &
-                            1.0d0, &
-                            element%weightFraction(H_1), &
-                            "weight fraction from atom fraction")
+            call fromWeightFractions( &
+                    H, &
+                    [ElementComponent(H_1, 0.6d0), ElementComponent(H_1, 0.4d0)], &
+                    messages, &
+                    errors, &
+                    from_weight_fractions)
+            if (errors%hasAny()) then
+                result_ = fail(errors%toString())
+            else
+                result_ =  &
+                        assertAllIsotope( &
+                                H_1, from_atom_fractions, "atom fractions") &
+                        .and.assertAllIsotope( &
+                                H_1, from_weight_fractions, "weight fractions")
+            end if
         end if
     end function checkDuplicates
+
+    pure function assertAllIsotope(isotope, element, from) result(result_)
+        type(Isotope_t), intent(in) :: isotope
+        type(Element_t), intent(in) :: element
+        character(len=*), intent(in) :: from
+        type(Result_t) :: result_
+
+        result_ = &
+                assertEquals( &
+                        1.0d0, &
+                        element%atomFraction(isotope), &
+                        "atom fraction from " // from) &
+                .and.assertEquals( &
+                        1.0d0, &
+                        element%weightFraction(isotope), &
+                        "weight fraction from " // from)
+    end function assertAllIsotope
 end module element_test
