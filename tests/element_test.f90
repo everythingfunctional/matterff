@@ -4,7 +4,7 @@ module element_test
     use Element_symbol_m, only: H
     use erloff, only: ErrorList_t, MessageList_t
     use Isotope_m, only: H_1, H_2, He_3
-    use Utilities_m, only: INVALID_ARGUMENT, MISMATCH_TYPE
+    use Utilities_m, only: INVALID_ARGUMENT, MISMATCH_TYPE, NORMALIZED_FRACTIONS
     use Vegetables_m, only: &
             Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
 
@@ -16,7 +16,7 @@ contains
     function test_element() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(5)
+        type(TestItem_t) :: individual_tests(7)
 
         individual_tests(1) = It( &
                 "Doesn't contain any isotopes when it's empty", checkEmpty)
@@ -31,6 +31,12 @@ contains
                 checkSingleIsotope)
         individual_tests(5) = It( &
                 "Keeps track of its components", checkKeepsTrack)
+        individual_tests(6) = It( &
+                "Has normalized fractions of its components", &
+                checkNormalizedFractions)
+        individual_tests(7) = It( &
+                "Normalizing fractions of isotopes produces a message", &
+                checkNormalizedMessage)
         tests = Describe("Element_t", individual_tests)
     end function test_element
 
@@ -119,4 +125,47 @@ contains
                     .and.assertEquals(0.4d0, element%atomFraction(H_2))
         end if
     end function checkKeepsTrack
+
+    pure function checkNormalizedFractions() result(result_)
+        type(Result_t) :: result_
+
+        type(Element_t) :: element
+        type(ErrorList_t) :: errors
+        type(MessageList_t) :: messages
+
+        call fromAtomFractions( &
+                H, &
+                [ElementComponent(H_1, 0.06d0), ElementComponent(H_2, 0.04d0)], &
+                messages, &
+                errors, &
+                element)
+        if (errors%hasAny()) then
+            result_ = fail(errors%toString())
+        else
+            result_ = &
+                    assertEquals(0.6d0, element%atomFraction(H_1)) &
+                    .and.assertEquals(0.4d0, element%atomFraction(H_2))
+        end if
+    end function checkNormalizedFractions
+
+    pure function checkNormalizedMessage() result(result_)
+        type(Result_t) :: result_
+
+        type(Element_t) :: element
+        type(ErrorList_t) :: errors
+        type(MessageList_t) :: messages
+
+        call fromAtomFractions( &
+                H, &
+                [ElementComponent(H_1, 0.06d0), ElementComponent(H_2, 0.04d0)], &
+                messages, &
+                errors, &
+                element)
+        if (errors%hasAny()) then
+            result_ = fail(errors%toString())
+        else
+            result_ = assertThat( &
+                    messages.hasType.NORMALIZED_FRACTIONS, messages%toString())
+        end if
+    end function checkNormalizedMessage
 end module element_test

@@ -1,13 +1,18 @@
 module Element_m
-    use Element_component_m, only: ElementComponent_t
+    use Element_component_m, only: ElementComponent_t, ElementComponent
     use Element_symbol_m, only: ElementSymbol_t
-    use erloff, only: ErrorList_t, MessageList_t, Internal, Module_, Procedure_
+    use erloff, only: &
+            ErrorList_t, MessageList_t, Info, Internal, Module_, Procedure_
     use iso_varying_string, only: operator(//)
     use Isotope_m, only: Isotope_t, find
     use Isotope_symbol_m, only: IsotopeSymbol_t
     use quaff, only: MolarMass_t, sum
     use strff, only: join
-    use Utilities_m, only: INVALID_ARGUMENT, MISMATCH_TYPE
+    use Utilities_m, only: &
+            operator(.sumsTo.), &
+            INVALID_ARGUMENT, &
+            MISMATCH_TYPE, &
+            NORMALIZED_FRACTIONS
 
     implicit none
     private
@@ -46,7 +51,19 @@ contains
             if (all(components%fraction > 0.0d0)) then
                 element%symbol = symbol
                 element%num_components = size(components)
-                allocate(element%components, source = components)
+                if (components%fraction.sumsTo.1.0d0) then
+                    allocate(element%components, source = components)
+                else
+                    call messages%appendMessage(Info( &
+                            NORMALIZED_FRACTIONS, &
+                            Module_(MODULE_NAME), &
+                            Procedure_(PROCEDURE_NAME), &
+                            "Attempted to create composition with component" &
+                            // " fractions that did not sum to 1.0."))
+                    allocate(element%components, source = ElementComponent( &
+                            components%isotope, &
+                            components%fraction / sum(components%fraction)))
+                end if
             else
                 call errors%appendError(Internal( &
                         INVALID_ARGUMENT, &

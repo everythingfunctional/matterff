@@ -11,6 +11,7 @@ module Utilities_m
 
     type(MessageType_t), parameter, public :: INVALID_ARGUMENT = MessageType_t("Invalid Argument")
     type(MessageType_t), parameter, public :: MISMATCH_TYPE = MessageType_t("Mismatch")
+    type(MessageType_t), parameter, public :: NORMALIZED_FRACTIONS = MessageType_t("Normalized Fractions")
 
     public :: operator(.sumsTo.)
 contains
