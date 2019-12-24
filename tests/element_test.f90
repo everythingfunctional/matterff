@@ -17,7 +17,7 @@ contains
     function test_element() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(7)
+        type(TestItem_t) :: individual_tests(8)
 
         individual_tests(1) = It( &
                 "Doesn't contain any isotopes when it's empty", checkEmpty)
@@ -38,6 +38,9 @@ contains
         individual_tests(7) = It( &
                 "Normalizing fractions of isotopes produces a message", &
                 checkNormalizedMessage)
+        individual_tests(8) = It( &
+                "Created with duplicate isotopes has sum of duplicates", &
+                checkDuplicates)
         tests = Describe("Element_t", individual_tests)
     end function test_element
 
@@ -170,4 +173,32 @@ contains
                     messages%toString())
         end if
     end function checkNormalizedMessage
+
+    pure function checkDuplicates() result(result_)
+        type(Result_t) :: result_
+
+        type(Element_t) :: element
+        type(ErrorList_t) :: errors
+        type(MessageList_t) :: messages
+
+        call fromAtomFractions( &
+                H, &
+                [ElementComponent(H_1, 0.6d0), ElementComponent(H_1, 0.4d0)], &
+                messages, &
+                errors, &
+                element)
+        if (errors%hasAny()) then
+            result_ = fail(errors%toString())
+        else
+            result_ = &
+                    assertEquals( &
+                            1.0d0, &
+                            element%atomFraction(H_1), &
+                            "atom fraction from atom fraction") &
+                    .and.assertEquals( &
+                            1.0d0, &
+                            element%weightFraction(H_1), &
+                            "weight fraction from atom fraction")
+        end if
+    end function checkDuplicates
 end module element_test

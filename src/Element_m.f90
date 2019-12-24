@@ -50,9 +50,8 @@ contains
         if (all(components%isotope%is(symbol))) then
             if (all(components%fraction > 0.0d0)) then
                 element%symbol = symbol
-                element%num_components = size(components)
                 if (components%fraction.sumsTo.1.0d0) then
-                    allocate(element%components, source = components)
+                    call combineDuplicates(components, element%components)
                 else
                     call messages%appendMessage(Info( &
                             NORMALIZED_FRACTIONS_TYPE, &
@@ -60,10 +59,13 @@ contains
                             Procedure_(PROCEDURE_NAME), &
                             "Attempted to create composition with component" &
                             // " fractions that did not sum to 1.0."))
-                    allocate(element%components, source = ElementComponent( &
-                            components%isotope, &
-                            components%fraction / sum(components%fraction)))
+                    call combineDuplicates( &
+                            ElementComponent( &
+                                    components%isotope, &
+                                    components%fraction / sum(components%fraction)), &
+                            element%components)
                 end if
+                element%num_components = size(element%components)
             else
                 call errors%appendError(Internal( &
                         INVALID_ARGUMENT_TYPE, &
@@ -137,4 +139,37 @@ contains
             weight_fraction = 0.0d0
         end if
     end function weightFractionFromSymbol
+
+    pure subroutine combineDuplicates(inputs, combined)
+        type(ElementComponent_t), intent(in) :: inputs(:)
+        type(ElementComponent_t), allocatable, intent(out) :: combined(:)
+
+        integer :: duplicate_position
+        integer :: i
+        integer :: new_num_components
+        integer :: num_inputs
+        integer :: prev_num_components
+        type(ElementComponent_t), allocatable :: working_components(:)
+
+        num_inputs = size(inputs)
+        allocate(combined(1))
+        combined(1) = inputs(1)
+        do i = 2, num_inputs
+            duplicate_position = find(inputs(i)%isotope%symbol, combined%isotope)
+            if (duplicate_position == 0) then
+                prev_num_components = size(combined)
+                new_num_components = prev_num_components + 1
+                allocate(working_components(prev_num_components))
+                working_components(:) = combined(:)
+                deallocate(combined)
+                allocate(combined(new_num_components))
+                combined(1:prev_num_components) = working_components(:)
+                deallocate(working_components)
+                combined(new_num_components) = inputs(i)
+            else
+                combined(duplicate_position)%fraction = &
+                        combined(duplicate_position)%fraction + inputs(i)%fraction
+            end if
+        end do
+    end subroutine combineDuplicates
 end module Element_m
