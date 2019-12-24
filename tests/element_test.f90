@@ -17,44 +17,30 @@ contains
     function test_element() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(8)
+        type(TestItem_t) :: individual_tests(7)
 
         individual_tests(1) = It( &
-                "Doesn't contain any isotopes when it's empty", checkEmpty)
-        individual_tests(2) = It( &
                 "Creating an element with isotopes of a different element is an error", &
                 checkDiffIsotopes)
-        individual_tests(3) = It( &
+        individual_tests(2) = It( &
                 "Creating an element with negative fractions is an error", &
                 checkNegativeFractions)
-        individual_tests(4) = It( &
+        individual_tests(3) = It( &
                 "A single isotope element is all that isotope", &
                 checkSingleIsotope)
-        individual_tests(5) = It( &
+        individual_tests(4) = It( &
                 "Keeps track of its components", checkKeepsTrack)
-        individual_tests(6) = It( &
+        individual_tests(5) = It( &
                 "Has normalized fractions of its components", &
                 checkNormalizedFractions)
-        individual_tests(7) = It( &
+        individual_tests(6) = It( &
                 "Normalizing fractions of isotopes produces a message", &
                 checkNormalizedMessage)
-        individual_tests(8) = It( &
+        individual_tests(7) = It( &
                 "Created with duplicate isotopes has sum of duplicates", &
                 checkDuplicates)
         tests = Describe("Element_t", individual_tests)
     end function test_element
-
-    pure function checkEmpty() result(result_)
-        type(Result_t) :: result_
-
-        type(Element_t) :: empty
-
-        result_ = &
-                assertEquals( &
-                        0.0d0, empty%atomFraction(H_1), "atom fraction") &
-                .and.assertEquals( &
-                        0.0d0, empty%weightFraction(H_1), "weight fraction")
-    end function checkEmpty
 
     pure function checkDiffIsotopes() result(result_)
         type(Result_t) :: result_
