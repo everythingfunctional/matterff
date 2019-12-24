@@ -9,9 +9,9 @@ module Utilities_m
         module procedure sumsTo
     end interface operator(.sumsTo.)
 
-    type(MessageType_t), parameter, public :: INVALID_ARGUMENT = MessageType_t("Invalid Argument")
+    type(MessageType_t), parameter, public :: INVALID_ARGUMENT_TYPE = MessageType_t("Invalid Argument")
     type(MessageType_t), parameter, public :: MISMATCH_TYPE = MessageType_t("Mismatch")
-    type(MessageType_t), parameter, public :: NORMALIZED_FRACTIONS = MessageType_t("Normalized Fractions")
+    type(MessageType_t), parameter, public :: NORMALIZED_FRACTIONS_TYPE = MessageType_t("Normalized Fractions")
 
     public :: operator(.sumsTo.)
 contains

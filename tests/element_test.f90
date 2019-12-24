@@ -4,7 +4,8 @@ module element_test
     use Element_symbol_m, only: H
     use erloff, only: ErrorList_t, MessageList_t
     use Isotope_m, only: H_1, H_2, He_3
-    use Utilities_m, only: INVALID_ARGUMENT, MISMATCH_TYPE, NORMALIZED_FRACTIONS
+    use Utilities_m, only: &
+            INVALID_ARGUMENT_TYPE, MISMATCH_TYPE, NORMALIZED_FRACTIONS_TYPE
     use Vegetables_m, only: &
             Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
 
@@ -77,7 +78,7 @@ contains
                 H, [ElementComponent(H_1, -1.0d0)], messages, errors, element)
 
         result_ = assertThat( &
-                errors.hasType.INVALID_ARGUMENT, errors%toString())
+                errors.hasType.INVALID_ARGUMENT_TYPE, errors%toString())
     end function checkNegativeFractions
 
     pure function checkSingleIsotope() result(result_)
@@ -165,7 +166,8 @@ contains
             result_ = fail(errors%toString())
         else
             result_ = assertThat( &
-                    messages.hasType.NORMALIZED_FRACTIONS, messages%toString())
+                    messages.hasType.NORMALIZED_FRACTIONS_TYPE, &
+                    messages%toString())
         end if
     end function checkNormalizedMessage
 end module element_test

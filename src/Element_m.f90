@@ -10,9 +10,9 @@ module Element_m
     use strff, only: join
     use Utilities_m, only: &
             operator(.sumsTo.), &
-            INVALID_ARGUMENT, &
+            INVALID_ARGUMENT_TYPE, &
             MISMATCH_TYPE, &
-            NORMALIZED_FRACTIONS
+            NORMALIZED_FRACTIONS_TYPE
 
     implicit none
     private
@@ -55,7 +55,7 @@ contains
                     allocate(element%components, source = components)
                 else
                     call messages%appendMessage(Info( &
-                            NORMALIZED_FRACTIONS, &
+                            NORMALIZED_FRACTIONS_TYPE, &
                             Module_(MODULE_NAME), &
                             Procedure_(PROCEDURE_NAME), &
                             "Attempted to create composition with component" &
@@ -66,7 +66,7 @@ contains
                 end if
             else
                 call errors%appendError(Internal( &
-                        INVALID_ARGUMENT, &
+                        INVALID_ARGUMENT_TYPE, &
                         Module_(MODULE_NAME), &
                         Procedure_(PROCEDURE_NAME), &
                         "All fractions must be greater than 0."))
