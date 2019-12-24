@@ -17,9 +17,11 @@ module Element_m
     implicit none
     private
 
+    ! It is assumed throughout this module that an Element will never be
+    ! uninitialized or empty. Any attempt to create an empty element or use an
+    ! element that has not been intialized will likely result in a memory error
     type, public :: Element_t
         private
-        integer :: num_components = 0
         type(ElementSymbol_t) :: symbol
         type(ElementComponent_t), allocatable :: components(:)
     contains
@@ -216,7 +218,6 @@ contains
 
         element%symbol = symbol
         call combineDuplicates(components, element%components)
-        element%num_components = size(element%components)
     end subroutine fromAtomFractionsUnsafe
 
     pure subroutine fromWeightFractions(symbol, components, messages, errors, element)
@@ -262,7 +263,6 @@ contains
         type(Element_t) :: naturalHydrogen
 
         naturalHydrogen%symbol = H
-        naturalHydrogen%num_components = 2
         allocate(naturalHydrogen%components, source = &
                 [ElementComponent(H_1, 0.999885d0), &
                  ElementComponent(H_2, 0.000115d0)])
@@ -272,7 +272,6 @@ contains
         type(Element_t) :: naturalHelium
 
         naturalHelium%symbol = He
-        naturalHelium%num_components = 2
         allocate(naturalHelium%components, source = &
                 [ElementComponent(He_3, 0.000001344d0), &
                  ElementComponent(He_4, 0.99999866d0)])
@@ -282,7 +281,6 @@ contains
         type(Element_t) :: naturalLithium
 
         naturalLithium%symbol = Li
-        naturalLithium%num_components = 2
         allocate(naturalLithium%components, source = &
                 [ElementComponent(Li_6, 0.0759d0), &
                  ElementComponent(Li_7, 0.9241d0)])
@@ -292,7 +290,6 @@ contains
         type(Element_t) :: naturalBeryllium
 
         naturalBeryllium%symbol = Be
-        naturalBeryllium%num_components = 1
         allocate(naturalBeryllium%components, source = &
                 [ElementComponent(Be_9, 1.0d0)])
     end function naturalBeryllium
@@ -312,13 +309,9 @@ contains
 
         integer :: position
 
-        if (self%num_components > 0) then
-            position = find(isotope, self%components%isotope)
-            if (position > 0) then
-                atom_fraction = self%components(position)%fraction
-            else
-                atom_fraction = 0.0d0
-            end if
+        position = find(isotope, self%components%isotope)
+        if (position > 0) then
+            atom_fraction = self%components(position)%fraction
         else
             atom_fraction = 0.0d0
         end if
@@ -344,17 +337,13 @@ contains
         type(IsotopeSymbol_t), intent(in) :: isotope
         double precision :: weight_fraction
 
-        type(MolarMass_t) :: masses(self%num_components)
+        type(MolarMass_t) :: masses(size(self%components))
         integer :: position
 
-        if (self%num_components > 0) then
-            position = find(isotope, self%components%isotope)
-            if (position > 0) then
-                masses = self%components%fraction * self%components%isotope%atomic_mass
-                weight_fraction = masses(position) / sum(masses)
-            else
-                weight_fraction = 0.0d0
-            end if
+        position = find(isotope, self%components%isotope)
+        if (position > 0) then
+            masses = self%components%fraction * self%components%isotope%atomic_mass
+            weight_fraction = masses(position) / sum(masses)
         else
             weight_fraction = 0.0d0
         end if
