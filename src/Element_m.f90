@@ -36,7 +36,7 @@ module Element_m
 
     character(len=*), parameter :: MODULE_NAME = "Element_m"
 
-    public :: fromAtomFractions
+    public :: fromAtomFractions, fromAtomFractionsUnsafe
 contains
     pure subroutine fromAtomFractions(symbol, components, messages, errors, element)
         type(ElementSymbol_t), intent(in) :: symbol
@@ -46,12 +46,34 @@ contains
         type(Element_t), intent(out) :: element
 
         character(len=*), parameter :: PROCEDURE_NAME = "fromAtomFractions"
+        type(ErrorList_t) :: errors_
+        type(ElementComponent_t) :: fixed_components(size(components))
+        type(MessageList_t) :: messages_
+
+        call errorChecking(symbol, components, messages_, errors_, fixed_components)
+        call messages%appendMessages( &
+                messages_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+        if (errors_%hasAny()) then
+            call errors%appendErrors( &
+                    errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+        else
+            call fromAtomFractionsUnsafe(symbol, fixed_components, element)
+        end if
+    end subroutine fromAtomFractions
+
+    pure subroutine errorChecking(symbol, components, messages, errors, fixed_components)
+        type(ElementSymbol_t), intent(in) :: symbol
+        type(ElementComponent_t), intent(in) :: components(:)
+        type(MessageList_t), intent(out) :: messages
+        type(ErrorList_t), intent(out) :: errors
+        type(ElementComponent_t), intent(out) :: fixed_components(size(components))
+
+        character(len=*), parameter :: PROCEDURE_NAME = "errorChecking"
 
         if (all(components%isotope%is(symbol))) then
             if (all(components%fraction > 0.0d0)) then
-                element%symbol = symbol
                 if (components%fraction.sumsTo.1.0d0) then
-                    call combineDuplicates(components, element%components)
+                    fixed_components = components
                 else
                     call messages%appendMessage(Info( &
                             NORMALIZED_FRACTIONS_TYPE, &
@@ -59,13 +81,10 @@ contains
                             Procedure_(PROCEDURE_NAME), &
                             "Attempted to create composition with component" &
                             // " fractions that did not sum to 1.0."))
-                    call combineDuplicates( &
-                            ElementComponent( &
-                                    components%isotope, &
-                                    components%fraction / sum(components%fraction)), &
-                            element%components)
+                    fixed_components = ElementComponent( &
+                            components%isotope, &
+                            components%fraction / sum(components%fraction))
                 end if
-                element%num_components = size(element%components)
             else
                 call errors%appendError(Internal( &
                         INVALID_ARGUMENT_TYPE, &
@@ -82,7 +101,17 @@ contains
                     // " Element: " // symbol%toString() // ", Isotopes: [" &
                     // join(components%isotope%toString(), ", ") // "]"))
         end if
-    end subroutine fromAtomFractions
+    end subroutine errorChecking
+
+    pure subroutine fromAtomFractionsUnsafe(symbol, components, element)
+        type(ElementSymbol_t), intent(in) :: symbol
+        type(ElementComponent_t), intent(in) :: components(:)
+        type(Element_t), intent(out) :: element
+
+        element%symbol = symbol
+        call combineDuplicates(components, element%components)
+        element%num_components = size(element%components)
+    end subroutine fromAtomFractionsUnsafe
 
     elemental function atomFractionFromIsotope(self, isotope) result(atom_fraction)
         class(Element_t), intent(in) :: self
