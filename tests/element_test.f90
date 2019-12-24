@@ -52,7 +52,7 @@ contains
         type(MessageList_t) :: messages
 
         call fromAtomFractions( &
-                H, ElementComponent([He_3], [1.0d0]), messages, errors, element)
+                H, [ElementComponent(He_3, 1.0d0)], messages, errors, element)
 
         result_ = assertThat( &
                 errors.hasType.MISMATCH_TYPE, errors%toString())
@@ -66,7 +66,7 @@ contains
         type(MessageList_t) :: messages
 
         call fromAtomFractions( &
-                H, ElementComponent([H_1], [-1.0d0]), messages, errors, element)
+                H, [ElementComponent(H_1, -1.0d0)], messages, errors, element)
 
         result_ = assertThat( &
                 errors.hasType.INVALID_ARGUMENT, errors%toString())
@@ -80,7 +80,7 @@ contains
         type(MessageList_t) :: messages
 
         call fromAtomFractions( &
-                H, ElementComponent([H_1], [1.0d0]), messages, errors, element)
+                H, [ElementComponent(H_1, 1.0d0)], messages, errors, element)
         if (errors%hasAny()) then
             result_ = fail(errors%toString())
         else
