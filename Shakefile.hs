@@ -162,7 +162,7 @@ sourceDirs =
     ]
 shakeDir = "_shake"
 buildDir = "build"
-testDir = "tests"
+testDirs = ["tests", "quaff" </> "tests" </> "test_helpers" </> "assertions"]
 testBuildDir = "tests_build"
 
 -- Special files
@@ -176,7 +176,7 @@ main = do
     (sources, modules, programs) <- scanSourceFiles Map.empty sourceFiles
     let projectSearchTree = Node buildDir modules Set.empty
 
-    testSourceFiles <- getDirectoriesFiles [testDir] sourceExts
+    testSourceFiles <- getDirectoriesFiles testDirs sourceExts
     let testCollectionFiles = filter (endswith "_test.f90") testSourceFiles
     let testCollectionModules = Set.fromList
             $ map (takeFileName . dropExtension) testCollectionFiles

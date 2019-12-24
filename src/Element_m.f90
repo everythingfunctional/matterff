@@ -1,10 +1,10 @@
 module Element_m
     use Element_component_m, only: ElementComponent_t, ElementComponent
-    use Element_symbol_m, only: ElementSymbol_t
+    use Element_symbol_m, only: ElementSymbol_t, H, He
     use erloff, only: &
             ErrorList_t, MessageList_t, Info, Internal, Module_, Procedure_
     use iso_varying_string, only: operator(//)
-    use Isotope_m, only: Isotope_t, find
+    use Isotope_m, only: Isotope_t, find, H_1, H_2, He_3, He_4
     use Isotope_symbol_m, only: IsotopeSymbol_t
     use quaff, only: Amount_t, Mass_t, MolarMass_t, operator(/), sum
     use strff, only: join
@@ -28,6 +28,7 @@ module Element_m
         procedure :: atomFractionFromSymbol
         generic, public :: atomFraction => &
                 atomFractionFromIsotope, atomFractionFromSymbol
+        procedure, public :: atomicMass
         procedure :: weightFractionFromIsotope
         procedure :: weightFractionFromSymbol
         generic, public :: weightFraction => &
@@ -40,7 +41,9 @@ module Element_m
             fromAtomFractions, &
             fromAtomFractionsUnsafe, &
             fromWeightFractions, &
-            fromWeightFractionsUnsafe
+            fromWeightFractionsUnsafe, &
+            naturalHydrogen, &
+            naturalHelium
 contains
     pure subroutine fromAtomFractions(symbol, components, messages, errors, element)
         type(ElementSymbol_t), intent(in) :: symbol
@@ -155,6 +158,27 @@ contains
                 element)
     end subroutine fromWeightFractionsUnsafe
 
+    ! Atomic fractions are taken from the 17th Edition of the Chart of Nuclides
+    pure function naturalHydrogen()
+        type(Element_t) :: naturalHydrogen
+
+        naturalHydrogen%symbol = H
+        naturalHydrogen%num_components = 2
+        allocate(naturalHydrogen%components, source = &
+                [ElementComponent(H_1, 0.999885d0), &
+                 ElementComponent(H_2, 0.000115d0)])
+    end function naturalHydrogen
+
+    pure function naturalHelium()
+        type(Element_t) :: naturalHelium
+
+        naturalHelium%symbol = He
+        naturalHelium%num_components = 2
+        allocate(naturalHelium%components, source = &
+                [ElementComponent(He_3, 0.000001344d0), &
+                 ElementComponent(He_4, 0.99999866d0)])
+    end function naturalHelium
+
     elemental function atomFractionFromIsotope(self, isotope) result(atom_fraction)
         class(Element_t), intent(in) :: self
         type(Isotope_t), intent(in) :: isotope
@@ -181,6 +205,13 @@ contains
             atom_fraction = 0.0d0
         end if
     end function atomFractionFromSymbol
+
+    elemental function atomicMass(self)
+        class(Element_t), intent(in) :: self
+        type(MolarMass_t) :: atomicMass
+
+        atomicMass = sum(self%components%fraction * self%components%isotope%atomic_mass)
+    end function atomicMass
 
     elemental function weightFractionFromIsotope(self, isotope) result(weight_fraction)
         class(Element_t), intent(in) :: self

@@ -1,9 +1,16 @@
 module element_test
-    use Element_m, only: Element_t, fromAtomFractions, fromWeightFractions
+    use Element_m, only: &
+            Element_t, &
+            fromAtomFractions, &
+            fromWeightFractions, &
+            naturalHydrogen, &
+            naturalHelium
     use Element_component_m, only: ElementComponent
     use Element_symbol_m, only: H
     use erloff, only: ErrorList_t, MessageList_t
     use Isotope_m, only: Isotope_t, H_1, H_2, He_3
+    use quaff, only: operator(.unit.), GRAMS_PER_MOL
+    use quaff_asserts_m, only: assertEqualsWithinAbsolute
     use Utilities_m, only: &
             INVALID_ARGUMENT_TYPE, MISMATCH_TYPE, NORMALIZED_FRACTIONS_TYPE
     use Vegetables_m, only: &
@@ -17,7 +24,7 @@ contains
     function test_element() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(7)
+        type(TestItem_t) :: individual_tests(8)
 
         individual_tests(1) = It( &
                 "Creating an element with isotopes of a different element is an error", &
@@ -39,6 +46,9 @@ contains
         individual_tests(7) = It( &
                 "Created with duplicate isotopes has sum of duplicates", &
                 checkDuplicates)
+        individual_tests(8) = It( &
+                "Natural compositions have their atomic mass from the Periodic Table", &
+                checkNaturalElements)
         tests = Describe("Element_t", individual_tests)
     end function test_element
 
@@ -302,6 +312,29 @@ contains
             end if
         end if
     end function checkDuplicates
+
+    pure function checkNaturalElements() result(result_)
+        type(Result_t) :: result_
+
+        type(Element_t) :: hydrogen
+        type(Element_t) :: helium
+
+        hydrogen = naturalHydrogen()
+        helium = naturalHelium()
+
+        ! Atomic masses and tolerances are taken from the 17th Edition of the Chart of Nuclides
+        result_ = &
+                assertEqualsWithinAbsolute( &
+                        1.00794d0.unit.GRAMS_PER_MOL, &
+                        hydrogen%atomicMass(), &
+                        0.00007d0.unit.GRAMS_PER_MOL, &
+                        "H") &
+                .and.assertEqualsWithinAbsolute( &
+                        4.002602d0.unit.GRAMS_PER_MOL, &
+                        helium%atomicMass(), &
+                        0.000002d0.unit.GRAMS_PER_MOL, &
+                        "He")
+    end function checkNaturalElements
 
     pure function assertAllIsotope(isotope, element, from) result(result_)
         type(Isotope_t), intent(in) :: isotope
