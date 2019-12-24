@@ -26,6 +26,10 @@ module Isotope_m
         procedure, public :: toString
     end type Isotope_t
 
+    interface find
+        module procedure findIsotope
+    end interface find
+
     ! Atomic masses are taken from the 17th Edition of the Chart of Nuclides
     ! Where atomic mass is not provided for an isotope in the table, the
     ! atomic mass is taken from:
@@ -59,7 +63,7 @@ contains
         string = self%symbol%toString()
     end function toString
 
-    pure function find(symbol, isotopes) result(position)
+    pure function findIsotope(symbol, isotopes) result(position)
         type(IsotopeSymbol_t), intent(in) :: symbol
         type(Isotope_t), intent(in) :: isotopes(:)
         integer :: position
@@ -73,5 +77,5 @@ contains
                 exit
             end if
         end do
-    end function find
+    end function findIsotope
 end module Isotope_m

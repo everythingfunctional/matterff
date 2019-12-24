@@ -3,6 +3,7 @@ module element_test
             Element_t, &
             combineByAtomFactors, &
             combineByWeightFactors, &
+            find, &
             fromAtomFractions, &
             fromWeightFractions, &
             naturalHydrogen, &
@@ -28,7 +29,7 @@ contains
     function test_element() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(10)
+        type(TestItem_t) :: individual_tests(12)
 
         individual_tests(1) = It( &
                 "Creating an element with isotopes of a different element is an error", &
@@ -58,6 +59,10 @@ contains
         individual_tests(10) = It( &
                 "Natural compositions have their atomic mass from the Periodic Table", &
                 checkNaturalElements)
+        individual_tests(11) = It( &
+                "Has a position of 0 if it's not in a list", checkNotFound)
+        individual_tests(12) = It( &
+                "Can be found in a list", checkFind)
         tests = Describe("Element_t", individual_tests)
     end function test_element
 
@@ -440,6 +445,30 @@ contains
                         0.000003d0.unit.GRAMS_PER_MOL, &
                         "Be")
     end function checkNaturalElements
+
+    pure function checkNotFound() result(result_)
+        type(Result_t) :: result_
+
+        type(Element_t) :: elements(3)
+
+        elements(1) = naturalHelium()
+        elements(2) = naturalLithium()
+        elements(3) = naturalBeryllium()
+
+        result_ = assertEquals(0, find(H, elements))
+    end function checkNotFound
+
+    pure function checkFind() result(result_)
+        type(Result_t) :: result_
+
+        type(Element_t) :: elements(3)
+
+        elements(1) = naturalHydrogen()
+        elements(2) = naturalHelium()
+        elements(3) = naturalLithium()
+
+        result_ = assertEquals(1, find(H, elements))
+    end function checkFind
 
     pure function assertAllIsotope(isotope, element, from) result(result_)
         type(Isotope_t), intent(in) :: isotope

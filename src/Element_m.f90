@@ -35,6 +35,10 @@ module Element_m
                 weightFractionFromIsotope, weightFractionFromSymbol
     end type Element_t
 
+    interface find
+        module procedure findElement
+    end interface find
+
     character(len=*), parameter :: MODULE_NAME = "Element_m"
 
     public :: &
@@ -42,6 +46,7 @@ module Element_m
             combineByAtomFactorsUnsafe, &
             combineByWeightFactors, &
             combineByWeightFactorsUnsafe, &
+            find, &
             fromAtomFractions, &
             fromAtomFractionsUnsafe, &
             fromWeightFractions, &
@@ -387,4 +392,20 @@ contains
             end if
         end do
     end subroutine combineDuplicates
+
+    pure function findElement(symbol, elements) result(position)
+        type(ElementSymbol_t), intent(in) :: symbol
+        type(Element_t), intent(in) :: elements(:)
+        integer :: position
+
+        integer :: i
+
+        position = 0
+        do i = 1, size(elements)
+            if (elements(i)%symbol == symbol) then
+                position = i
+                exit
+            end if
+        end do
+    end function findElement
 end module Element_m
