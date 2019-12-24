@@ -11,7 +11,7 @@ module Isotope_m
     type, public :: Isotope_t
         private
         type(IsotopeSymbol_t), public :: symbol
-        type(MolarMass_t) :: atomic_mass
+        type(MolarMass_t), public :: atomic_mass
     contains
         private
         procedure, public :: is

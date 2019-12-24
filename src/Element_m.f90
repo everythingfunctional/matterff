@@ -3,8 +3,9 @@ module Element_m
     use Element_symbol_m, only: ElementSymbol_t
     use erloff, only: ErrorList_t, MessageList_t, Internal, Module_, Procedure_
     use iso_varying_string, only: operator(//)
-    use Isotope_m, only: Isotope_t
+    use Isotope_m, only: Isotope_t, find
     use Isotope_symbol_m, only: IsotopeSymbol_t
+    use quaff, only: MolarMass_t, sum
     use strff, only: join
     use Utilities_m, only: INVALID_ARGUMENT, MISMATCH_TYPE
 
@@ -13,6 +14,7 @@ module Element_m
 
     type, public :: Element_t
         private
+        integer :: num_components = 0
         type(ElementSymbol_t) :: symbol
         type(ElementComponent_t), allocatable :: components(:)
     contains
@@ -43,6 +45,7 @@ contains
         if (all(components%isotope%is(symbol))) then
             if (all(components%fraction > 0.0d0)) then
                 element%symbol = symbol
+                element%num_components = size(components)
                 allocate(element%components, source = components)
             else
                 call errors%appendError(Internal( &
@@ -75,11 +78,15 @@ contains
         type(IsotopeSymbol_t), intent(in) :: isotope
         double precision :: atom_fraction
 
-        associate(a => isotope)
-        end associate
+        integer :: position
 
-        if (allocated(self%components)) then
-            atom_fraction = self%components(1)%fraction
+        if (self%num_components > 0) then
+            position = find(isotope, self%components%isotope)
+            if (position > 0) then
+                atom_fraction = self%components(position)%fraction
+            else
+                atom_fraction = 0.0d0
+            end if
         else
             atom_fraction = 0.0d0
         end if
@@ -98,11 +105,17 @@ contains
         type(IsotopeSymbol_t), intent(in) :: isotope
         double precision :: weight_fraction
 
-        associate(a => isotope)
-        end associate
+        type(MolarMass_t) :: masses(self%num_components)
+        integer :: position
 
-        if (allocated(self%components)) then
-            weight_fraction = self%components(1)%fraction
+        if (self%num_components > 0) then
+            position = find(isotope, self%components%isotope)
+            if (position > 0) then
+                masses = self%components%fraction * self%components%isotope%atomic_mass
+                weight_fraction = masses(position) / sum(masses)
+            else
+                weight_fraction = 0.0d0
+            end if
         else
             weight_fraction = 0.0d0
         end if
