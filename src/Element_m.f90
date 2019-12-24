@@ -38,6 +38,10 @@ module Element_m
     character(len=*), parameter :: MODULE_NAME = "Element_m"
 
     public :: &
+            combineByAtomFactors, &
+            combineByAtomFactorsUnsafe, &
+            combineByWeightFactors, &
+            combineByWeightFactorsUnsafe, &
             fromAtomFractions, &
             fromAtomFractionsUnsafe, &
             fromWeightFractions, &
@@ -45,6 +49,94 @@ module Element_m
             naturalHydrogen, &
             naturalHelium
 contains
+    pure subroutine combineByAtomFactors( &
+            element1, factor1, element2, factor2, messages, errors, combined)
+        type(Element_t), intent(in) :: element1
+        double precision, intent(in) :: factor1
+        type(Element_t), intent(in) :: element2
+        double precision, intent(in) :: factor2
+        type(MessageList_t), intent(out) :: messages
+        type(ErrorList_t), intent(out) :: errors
+        type(Element_t), intent(out) :: combined
+
+        character(len=*), parameter :: PROCEDURE_NAME = "combineByAtomFactors"
+        type(ErrorList_t) :: errors_
+        type(MessageList_t) :: messages_
+
+        call fromAtomFractions( &
+                element1%symbol, &
+                ElementComponent( &
+                        [element1%components%isotope, element2%components%isotope], &
+                        [element1%components%fraction * factor1, element2%components%fraction * factor2]), &
+                messages_, &
+                errors_, &
+                combined)
+        call messages%appendMessages( &
+                messages_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+        call errors%appendErrors( &
+                errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+    end subroutine combineByAtomFactors
+
+    pure subroutine combineByAtomFactorsUnsafe( &
+            element1, factor1, element2, factor2, combined)
+        type(Element_t), intent(in) :: element1
+        double precision, intent(in) :: factor1
+        type(Element_t), intent(in) :: element2
+        double precision, intent(in) :: factor2
+        type(Element_t), intent(out) :: combined
+
+        call fromAtomFractionsUnsafe( &
+                element1%symbol, &
+                ElementComponent( &
+                        [element1%components%isotope, element2%components%isotope], &
+                        [element1%components%fraction * factor1, element2%components%fraction * factor2]), &
+                combined)
+    end subroutine combineByAtomFactorsUnsafe
+
+    pure subroutine combineByWeightFactors( &
+            element1, factor1, element2, factor2, messages, errors, combined)
+        type(Element_t), intent(in) :: element1
+        double precision, intent(in) :: factor1
+        type(Element_t), intent(in) :: element2
+        double precision, intent(in) :: factor2
+        type(MessageList_t), intent(out) :: messages
+        type(ErrorList_t), intent(out) :: errors
+        type(Element_t), intent(out) :: combined
+
+        character(len=*), parameter :: PROCEDURE_NAME = "combineByWeightFactors"
+        type(ErrorList_t) :: errors_
+        type(MessageList_t) :: messages_
+
+        call fromWeightFractions( &
+                element1%symbol, &
+                ElementComponent( &
+                        [element1%components%isotope, element2%components%isotope], &
+                        [element1%components%fraction * factor1, element2%components%fraction * factor2]), &
+                messages_, &
+                errors_, &
+                combined)
+        call messages%appendMessages( &
+                messages_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+        call errors%appendErrors( &
+                errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+    end subroutine combineByWeightFactors
+
+    pure subroutine combineByWeightFactorsUnsafe( &
+            element1, factor1, element2, factor2, combined)
+        type(Element_t), intent(in) :: element1
+        double precision, intent(in) :: factor1
+        type(Element_t), intent(in) :: element2
+        double precision, intent(in) :: factor2
+        type(Element_t), intent(out) :: combined
+
+        call fromWeightFractionsUnsafe( &
+                element1%symbol, &
+                ElementComponent( &
+                        [element1%components%isotope, element2%components%isotope], &
+                        [element1%components%fraction * factor1, element2%components%fraction * factor2]), &
+                combined)
+    end subroutine combineByWeightFactorsUnsafe
+
     pure subroutine fromAtomFractions(symbol, components, messages, errors, element)
         type(ElementSymbol_t), intent(in) :: symbol
         type(ElementComponent_t), intent(in) :: components(:)

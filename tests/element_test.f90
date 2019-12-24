@@ -1,6 +1,8 @@
 module element_test
     use Element_m, only: &
             Element_t, &
+            combineByAtomFactors, &
+            combineByWeightFactors, &
             fromAtomFractions, &
             fromWeightFractions, &
             naturalHydrogen, &
@@ -24,7 +26,7 @@ contains
     function test_element() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(8)
+        type(TestItem_t) :: individual_tests(10)
 
         individual_tests(1) = It( &
                 "Creating an element with isotopes of a different element is an error", &
@@ -47,6 +49,11 @@ contains
                 "Created with duplicate isotopes has sum of duplicates", &
                 checkDuplicates)
         individual_tests(8) = It( &
+                "Combining elements of a different type is an error", &
+                checkCombineDifferentElementsIsError)
+        individual_tests(9) = It( &
+                "Combining elements results in correct fractions", checkCombine)
+        individual_tests(10) = It( &
                 "Natural compositions have their atomic mass from the Periodic Table", &
                 checkNaturalElements)
         tests = Describe("Element_t", individual_tests)
@@ -312,6 +319,88 @@ contains
             end if
         end if
     end function checkDuplicates
+
+    pure function checkCombineDifferentElementsIsError() result(result_)
+        type(Result_t) :: result_
+
+        type(Element_t) :: combined
+        type(ErrorList_t) :: errors_from_atom_fractions
+        type(ErrorList_t) :: errors_from_weight_fractions
+        type(MessageList_t) :: messages
+
+        call combineByAtomFactors( &
+                naturalHydrogen(), &
+                1.0d0, &
+                naturalHelium(), &
+                1.0d0, &
+                messages, &
+                errors_from_atom_fractions, &
+                combined)
+        call combineByWeightFactors( &
+                naturalHydrogen(), &
+                1.0d0, &
+                naturalHelium(), &
+                1.0d0, &
+                messages, &
+                errors_from_weight_fractions, &
+                combined)
+        result_ = &
+                assertThat( &
+                        errors_from_atom_fractions.hasType.MISMATCH_TYPE, &
+                        errors_from_atom_fractions%toString()) &
+                .and.assertThat( &
+                        errors_from_weight_fractions.hasType.MISMATCH_TYPE, &
+                        errors_from_weight_fractions%toString())
+    end function checkCombineDifferentElementsIsError
+
+    pure function checkCombine() result(result_)
+        type(Result_t) :: result_
+
+        type(ErrorList_t) :: errors
+        type(Element_t) :: from_atom_factors
+        type(Element_t) :: from_weight_factors
+        type(MessageList_t) :: messages
+        type(Element_t) :: pure_H_1
+        type(Element_t) :: pure_H_2
+
+        call fromAtomFractions(H, [ElementComponent(H_1, 1.0d0)], messages, errors, pure_H_1)
+        if (errors%hasAny()) then
+            result_ = fail(errors%toString())
+        else
+            call fromAtomFractions(H, [ElementComponent(H_2, 1.0d0)], messages, errors, pure_H_2)
+            if (errors%hasAny()) then
+                result_ = fail(errors%toString())
+            else
+                call combineByAtomFactors(pure_H_1, 0.6d0, pure_H_2, 0.4d0, messages, errors, from_atom_factors)
+                if (errors%hasAny()) then
+                    result_ = fail(errors%toString())
+                else
+                    call combineByWeightFactors(pure_H_1, 0.6d0, pure_H_2, 0.4d0, messages, errors, from_weight_factors)
+                    if (errors%hasAny()) then
+                        result_ = fail(errors%toString())
+                    else
+                        result_ = &
+                                assertEquals( &
+                                        0.6d0, &
+                                        from_atom_factors%atomFraction(H_1), &
+                                        "H-1 atom fraction") &
+                                .and.assertEquals( &
+                                        0.4d0, &
+                                        from_atom_factors%atomFraction(H_2), &
+                                        "H-2 atom fraction") &
+                                .and.assertEquals( &
+                                        0.6d0, &
+                                        from_weight_factors%weightFraction(H_1), &
+                                        "H-1 weight fraction") &
+                                .and.assertEquals( &
+                                        0.4d0, &
+                                        from_weight_factors%weightFraction(H_2), &
+                                        "H-2 weight fraction")
+                    end if
+                end if
+            end if
+        end if
+    end function checkCombine
 
     pure function checkNaturalElements() result(result_)
         type(Result_t) :: result_
