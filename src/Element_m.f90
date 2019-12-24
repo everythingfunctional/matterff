@@ -1,10 +1,10 @@
 module Element_m
     use Element_component_m, only: ElementComponent_t, ElementComponent
-    use Element_symbol_m, only: ElementSymbol_t, H, He
+    use Element_symbol_m, only: ElementSymbol_t, H, He, Li, Be
     use erloff, only: &
             ErrorList_t, MessageList_t, Info, Internal, Module_, Procedure_
     use iso_varying_string, only: operator(//)
-    use Isotope_m, only: Isotope_t, find, H_1, H_2, He_3, He_4
+    use Isotope_m, only: Isotope_t, find, H_1, H_2, He_3, He_4, Li_6, Li_7, Be_9
     use Isotope_symbol_m, only: IsotopeSymbol_t
     use quaff, only: Amount_t, Mass_t, MolarMass_t, operator(/), sum
     use strff, only: join
@@ -47,7 +47,9 @@ module Element_m
             fromWeightFractions, &
             fromWeightFractionsUnsafe, &
             naturalHydrogen, &
-            naturalHelium
+            naturalHelium, &
+            naturalLithium, &
+            naturalBeryllium
 contains
     pure subroutine combineByAtomFactors( &
             element1, factor1, element2, factor2, messages, errors, combined)
@@ -270,6 +272,25 @@ contains
                 [ElementComponent(He_3, 0.000001344d0), &
                  ElementComponent(He_4, 0.99999866d0)])
     end function naturalHelium
+
+    pure function naturalLithium()
+        type(Element_t) :: naturalLithium
+
+        naturalLithium%symbol = Li
+        naturalLithium%num_components = 2
+        allocate(naturalLithium%components, source = &
+                [ElementComponent(Li_6, 0.0759d0), &
+                 ElementComponent(Li_7, 0.9241d0)])
+    end function naturalLithium
+
+    pure function naturalBeryllium()
+        type(Element_t) :: naturalBeryllium
+
+        naturalBeryllium%symbol = Be
+        naturalBeryllium%num_components = 1
+        allocate(naturalBeryllium%components, source = &
+                [ElementComponent(Be_9, 1.0d0)])
+    end function naturalBeryllium
 
     elemental function atomFractionFromIsotope(self, isotope) result(atom_fraction)
         class(Element_t), intent(in) :: self

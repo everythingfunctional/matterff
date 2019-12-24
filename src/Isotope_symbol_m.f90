@@ -1,5 +1,5 @@
 module Isotope_symbol_m
-    use Element_symbol_m, only: ElementSymbol_t, H, He
+    use Element_symbol_m, only: ElementSymbol_t, H, He, Li, Be
     use iso_varying_string, only: VARYING_STRING, operator(//)
     use strff, only: toString
 
@@ -24,6 +24,11 @@ module Isotope_symbol_m
 
     type(IsotopeSymbol_t), parameter, public :: He_3_SYM = IsotopeSymbol_t(He, 3)
     type(IsotopeSymbol_t), parameter, public :: He_4_SYM = IsotopeSymbol_t(He, 4)
+
+    type(IsotopeSymbol_t), parameter, public :: Li_6_SYM = IsotopeSymbol_t(Li, 6)
+    type(IsotopeSymbol_t), parameter, public :: Li_7_SYM = IsotopeSymbol_t(Li, 7)
+
+    type(IsotopeSymbol_t), parameter, public :: Be_9_SYM = IsotopeSymbol_t(Be, 9)
 contains
     elemental function is(self, element)
         class(IsotopeSymbol_t), intent(in) :: self

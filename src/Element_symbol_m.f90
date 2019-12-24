@@ -16,6 +16,8 @@ module Element_symbol_m
 
     type(ElementSymbol_t), parameter, public :: H = ElementSymbol_t("H ")
     type(ElementSymbol_t), parameter, public :: He = ElementSymbol_t("He")
+    type(ElementSymbol_t), parameter, public :: Li = ElementSymbol_t("Li")
+    type(ElementSymbol_t), parameter, public :: Be = ElementSymbol_t("Be")
 contains
     elemental function elementSymbolEquals(lhs, rhs)
         class(ElementSymbol_t), intent(in) :: lhs

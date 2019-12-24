@@ -2,7 +2,15 @@ module Isotope_m
     use Element_symbol_m, only: ElementSymbol_t
     use iso_varying_string, only: VARYING_STRING
     use Isotope_symbol_m, only: &
-            IsotopeSymbol_t, H_1_SYM, H_2_SYM, H_3_SYM, He_3_SYM, He_4_SYM
+            IsotopeSymbol_t, &
+            H_1_SYM, &
+            H_2_SYM, &
+            H_3_SYM, &
+            He_3_SYM, &
+            He_4_SYM, &
+            Li_6_SYM, &
+            Li_7_SYM, &
+            Be_9_SYM
     use quaff, only: MolarMass_t
 
     implicit none
@@ -28,6 +36,11 @@ module Isotope_m
 
     type(Isotope_t), parameter, public :: He_3 = Isotope_t(He_3_SYM, MolarMass_t(kilograms_per_mol = 3.016029319d-3))
     type(Isotope_t), parameter, public :: He_4 = Isotope_t(He_4_SYM, MolarMass_t(kilograms_per_mol = 4.0026032542d-3))
+
+    type(Isotope_t), parameter, public :: Li_6 = Isotope_t(Li_6_SYM, MolarMass_t(kilograms_per_mol = 6.01512279d-3))
+    type(Isotope_t), parameter, public :: Li_7 = Isotope_t(Li_7_SYM, MolarMass_t(kilograms_per_mol = 7.0160045d-3))
+
+    type(Isotope_t), parameter, public :: Be_9 = Isotope_t(Be_9_SYM, MolarMass_t(kilograms_per_mol = 9.0121822d-3))
 
     public :: find
 contains

@@ -6,7 +6,9 @@ module element_test
             fromAtomFractions, &
             fromWeightFractions, &
             naturalHydrogen, &
-            naturalHelium
+            naturalHelium, &
+            naturalLithium, &
+            naturalBeryllium
     use Element_component_m, only: ElementComponent
     use Element_symbol_m, only: H
     use erloff, only: ErrorList_t, MessageList_t
@@ -407,9 +409,13 @@ contains
 
         type(Element_t) :: hydrogen
         type(Element_t) :: helium
+        type(Element_t) :: lithium
+        type(Element_t) :: beryllium
 
         hydrogen = naturalHydrogen()
         helium = naturalHelium()
+        lithium = naturalLithium()
+        beryllium = naturalBeryllium()
 
         ! Atomic masses and tolerances are taken from the 17th Edition of the Chart of Nuclides
         result_ = &
@@ -422,7 +428,17 @@ contains
                         4.002602d0.unit.GRAMS_PER_MOL, &
                         helium%atomicMass(), &
                         0.000002d0.unit.GRAMS_PER_MOL, &
-                        "He")
+                        "He") &
+                .and.assertEqualsWithinAbsolute( &
+                        6.941d0.unit.GRAMS_PER_MOL, &
+                        lithium%atomicMass(), &
+                        0.002d0.unit.GRAMS_PER_MOL, &
+                        "Li") &
+                .and.assertEqualsWithinAbsolute( &
+                        9.012182d0.unit.GRAMS_PER_MOL, &
+                        beryllium%atomicMass(), &
+                        0.000003d0.unit.GRAMS_PER_MOL, &
+                        "Be")
     end function checkNaturalElements
 
     pure function assertAllIsotope(isotope, element, from) result(result_)
