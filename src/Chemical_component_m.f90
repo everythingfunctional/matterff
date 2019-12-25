@@ -12,7 +12,7 @@ module Chemical_component_m
 
     public :: ChemicalComponent
 contains
-    pure function ChemicalComponent(element, multiplier)
+    elemental function ChemicalComponent(element, multiplier)
         type(Element_t), intent(in) :: element
         double precision, intent(in) :: multiplier
         type(ChemicalComponent_t) :: ChemicalComponent

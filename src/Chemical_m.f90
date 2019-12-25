@@ -1,5 +1,5 @@
 module Chemical_m
-    use Chemical_component_m, only: ChemicalComponent_t
+    use Chemical_component_m, only: ChemicalComponent_t, ChemicalComponent
     use Chemical_symbol_m, only: ChemicalSymbol_t
     use Element_m, only: Element_t, combineByAtomFactorsUnsafe, find
     use Element_symbol_m, only: ElementSymbol_t
@@ -38,8 +38,47 @@ module Chemical_m
 
     character(len=*), parameter :: MODULE_NAME = "Chemical_m"
 
-    public :: makeChemical
+    public :: makeChemical, combineByAtomFactors
 contains
+    pure subroutine combineByAtomFactors(chemical1, factor1, chemical2, factor2, messages, errors, combined)
+        type(Chemical_t), intent(in) :: chemical1
+        double precision, intent(in) :: factor1
+        type(Chemical_t), intent(in) :: chemical2
+        double precision, intent(in) :: factor2
+        type(MessageList_t), intent(out) :: messages
+        type(ErrorList_t), intent(out) :: errors
+        type(Chemical_t), intent(out) :: combined
+
+        character(len=*), parameter :: PROCEDURE_NAME = "combineByAtomFactors"
+        type(ErrorList_t) :: errors_
+        type(MessageList_t) :: messages_
+        double precision :: normalizer
+
+        if (chemical1%symbol == chemical2%symbol) then
+            normalizer = factor1 + factor2
+            call makeChemical( &
+                    chemical1%symbol, &
+                    ChemicalComponent( &
+                            [chemical1%components%element, chemical2%components%element], &
+                            [chemical1%components%multiplier * factor1 / normalizer, &
+                                chemical2%components%multiplier * factor2 / normalizer]), &
+                    messages_, &
+                    errors_, &
+                    combined)
+            call messages%appendMessages( &
+                    messages_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+            call errors%appendErrors( &
+                    errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+        else
+            call errors%appendError(Internal( &
+                    MISMATCH_TYPE, &
+                    Module_(MODULE_NAME), &
+                    Procedure_(PROCEDURE_NAME), &
+                    "Attempted to combine different chemicals: " &
+                    // chemical1%symbol%toString() // " and " // chemical2%symbol%toString()))
+        end if
+    end subroutine combineByAtomFactors
+
     pure subroutine makeChemical(symbol, components, messages, errors, chemical)
         type(ChemicalSymbol_t), intent(in) :: symbol
         type(ChemicalComponent_t), intent(in) :: components(:)
