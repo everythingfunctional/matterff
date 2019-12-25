@@ -50,25 +50,12 @@ contains
         type(Chemical_t), intent(out) :: combined
 
         character(len=*), parameter :: PROCEDURE_NAME = "combineByAtomFactors"
-        type(ErrorList_t) :: errors_
-        type(MessageList_t) :: messages_
         double precision :: normalizer
 
         if (chemical1%symbol == chemical2%symbol) then
             normalizer = factor1 + factor2
-            call makeChemical( &
-                    chemical1%symbol, &
-                    ChemicalComponent( &
-                            [chemical1%components%element, chemical2%components%element], &
-                            [chemical1%components%multiplier * factor1 / normalizer, &
-                                chemical2%components%multiplier * factor2 / normalizer]), &
-                    messages_, &
-                    errors_, &
-                    combined)
-            call messages%appendMessages( &
-                    messages_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
-            call errors%appendErrors( &
-                    errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+            call combineChemicalByAtomFactorsUnsafe( &
+                    chemical1, factor1 / normalizer, chemical2, factor2 / normalizer, combined)
         else
             call errors%appendError(Internal( &
                     MISMATCH_TYPE, &
@@ -78,6 +65,23 @@ contains
                     // chemical1%symbol%toString() // " and " // chemical2%symbol%toString()))
         end if
     end subroutine combineByAtomFactors
+
+    pure subroutine combineChemicalByAtomFactorsUnsafe( &
+                chemical1, factor1, chemical2, factor2, combined)
+        type(Chemical_t), intent(in) :: chemical1
+        double precision, intent(in) :: factor1
+        type(Chemical_t), intent(in) :: chemical2
+        double precision, intent(in) :: factor2
+        type(Chemical_t), intent(out) :: combined
+
+        call makeChemicalUnsafe( &
+                chemical1%symbol, &
+                ChemicalComponent( &
+                        [chemical1%components%element, chemical2%components%element], &
+                        [chemical1%components%multiplier * factor1, &
+                            chemical2%components%multiplier * factor2]), &
+                combined)
+    end subroutine combineChemicalByAtomFactorsUnsafe
 
     pure subroutine makeChemical(symbol, components, messages, errors, chemical)
         type(ChemicalSymbol_t), intent(in) :: symbol
@@ -89,8 +93,7 @@ contains
         character(len=*), parameter :: PROCEDURE_NAME = "makeChemical"
 
         if (all(symbol%includes(components%element%symbol))) then
-            chemical%symbol = symbol
-            call combineDuplicates(components, chemical%components)
+            call makeChemicalUnsafe(symbol, components, chemical)
         else
             call errors%appendError(Internal( &
                     MISMATCH_TYPE, &
@@ -101,6 +104,15 @@ contains
                     // ", Elements: [" // join(components%element%symbol%toString(), ", ") // "]"))
         end if
     end subroutine makeChemical
+
+    pure subroutine makeChemicalUnsafe(symbol, components, chemical)
+        type(ChemicalSymbol_t), intent(in) :: symbol
+        type(ChemicalComponent_t), intent(in) :: components(:)
+        type(Chemical_t), intent(out) :: chemical
+
+        chemical%symbol = symbol
+        call combineDuplicates(components, chemical%components)
+    end subroutine makeChemicalUnsafe
 
     elemental function atomFractionElement(self, element) result(atom_fraction)
         class(Chemical_t), intent(in) :: self
