@@ -43,6 +43,22 @@ module Chemical_m
                 weightFractionIsotopeSymbol
     end type Chemical_t
 
+    interface combineByAtomFactors
+        module procedure combineChemicalsByAtomFactors
+    end interface combineByAtomFactors
+
+    interface combineByAtomFactorsUnsafe
+        module procedure combineChemicalsByAtomFactorsUnsafe
+    end interface combineByAtomFactorsUnsafe
+
+    interface combineByWeightFactors
+        module procedure combineChemicalsByWeightFactors
+    end interface combineByWeightFactors
+
+    interface combineByWeightFactorsUnsafe
+        module procedure combineChemicalsByWeightFactorsUnsafe
+    end interface combineByWeightFactorsUnsafe
+
     character(len=*), parameter :: MODULE_NAME = "Chemical_m"
 
     public :: &
@@ -55,7 +71,7 @@ module Chemical_m
             naturalHydrogenGas, &
             naturalHeliumGas
 contains
-    pure subroutine combineByAtomFactors( &
+    pure subroutine combineChemicalsByAtomFactors( &
             chemical1, factor1, chemical2, factor2, errors, combined)
         type(Chemical_t), intent(in) :: chemical1
         double precision, intent(in) :: factor1
@@ -64,7 +80,7 @@ contains
         type(ErrorList_t), intent(out) :: errors
         type(Chemical_t), intent(out) :: combined
 
-        character(len=*), parameter :: PROCEDURE_NAME = "combineByAtomFactors"
+        character(len=*), parameter :: PROCEDURE_NAME = "combineChemicalsByAtomFactors"
         type(ErrorList_t) :: errors_
         double precision :: normalizer
 
@@ -74,10 +90,10 @@ contains
                     errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
         else
             normalizer = factor1 + factor2
-            call combineChemicalByAtomFactorsUnsafe( &
+            call combineByAtomFactorsUnsafe( &
                     chemical1, factor1 / normalizer, chemical2, factor2 / normalizer, combined)
         end if
-    end subroutine combineByAtomFactors
+    end subroutine combineChemicalsByAtomFactors
 
     pure subroutine combineErrorCheck(chemical1, chemical2, errors)
         type(Chemical_t), intent(in) :: chemical1
@@ -96,7 +112,7 @@ contains
         end if
     end subroutine combineErrorCheck
 
-    pure subroutine combineChemicalByAtomFactorsUnsafe( &
+    pure subroutine combineChemicalsByAtomFactorsUnsafe( &
             chemical1, factor1, chemical2, factor2, combined)
         type(Chemical_t), intent(in) :: chemical1
         double precision, intent(in) :: factor1
@@ -111,9 +127,9 @@ contains
                         [chemical1%components%multiplier * factor1, &
                             chemical2%components%multiplier * factor2]), &
                 combined)
-    end subroutine combineChemicalByAtomFactorsUnsafe
+    end subroutine combineChemicalsByAtomFactorsUnsafe
 
-    pure subroutine combineByWeightFactors( &
+    pure subroutine combineChemicalsByWeightFactors( &
             chemical1, factor1, chemical2, factor2, errors, combined)
         type(Chemical_t), intent(in) :: chemical1
         double precision, intent(in) :: factor1
@@ -122,7 +138,7 @@ contains
         type(ErrorList_t), intent(out) :: errors
         type(Chemical_t), intent(out) :: combined
 
-        character(len=*), parameter :: PROCEDURE_NAME = "combineByWeightFactors"
+        character(len=*), parameter :: PROCEDURE_NAME = "combineChemicalsByWeightFactors"
         type(ErrorList_t) :: errors_
 
         call combineErrorCheck(chemical1, chemical2, errors_)
@@ -133,9 +149,9 @@ contains
             call combineByWeightFactorsUnsafe( &
                     chemical1, factor1, chemical2, factor2, combined)
         end if
-    end subroutine combineByWeightFactors
+    end subroutine combineChemicalsByWeightFactors
 
-    pure subroutine combineByWeightFactorsUnsafe( &
+    pure subroutine combineChemicalsByWeightFactorsUnsafe( &
             chemical1, factor1, chemical2, factor2, combined)
         type(Chemical_t), intent(in) :: chemical1
         double precision, intent(in) :: factor1
@@ -150,13 +166,13 @@ contains
         amounts(1) = factor1 * ONE_KILOGRAM / chemical1%molarMass()
         amounts(2) = factor2 * ONE_KILOGRAM / chemical2%molarMass()
         total_amount = sum(amounts)
-        call combineChemicalByAtomFactorsUnsafe( &
+        call combineByAtomFactorsUnsafe( &
                 chemical1, &
                 amounts(1) / total_amount, &
                 chemical2, &
                 amounts(2) / total_amount, &
                 combined)
-    end subroutine combineByWeightFactorsUnsafe
+    end subroutine combineChemicalsByWeightFactorsUnsafe
 
     pure subroutine makeChemical(symbol, components, errors, chemical)
         type(ChemicalSymbol_t), intent(in) :: symbol

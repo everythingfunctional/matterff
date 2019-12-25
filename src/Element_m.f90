@@ -37,6 +37,22 @@ module Element_m
                 weightFractionFromIsotope, weightFractionFromSymbol
     end type Element_t
 
+    interface combineByAtomFactors
+        module procedure combineElementsByAtomFactors
+    end interface combineByAtomFactors
+
+    interface combineByAtomFactorsUnsafe
+        module procedure combineElementsByAtomFactorsUnsafe
+    end interface combineByAtomFactorsUnsafe
+
+    interface combineByWeightFactors
+        module procedure combineElementsByWeightFactors
+    end interface combineByWeightFactors
+
+    interface combineByWeightFactorsUnsafe
+        module procedure combineElementsByWeightFactorsUnsafe
+    end interface combineByWeightFactorsUnsafe
+
     interface find
         module procedure findElement
     end interface find
@@ -58,7 +74,7 @@ module Element_m
             naturalLithium, &
             naturalBeryllium
 contains
-    pure subroutine combineByAtomFactors( &
+    pure subroutine combineElementsByAtomFactors( &
             element1, factor1, element2, factor2, messages, errors, combined)
         type(Element_t), intent(in) :: element1
         double precision, intent(in) :: factor1
@@ -68,7 +84,7 @@ contains
         type(ErrorList_t), intent(out) :: errors
         type(Element_t), intent(out) :: combined
 
-        character(len=*), parameter :: PROCEDURE_NAME = "combineByAtomFactors"
+        character(len=*), parameter :: PROCEDURE_NAME = "combineElementsByAtomFactors"
         type(ErrorList_t) :: errors_
         type(MessageList_t) :: messages_
 
@@ -84,9 +100,9 @@ contains
                 messages_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
         call errors%appendErrors( &
                 errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
-    end subroutine combineByAtomFactors
+    end subroutine combineElementsByAtomFactors
 
-    pure subroutine combineByAtomFactorsUnsafe( &
+    pure subroutine combineElementsByAtomFactorsUnsafe( &
             element1, factor1, element2, factor2, combined)
         type(Element_t), intent(in) :: element1
         double precision, intent(in) :: factor1
@@ -100,9 +116,9 @@ contains
                         [element1%components%isotope, element2%components%isotope], &
                         [element1%components%fraction * factor1, element2%components%fraction * factor2]), &
                 combined)
-    end subroutine combineByAtomFactorsUnsafe
+    end subroutine combineElementsByAtomFactorsUnsafe
 
-    pure subroutine combineByWeightFactors( &
+    pure subroutine combineElementsByWeightFactors( &
             element1, factor1, element2, factor2, messages, errors, combined)
         type(Element_t), intent(in) :: element1
         double precision, intent(in) :: factor1
@@ -112,7 +128,7 @@ contains
         type(ErrorList_t), intent(out) :: errors
         type(Element_t), intent(out) :: combined
 
-        character(len=*), parameter :: PROCEDURE_NAME = "combineByWeightFactors"
+        character(len=*), parameter :: PROCEDURE_NAME = "combineElementsByWeightFactors"
         type(ErrorList_t) :: errors_
         type(MessageList_t) :: messages_
 
@@ -128,9 +144,9 @@ contains
                 messages_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
         call errors%appendErrors( &
                 errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
-    end subroutine combineByWeightFactors
+    end subroutine combineElementsByWeightFactors
 
-    pure subroutine combineByWeightFactorsUnsafe( &
+    pure subroutine combineElementsByWeightFactorsUnsafe( &
             element1, factor1, element2, factor2, combined)
         type(Element_t), intent(in) :: element1
         double precision, intent(in) :: factor1
@@ -144,7 +160,7 @@ contains
                         [element1%components%isotope, element2%components%isotope], &
                         [element1%components%fraction * factor1, element2%components%fraction * factor2]), &
                 combined)
-    end subroutine combineByWeightFactorsUnsafe
+    end subroutine combineElementsByWeightFactorsUnsafe
 
     pure subroutine fromAtomFractions(symbol, components, messages, errors, element)
         type(ElementSymbol_t), intent(in) :: symbol
