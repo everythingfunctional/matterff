@@ -20,7 +20,7 @@ contains
     function test_chemical() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(3)
+        type(TestItem_t) :: individual_tests(4)
 
         individual_tests(1) = It( &
                 "Creating a chemical with elements not included in the symbol is an error", &
@@ -31,6 +31,9 @@ contains
         individual_tests(3) = It( &
                 "A single isotope chemical is all that isotope", &
                 checkSingleIsotope)
+        individual_tests(4) = It( &
+                "Created with duplicate elements has sum of duplicates", &
+                checkDuplicate)
         tests = Describe("Chemical_t", individual_tests)
     end function test_chemical
 
@@ -118,4 +121,35 @@ contains
             end if
         end if
     end function  checkSingleIsotope
+
+    pure function checkDuplicate() result(result_)
+        type(Result_t) :: result_
+
+        type(Chemical_t) :: chemical
+        type(ChemicalComponent_t) :: components(2)
+        type(ErrorList_t) :: errors
+        type(MessageList_t) :: messages
+
+        components(1) = ChemicalComponent(naturalHydrogen(), 1.0d0)
+        components(2) = ChemicalComponent(naturalHydrogen(), 1.0d0)
+        call makeChemical( &
+                hydrogenGasSymbol(), &
+                components, &
+                messages, &
+                errors, &
+                chemical)
+        if (errors%hasAny()) then
+            result_ = fail(errors%toString())
+        else
+            result_ = &
+                    assertEquals( &
+                            1.0d0, &
+                            chemical%atomFraction(H), &
+                            "atom fraction") &
+                    .and.assertEquals( &
+                            1.0d0, &
+                            chemical%weightFraction(H), &
+                            "weight fraction")
+        end if
+    end function checkDuplicate
 end module chemical_test
