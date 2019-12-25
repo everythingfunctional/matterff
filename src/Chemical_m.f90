@@ -130,16 +130,16 @@ contains
         type(Chemical_t) :: naturalHydrogenGas
 
         naturalHydrogenGas%symbol = hydrogenGasSymbol()
-        allocate(naturalHydrogenGas%components, source = &
-                [ChemicalComponent(naturalHydrogen(), 2.0d0)])
+        allocate(naturalHydrogenGas%components(1))
+        naturalHydrogenGas%components(1) = ChemicalComponent(naturalHydrogen(), 2.0d0)
     end function naturalHydrogenGas
 
     pure function naturalHeliumGas()
         type(Chemical_t) :: naturalHeliumGas
 
         naturalHeliumGas%symbol = heliumGasSymbol()
-        allocate(naturalHeliumGas%components, source = &
-                [ChemicalComponent(naturalHelium(), 1.0d0)])
+        allocate(naturalHeliumGas%components(1))
+        naturalHeliumGas%components(1) = ChemicalComponent(naturalHelium(), 1.0d0)
     end function naturalHeliumGas
 
     elemental function atomFractionElement(self, element) result(atom_fraction)

@@ -1,5 +1,10 @@
 module chemical_test
-    use Chemical_m, only: Chemical_t, makeChemical
+    use Chemical_m, only: &
+            Chemical_t, &
+            combineByAtomFactors, &
+            makeChemical, &
+            naturalHydrogenGas, &
+            naturalHeliumGas
     use Chemical_component_m, only: ChemicalComponent_t, ChemicalComponent
     use Chemical_symbol_m, only: hydrogenGasSymbol
     use Element_m, only: &
@@ -7,7 +12,7 @@ module chemical_test
     use Element_component_m, only: ElementComponent
     use Element_symbol_m, only: H
     use erloff, only: ErrorList_t, MessageList_t
-    use Isotope_m, only: H_1
+    use Isotope_m, only: H_1, H_2
     use Utilities_m, only: MISMATCH_TYPE
     use Vegetables_m, only: &
             Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
@@ -20,7 +25,7 @@ contains
     function test_chemical() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(4)
+        type(TestItem_t) :: individual_tests(6)
 
         individual_tests(1) = It( &
                 "Creating a chemical with elements not included in the symbol is an error", &
@@ -34,6 +39,11 @@ contains
         individual_tests(4) = It( &
                 "Created with duplicate elements has sum of duplicates", &
                 checkDuplicate)
+        individual_tests(5) = It( &
+                "Combining chemicals of different types is an error", &
+                checkCombineError)
+        individual_tests(6) = It( &
+                "Combining chemicals results in correct fractios", checkCombine)
         tests = Describe("Chemical_t", individual_tests)
     end function test_chemical
 
@@ -152,4 +162,94 @@ contains
                             "weight fraction")
         end if
     end function checkDuplicate
+
+    pure function checkCombineError() result(result_)
+        type(Result_t) :: result_
+
+        type(Chemical_t) :: chemical
+        type(ErrorList_t) :: errors
+        type(MessageList_t) :: messages
+
+        call combineByAtomFactors( &
+                naturalHydrogenGas(), &
+                1.0d0, &
+                naturalHeliumGas(), &
+                1.0d0, &
+                messages, &
+                errors, &
+                chemical)
+        result_ = assertThat( &
+                errors.hasType.MISMATCH_TYPE, &
+                errors%toString())
+    end function checkCombineError
+
+    pure function checkCombine() result(result_)
+        type(Result_t) :: result_
+
+        type(Chemical_t) :: combined
+        type(ErrorList_t) :: errors
+        type(MessageList_t) :: messages
+        type(Element_t) :: pure_H_1
+        type(Chemical_t) :: pure_H_1_gas
+        type(ChemicalComponent_t) :: pure_H_1_gas_components(1)
+        type(Element_t) :: pure_H_2
+        type(Chemical_t) :: pure_H_2_gas
+        type(ChemicalComponent_t) :: pure_H_2_gas_components(1)
+
+        call fromAtomFractions( &
+                H, [ElementComponent(H_1, 1.0d0)], messages, errors, pure_H_1)
+        if (errors%hasAny()) then
+            result_ = fail(errors%toString())
+        else
+            call fromAtomFractions( &
+                    H, [ElementComponent(H_2, 1.0d0)], messages, errors, pure_H_2)
+            if (errors%hasAny()) then
+                result_ = fail(errors%toString())
+            else
+                pure_H_1_gas_components(1) = ChemicalComponent(pure_H_1, 2.0d0)
+                pure_H_2_gas_components(1) = ChemicalComponent(pure_H_2, 2.0d0)
+                call makeChemical( &
+                        hydrogenGasSymbol(), &
+                        pure_H_1_gas_components, &
+                        messages, &
+                        errors, &
+                        pure_H_1_gas)
+                if (errors%hasAny()) then
+                    result_ = fail(errors%toString())
+                else
+                    call makeChemical( &
+                            hydrogenGasSymbol(), &
+                            pure_H_2_gas_components, &
+                            messages, &
+                            errors, &
+                            pure_H_2_gas)
+                    if (errors%hasAny()) then
+                        result_ = fail(errors%toString())
+                    else
+                        call combineByAtomFactors( &
+                                pure_H_1_gas, &
+                                0.6d0, &
+                                pure_H_2_gas, &
+                                0.4d0, &
+                                messages, &
+                                errors, &
+                                combined)
+                        if (errors%hasAny()) then
+                            result_ = fail(errors%toString())
+                        else
+                            result_ = &
+                                    assertEquals( &
+                                            0.6d0, &
+                                            combined%atomFraction(H_1), &
+                                            "H-1 atom fraction") &
+                                    .and.assertEquals( &
+                                            0.4d0, &
+                                            combined%atomFraction(H_2), &
+                                            "H-2 atom fraction")
+                        end if
+                    end if
+                end if
+            end if
+        end if
+    end function checkCombine
 end module chemical_test
