@@ -5,6 +5,8 @@ module Chemical_m
     use Element_symbol_m, only: ElementSymbol_t
     use erloff, only: ErrorList_t, MessageList_t, Internal, Module_, Procedure_
     use iso_varying_string, only: operator(//)
+    use Isotope_m, only: Isotope_t
+    use Isotope_symbol_m, only: IsotopeSymbol_t
     use quaff, only: MolarMass_t, sum
     use strff, only: join
     use Utilities_m, only: MISMATCH_TYPE
@@ -19,9 +21,19 @@ module Chemical_m
     contains
         private
         procedure :: atomFractionElement
-        generic, public :: atomFraction => atomFractionElement
+        procedure :: atomFractionIsotope
+        procedure :: atomFractionIsotopeSymbol
+        generic, public :: atomFraction => &
+                atomFractionElement, &
+                atomFractionIsotope, &
+                atomFractionIsotopeSymbol
         procedure :: weightFractionElement
-        generic, public :: weightFraction => weightFractionElement
+        procedure :: weightFractionIsotope
+        procedure :: weightFractionIsotopeSymbol
+        generic, public :: weightFraction => &
+                weightFractionElement, &
+                weightFractionIsotope, &
+                weightFractionIsotopeSymbol
     end type Chemical_t
 
     character(len=*), parameter :: MODULE_NAME = "Chemical_m"
@@ -68,6 +80,25 @@ contains
         end if
     end function atomFractionElement
 
+    elemental function atomFractionIsotope(self, isotope) result(atom_fraction)
+        class(Chemical_t), intent(in) :: self
+        type(Isotope_t), intent(in) :: isotope
+        double precision :: atom_fraction
+
+        atom_fraction = self%atomFraction(isotope%symbol)
+    end function atomFractionIsotope
+
+    elemental function atomFractionIsotopeSymbol( &
+            self, isotope) result(atom_fraction)
+        class(Chemical_t), intent(in) :: self
+        type(IsotopeSymbol_t), intent(in) :: isotope
+        double precision :: atom_fraction
+
+        atom_fraction = sum( &
+                (self%components%multiplier / sum(self%components%multiplier)) &
+                * self%components%element%atomFraction(isotope))
+    end function atomFractionIsotopeSymbol
+
     elemental function weightFractionElement(self, element) result(weight_fraction)
         class(Chemical_t), intent(in) :: self
         type(ElementSymbol_t), intent(in) :: element
@@ -86,6 +117,25 @@ contains
             weight_fraction = 0.0d0
         end if
     end function weightFractionElement
+
+    elemental function weightFractionIsotope(self, isotope) result(weight_fraction)
+        class(Chemical_t), intent(in) :: self
+        type(Isotope_t), intent(in) :: isotope
+        double precision :: weight_fraction
+
+        weight_fraction = self%weightFraction(isotope%symbol)
+    end function weightFractionIsotope
+
+    elemental function weightFractionIsotopeSymbol( &
+            self, isotope) result(weight_fraction)
+        class(Chemical_t), intent(in) :: self
+        type(IsotopeSymbol_t), intent(in) :: isotope
+        double precision :: weight_fraction
+
+        weight_fraction = sum( &
+                self%weightFraction(self%components%element%symbol) &
+                * self%components%element%weightFraction(isotope))
+    end function weightFractionIsotopeSymbol
 
     pure subroutine combineDuplicates(inputs, combined)
         type(ChemicalComponent_t), intent(in) :: inputs(:)
