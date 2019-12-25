@@ -9,7 +9,7 @@ module Chemical_m
             naturalHydrogen, &
             naturalHelium
     use Element_symbol_m, only: ElementSymbol_t
-    use erloff, only: ErrorList_t, MessageList_t, Internal, Module_, Procedure_
+    use erloff, only: ErrorList_t, Internal, Module_, Procedure_
     use iso_varying_string, only: operator(//)
     use Isotope_m, only: Isotope_t
     use Isotope_symbol_m, only: IsotopeSymbol_t
@@ -56,21 +56,19 @@ module Chemical_m
             naturalHeliumGas
 contains
     pure subroutine combineByAtomFactors( &
-            chemical1, factor1, chemical2, factor2, messages, errors, combined)
+            chemical1, factor1, chemical2, factor2, errors, combined)
         type(Chemical_t), intent(in) :: chemical1
         double precision, intent(in) :: factor1
         type(Chemical_t), intent(in) :: chemical2
         double precision, intent(in) :: factor2
-        type(MessageList_t), intent(out) :: messages
         type(ErrorList_t), intent(out) :: errors
         type(Chemical_t), intent(out) :: combined
 
         character(len=*), parameter :: PROCEDURE_NAME = "combineByAtomFactors"
         type(ErrorList_t) :: errors_
-        type(MessageList_t) :: messages_
         double precision :: normalizer
 
-        call combineErrorCheck(chemical1, chemical2, messages_, errors_)
+        call combineErrorCheck(chemical1, chemical2, errors_)
         if (errors_%hasAny()) then
             call errors%appendErrors( &
                     errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
@@ -81,10 +79,9 @@ contains
         end if
     end subroutine combineByAtomFactors
 
-    pure subroutine combineErrorCheck(chemical1, chemical2, messages, errors)
+    pure subroutine combineErrorCheck(chemical1, chemical2, errors)
         type(Chemical_t), intent(in) :: chemical1
         type(Chemical_t), intent(in) :: chemical2
-        type(MessageList_t), intent(out) :: messages
         type(ErrorList_t), intent(out) :: errors
 
         character(len=*), parameter :: PROCEDURE_NAME = "combineErrorCheck"
@@ -117,20 +114,18 @@ contains
     end subroutine combineChemicalByAtomFactorsUnsafe
 
     pure subroutine combineByWeightFactors( &
-            chemical1, factor1, chemical2, factor2, messages, errors, combined)
+            chemical1, factor1, chemical2, factor2, errors, combined)
         type(Chemical_t), intent(in) :: chemical1
         double precision, intent(in) :: factor1
         type(Chemical_t), intent(in) :: chemical2
         double precision, intent(in) :: factor2
-        type(MessageList_t), intent(out) :: messages
         type(ErrorList_t), intent(out) :: errors
         type(Chemical_t), intent(out) :: combined
 
         character(len=*), parameter :: PROCEDURE_NAME = "combineByWeightFactors"
         type(ErrorList_t) :: errors_
-        type(MessageList_t) :: messages_
 
-        call combineErrorCheck(chemical1, chemical2, messages_, errors_)
+        call combineErrorCheck(chemical1, chemical2, errors_)
         if (errors_%hasAny()) then
             call errors%appendErrors( &
                     errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
@@ -163,10 +158,9 @@ contains
                 combined)
     end subroutine combineByWeightFactorsUnsafe
 
-    pure subroutine makeChemical(symbol, components, messages, errors, chemical)
+    pure subroutine makeChemical(symbol, components, errors, chemical)
         type(ChemicalSymbol_t), intent(in) :: symbol
         type(ChemicalComponent_t), intent(in) :: components(:)
-        type(MessageList_t), intent(out) :: messages
         type(ErrorList_t), intent(out) :: errors
         type(Chemical_t), intent(out) :: chemical
 

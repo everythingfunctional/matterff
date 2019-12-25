@@ -54,13 +54,11 @@ contains
         type(Chemical_t) :: chemical
         type(ChemicalComponent_t) :: components(1)
         type(ErrorList_t) :: errors
-        type(MessageList_t) :: messages
 
         components(1) = ChemicalComponent(naturalHelium(), 1.0d0)
         call makeChemical( &
                 hydrogenGasSymbol(), &
                 components, &
-                messages, &
                 errors, &
                 chemical)
         result_ = assertThat(errors.hasType.MISMATCH_TYPE, errors%toString())
@@ -72,13 +70,11 @@ contains
         type(Chemical_t) :: chemical
         type(ChemicalComponent_t) :: components(1)
         type(ErrorList_t) :: errors
-        type(MessageList_t) :: messages
 
         components(1) = ChemicalComponent(naturalHydrogen(), 2.0d0)
         call makeChemical( &
                 hydrogenGasSymbol(), &
                 components, &
-                messages, &
                 errors, &
                 chemical)
         if (errors%hasAny()) then
@@ -114,7 +110,6 @@ contains
             call makeChemical( &
                     hydrogenGasSymbol(), &
                     components, &
-                    messages, &
                     errors, &
                     chemical)
             if (errors%hasAny()) then
@@ -139,14 +134,12 @@ contains
         type(Chemical_t) :: chemical
         type(ChemicalComponent_t) :: components(2)
         type(ErrorList_t) :: errors
-        type(MessageList_t) :: messages
 
         components(1) = ChemicalComponent(naturalHydrogen(), 1.0d0)
         components(2) = ChemicalComponent(naturalHydrogen(), 1.0d0)
         call makeChemical( &
                 hydrogenGasSymbol(), &
                 components, &
-                messages, &
                 errors, &
                 chemical)
         if (errors%hasAny()) then
@@ -170,14 +163,12 @@ contains
         type(Chemical_t) :: chemical
         type(ErrorList_t) :: errors_from_atom_factors
         type(ErrorList_t) :: errors_from_weight_factors
-        type(MessageList_t) :: messages
 
         call combineByAtomFactors( &
                 naturalHydrogenGas(), &
                 1.0d0, &
                 naturalHeliumGas(), &
                 1.0d0, &
-                messages, &
                 errors_from_atom_factors, &
                 chemical)
         call combineByWeightFactors( &
@@ -185,7 +176,6 @@ contains
                 1.0d0, &
                 naturalHeliumGas(), &
                 1.0d0, &
-                messages, &
                 errors_from_weight_factors, &
                 chemical)
         result_ = &
@@ -226,7 +216,6 @@ contains
                 call makeChemical( &
                         hydrogenGasSymbol(), &
                         pure_H_1_gas_components, &
-                        messages, &
                         errors, &
                         pure_H_1_gas)
                 if (errors%hasAny()) then
@@ -235,7 +224,6 @@ contains
                     call makeChemical( &
                             hydrogenGasSymbol(), &
                             pure_H_2_gas_components, &
-                            messages, &
                             errors, &
                             pure_H_2_gas)
                     if (errors%hasAny()) then
@@ -246,7 +234,6 @@ contains
                                 0.6d0, &
                                 pure_H_2_gas, &
                                 0.4d0, &
-                                messages, &
                                 errors, &
                                 combined_by_atom_factors)
                         if (errors%hasAny()) then
@@ -257,7 +244,6 @@ contains
                                     0.6d0, &
                                     pure_H_2_gas, &
                                     0.4d0, &
-                                    messages, &
                                     errors, &
                                     combined_by_weight_factors)
                             if (errors%hasAny()) then
