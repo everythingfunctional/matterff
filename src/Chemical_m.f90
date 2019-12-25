@@ -1,7 +1,13 @@
 module Chemical_m
     use Chemical_component_m, only: ChemicalComponent_t, ChemicalComponent
-    use Chemical_symbol_m, only: ChemicalSymbol_t
-    use Element_m, only: Element_t, combineByAtomFactorsUnsafe, find
+    use Chemical_symbol_m, only: &
+            ChemicalSymbol_t, hydrogenGasSymbol, heliumGasSymbol
+    use Element_m, only: &
+            Element_t, &
+            combineByAtomFactorsUnsafe, &
+            find, &
+            naturalHydrogen, &
+            naturalHelium
     use Element_symbol_m, only: ElementSymbol_t
     use erloff, only: ErrorList_t, MessageList_t, Internal, Module_, Procedure_
     use iso_varying_string, only: operator(//)
@@ -38,7 +44,13 @@ module Chemical_m
 
     character(len=*), parameter :: MODULE_NAME = "Chemical_m"
 
-    public :: makeChemical, combineByAtomFactors
+    public :: &
+            combineByAtomFactors, &
+            combineByAtomFactorsUnsafe, &
+            makeChemical, &
+            makeChemicalUnsafe, &
+            naturalHydrogenGas, &
+            naturalHeliumGas
 contains
     pure subroutine combineByAtomFactors(chemical1, factor1, chemical2, factor2, messages, errors, combined)
         type(Chemical_t), intent(in) :: chemical1
@@ -113,6 +125,22 @@ contains
         chemical%symbol = symbol
         call combineDuplicates(components, chemical%components)
     end subroutine makeChemicalUnsafe
+
+    pure function naturalHydrogenGas()
+        type(Chemical_t) :: naturalHydrogenGas
+
+        naturalHydrogenGas%symbol = hydrogenGasSymbol()
+        allocate(naturalHydrogenGas%components, source = &
+                [ChemicalComponent(naturalHydrogen(), 2.0d0)])
+    end function naturalHydrogenGas
+
+    pure function naturalHeliumGas()
+        type(Chemical_t) :: naturalHeliumGas
+
+        naturalHeliumGas%symbol = heliumGasSymbol()
+        allocate(naturalHeliumGas%components, source = &
+                [ChemicalComponent(naturalHelium(), 1.0d0)])
+    end function naturalHeliumGas
 
     elemental function atomFractionElement(self, element) result(atom_fraction)
         class(Chemical_t), intent(in) :: self
