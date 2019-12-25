@@ -2,6 +2,7 @@ module chemical_test
     use Chemical_m, only: &
             Chemical_t, &
             combineByAtomFactors, &
+            combineByWeightFactors, &
             makeChemical, &
             naturalHydrogenGas, &
             naturalHeliumGas
@@ -167,7 +168,8 @@ contains
         type(Result_t) :: result_
 
         type(Chemical_t) :: chemical
-        type(ErrorList_t) :: errors
+        type(ErrorList_t) :: errors_from_atom_factors
+        type(ErrorList_t) :: errors_from_weight_factors
         type(MessageList_t) :: messages
 
         call combineByAtomFactors( &
@@ -176,17 +178,30 @@ contains
                 naturalHeliumGas(), &
                 1.0d0, &
                 messages, &
-                errors, &
+                errors_from_atom_factors, &
                 chemical)
-        result_ = assertThat( &
-                errors.hasType.MISMATCH_TYPE, &
-                errors%toString())
+        call combineByWeightFactors( &
+                naturalHydrogenGas(), &
+                1.0d0, &
+                naturalHeliumGas(), &
+                1.0d0, &
+                messages, &
+                errors_from_weight_factors, &
+                chemical)
+        result_ = &
+                assertThat( &
+                        errors_from_atom_factors.hasType.MISMATCH_TYPE, &
+                        errors_from_atom_factors%toString()) &
+                .and.assertThat( &
+                        errors_from_weight_factors.hasType.MISMATCH_TYPE, &
+                        errors_from_weight_factors%toString())
     end function checkCombineError
 
     pure function checkCombine() result(result_)
         type(Result_t) :: result_
 
-        type(Chemical_t) :: combined
+        type(Chemical_t) :: combined_by_atom_factors
+        type(Chemical_t) :: combined_by_weight_factors
         type(ErrorList_t) :: errors
         type(MessageList_t) :: messages
         type(Element_t) :: pure_H_1
@@ -233,19 +248,39 @@ contains
                                 0.4d0, &
                                 messages, &
                                 errors, &
-                                combined)
+                                combined_by_atom_factors)
                         if (errors%hasAny()) then
                             result_ = fail(errors%toString())
                         else
-                            result_ = &
-                                    assertEquals( &
-                                            0.6d0, &
-                                            combined%atomFraction(H_1), &
-                                            "H-1 atom fraction") &
-                                    .and.assertEquals( &
-                                            0.4d0, &
-                                            combined%atomFraction(H_2), &
-                                            "H-2 atom fraction")
+                            call combineByWeightFactors( &
+                                    pure_H_1_gas, &
+                                    0.6d0, &
+                                    pure_H_2_gas, &
+                                    0.4d0, &
+                                    messages, &
+                                    errors, &
+                                    combined_by_weight_factors)
+                            if (errors%hasAny()) then
+                                result_ = fail(errors%toString())
+                            else
+                                result_ = &
+                                        assertEquals( &
+                                                0.6d0, &
+                                                combined_by_atom_factors%atomFraction(H_1), &
+                                                "H-1 atom fraction") &
+                                        .and.assertEquals( &
+                                                0.4d0, &
+                                                combined_by_atom_factors%atomFraction(H_2), &
+                                                "H-2 atom fraction") &
+                                        .and.assertEquals( &
+                                                0.6d0, &
+                                                combined_by_weight_factors%weightFraction(H_1), &
+                                                "H-1 weight fraction") &
+                                        .and.assertEquals( &
+                                                0.4d0, &
+                                                combined_by_weight_factors%weightFraction(H_2), &
+                                                "H-2 weight fraction")
+                            end if
                         end if
                     end if
                 end if

@@ -13,7 +13,7 @@ module Chemical_m
     use iso_varying_string, only: operator(//)
     use Isotope_m, only: Isotope_t
     use Isotope_symbol_m, only: IsotopeSymbol_t
-    use quaff, only: MolarMass_t, sum
+    use quaff, only: Amount_t, Mass_t, MolarMass_t, operator(/), sum
     use strff, only: join
     use Utilities_m, only: MISMATCH_TYPE
 
@@ -33,6 +33,7 @@ module Chemical_m
                 atomFractionElement, &
                 atomFractionIsotope, &
                 atomFractionIsotopeSymbol
+        procedure, public :: molarMass
         procedure :: weightFractionElement
         procedure :: weightFractionIsotope
         procedure :: weightFractionIsotopeSymbol
@@ -47,12 +48,15 @@ module Chemical_m
     public :: &
             combineByAtomFactors, &
             combineByAtomFactorsUnsafe, &
+            combineByWeightFactors, &
+            combineByWeightFactorsUnsafe, &
             makeChemical, &
             makeChemicalUnsafe, &
             naturalHydrogenGas, &
             naturalHeliumGas
 contains
-    pure subroutine combineByAtomFactors(chemical1, factor1, chemical2, factor2, messages, errors, combined)
+    pure subroutine combineByAtomFactors( &
+            chemical1, factor1, chemical2, factor2, messages, errors, combined)
         type(Chemical_t), intent(in) :: chemical1
         double precision, intent(in) :: factor1
         type(Chemical_t), intent(in) :: chemical2
@@ -62,13 +66,30 @@ contains
         type(Chemical_t), intent(out) :: combined
 
         character(len=*), parameter :: PROCEDURE_NAME = "combineByAtomFactors"
+        type(ErrorList_t) :: errors_
+        type(MessageList_t) :: messages_
         double precision :: normalizer
 
-        if (chemical1%symbol == chemical2%symbol) then
+        call combineErrorCheck(chemical1, chemical2, messages_, errors_)
+        if (errors_%hasAny()) then
+            call errors%appendErrors( &
+                    errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+        else
             normalizer = factor1 + factor2
             call combineChemicalByAtomFactorsUnsafe( &
                     chemical1, factor1 / normalizer, chemical2, factor2 / normalizer, combined)
-        else
+        end if
+    end subroutine combineByAtomFactors
+
+    pure subroutine combineErrorCheck(chemical1, chemical2, messages, errors)
+        type(Chemical_t), intent(in) :: chemical1
+        type(Chemical_t), intent(in) :: chemical2
+        type(MessageList_t), intent(out) :: messages
+        type(ErrorList_t), intent(out) :: errors
+
+        character(len=*), parameter :: PROCEDURE_NAME = "combineErrorCheck"
+
+        if (.not. chemical1%symbol == chemical2%symbol) then
             call errors%appendError(Internal( &
                     MISMATCH_TYPE, &
                     Module_(MODULE_NAME), &
@@ -76,10 +97,10 @@ contains
                     "Attempted to combine different chemicals: " &
                     // chemical1%symbol%toString() // " and " // chemical2%symbol%toString()))
         end if
-    end subroutine combineByAtomFactors
+    end subroutine combineErrorCheck
 
     pure subroutine combineChemicalByAtomFactorsUnsafe( &
-                chemical1, factor1, chemical2, factor2, combined)
+            chemical1, factor1, chemical2, factor2, combined)
         type(Chemical_t), intent(in) :: chemical1
         double precision, intent(in) :: factor1
         type(Chemical_t), intent(in) :: chemical2
@@ -94,6 +115,53 @@ contains
                             chemical2%components%multiplier * factor2]), &
                 combined)
     end subroutine combineChemicalByAtomFactorsUnsafe
+
+    pure subroutine combineByWeightFactors( &
+            chemical1, factor1, chemical2, factor2, messages, errors, combined)
+        type(Chemical_t), intent(in) :: chemical1
+        double precision, intent(in) :: factor1
+        type(Chemical_t), intent(in) :: chemical2
+        double precision, intent(in) :: factor2
+        type(MessageList_t), intent(out) :: messages
+        type(ErrorList_t), intent(out) :: errors
+        type(Chemical_t), intent(out) :: combined
+
+        character(len=*), parameter :: PROCEDURE_NAME = "combineByWeightFactors"
+        type(ErrorList_t) :: errors_
+        type(MessageList_t) :: messages_
+
+        call combineErrorCheck(chemical1, chemical2, messages_, errors_)
+        if (errors_%hasAny()) then
+            call errors%appendErrors( &
+                    errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+        else
+            call combineByWeightFactorsUnsafe( &
+                    chemical1, factor1, chemical2, factor2, combined)
+        end if
+    end subroutine combineByWeightFactors
+
+    pure subroutine combineByWeightFactorsUnsafe( &
+            chemical1, factor1, chemical2, factor2, combined)
+        type(Chemical_t), intent(in) :: chemical1
+        double precision, intent(in) :: factor1
+        type(Chemical_t), intent(in) :: chemical2
+        double precision, intent(in) :: factor2
+        type(Chemical_t), intent(out) :: combined
+
+        type(Mass_t), parameter :: ONE_KILOGRAM = Mass_t(kilograms = 1.0d0)
+        type(Amount_t) :: amounts(2)
+        type(Amount_t) :: total_amount
+
+        amounts(1) = factor1 * ONE_KILOGRAM / chemical1%molarMass()
+        amounts(2) = factor2 * ONE_KILOGRAM / chemical2%molarMass()
+        total_amount = sum(amounts)
+        call combineChemicalByAtomFactorsUnsafe( &
+                chemical1, &
+                amounts(1) / total_amount, &
+                chemical2, &
+                amounts(2) / total_amount, &
+                combined)
+    end subroutine combineByWeightFactorsUnsafe
 
     pure subroutine makeChemical(symbol, components, messages, errors, chemical)
         type(ChemicalSymbol_t), intent(in) :: symbol
@@ -177,6 +245,13 @@ contains
                 (self%components%multiplier / sum(self%components%multiplier)) &
                 * self%components%element%atomFraction(isotope))
     end function atomFractionIsotopeSymbol
+
+    elemental function molarMass(self)
+        class(Chemical_t), intent(in) :: self
+        type(MolarMass_t) :: molarMass
+
+        molarMass = sum(self%components%multiplier * self%components%element%atomicMass())
+    end function molarMass
 
     elemental function weightFractionElement(self, element) result(weight_fraction)
         class(Chemical_t), intent(in) :: self
