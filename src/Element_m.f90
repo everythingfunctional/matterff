@@ -22,7 +22,7 @@ module Element_m
     ! element that has not been intialized will likely result in a memory error
     type, public :: Element_t
         private
-        type(ElementSymbol_t) :: symbol
+        type(ElementSymbol_t), public :: symbol
         type(ElementComponent_t), allocatable :: components(:)
     contains
         private
