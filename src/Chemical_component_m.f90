@@ -7,7 +7,7 @@ module Chemical_component_m
     type, public :: ChemicalComponent_t
         private
         type(Element_t), public :: element
-        double precision :: multiplier
+        double precision, public :: multiplier
     end type ChemicalComponent_t
 
     public :: ChemicalComponent
