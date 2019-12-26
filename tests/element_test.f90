@@ -9,7 +9,11 @@ module element_test
             naturalHydrogen, &
             naturalHelium, &
             naturalLithium, &
-            naturalBeryllium
+            naturalBeryllium, &
+            naturalBoron, &
+            naturalCarbon, &
+            naturalNitrogen, &
+            naturalOxygen
     use Element_component_m, only: ElementComponent
     use Element_symbol_m, only: H
     use erloff, only: ErrorList_t, MessageList_t
@@ -416,11 +420,19 @@ contains
         type(Element_t) :: helium
         type(Element_t) :: lithium
         type(Element_t) :: beryllium
+        type(Element_t) :: boron
+        type(Element_t) :: carbon
+        type(Element_t) :: nitrogen
+        type(Element_t) :: oxygen
 
         hydrogen = naturalHydrogen()
         helium = naturalHelium()
         lithium = naturalLithium()
         beryllium = naturalBeryllium()
+        boron = naturalBoron()
+        carbon = naturalCarbon()
+        nitrogen = naturalNitrogen()
+        oxygen = naturalOxygen()
 
         ! Atomic masses and tolerances are taken from the 17th Edition of the Chart of Nuclides
         result_ = &
@@ -443,7 +455,27 @@ contains
                         9.012182d0.unit.GRAMS_PER_MOL, &
                         beryllium%atomicMass(), &
                         0.000003d0.unit.GRAMS_PER_MOL, &
-                        "Be")
+                        "Be") &
+                .and.assertEqualsWithinAbsolute( &
+                        10.811d0.unit.GRAMS_PER_MOL, &
+                        boron%atomicMass(), &
+                        0.007d0.unit.GRAMS_PER_MOL, &
+                        "B") &
+                .and.assertEqualsWithinAbsolute( &
+                        12.0107d0.unit.GRAMS_PER_MOL, &
+                        carbon%atomicMass(), &
+                        0.0008d0.unit.GRAMS_PER_MOL, &
+                        "C") &
+                .and.assertEqualsWithinAbsolute( &
+                        14.0067d0.unit.GRAMS_PER_MOL, &
+                        nitrogen%atomicMass(), &
+                        0.0002d0.unit.GRAMS_PER_MOL, &
+                        "N") &
+                .and.assertEqualsWithinAbsolute( &
+                        15.9994d0.unit.GRAMS_PER_MOL, &
+                        oxygen%atomicMass(), &
+                        0.0003d0.unit.GRAMS_PER_MOL, &
+                        "O")
     end function checkNaturalElements
 
     pure function checkNotFound() result(result_)

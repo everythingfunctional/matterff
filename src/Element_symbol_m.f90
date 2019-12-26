@@ -18,6 +18,10 @@ module Element_symbol_m
     type(ElementSymbol_t), parameter, public :: He = ElementSymbol_t("He")
     type(ElementSymbol_t), parameter, public :: Li = ElementSymbol_t("Li")
     type(ElementSymbol_t), parameter, public :: Be = ElementSymbol_t("Be")
+    type(ElementSymbol_t), parameter, public :: B = ElementSymbol_t("B ")
+    type(ElementSymbol_t), parameter, public :: C = ElementSymbol_t("C ")
+    type(ElementSymbol_t), parameter, public :: N = ElementSymbol_t("N ")
+    type(ElementSymbol_t), parameter, public :: O = ElementSymbol_t("O ")
 contains
     elemental function elementSymbolEquals(lhs, rhs)
         class(ElementSymbol_t), intent(in) :: lhs

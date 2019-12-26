@@ -10,7 +10,16 @@ module Isotope_m
             He_4_SYM, &
             Li_6_SYM, &
             Li_7_SYM, &
-            Be_9_SYM
+            Be_9_SYM, &
+            B_10_SYM, &
+            B_11_SYM, &
+            C_12_SYM, &
+            C_13_SYM, &
+            N_14_SYM, &
+            N_15_SYM, &
+            O_16_SYM, &
+            O_17_SYM, &
+            O_18_SYM
     use quaff, only: MolarMass_t
 
     implicit none
@@ -45,6 +54,19 @@ module Isotope_m
     type(Isotope_t), parameter, public :: Li_7 = Isotope_t(Li_7_SYM, MolarMass_t(kilograms_per_mol = 7.0160045d-3))
 
     type(Isotope_t), parameter, public :: Be_9 = Isotope_t(Be_9_SYM, MolarMass_t(kilograms_per_mol = 9.0121822d-3))
+
+    type(Isotope_t), parameter, public :: B_10 = Isotope_t(B_10_SYM, MolarMass_t(kilograms_per_mol = 10.012937d-3))
+    type(Isotope_t), parameter, public :: B_11 = Isotope_t(B_11_SYM, MolarMass_t(kilograms_per_mol = 11.0090354d-3))
+
+    type(Isotope_t), parameter, public :: C_12 = Isotope_t(C_12_SYM, MolarMass_t(kilograms_per_mol = 12.0d-3))
+    type(Isotope_t), parameter, public :: C_13 = Isotope_t(C_13_SYM, MolarMass_t(kilograms_per_mol = 13.003354838d-3))
+
+    type(Isotope_t), parameter, public :: N_14 = Isotope_t(N_14_SYM, MolarMass_t(kilograms_per_mol = 14.003074005d-3))
+    type(Isotope_t), parameter, public :: N_15 = Isotope_t(N_15_SYM, MolarMass_t(kilograms_per_mol = 15.000108898d-3))
+
+    type(Isotope_t), parameter, public :: O_16 = Isotope_t(O_16_SYM, MolarMass_t(kilograms_per_mol = 15.9949146196d-3))
+    type(Isotope_t), parameter, public :: O_17 = Isotope_t(O_17_SYM, MolarMass_t(kilograms_per_mol = 16.9991317d-3))
+    type(Isotope_t), parameter, public :: O_18 = Isotope_t(O_18_SYM, MolarMass_t(kilograms_per_mol = 17.999161d-3))
 
     public :: find
 contains

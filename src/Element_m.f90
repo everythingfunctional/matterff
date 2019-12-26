@@ -1,10 +1,28 @@
 module Element_m
     use Element_component_m, only: ElementComponent_t, ElementComponent
-    use Element_symbol_m, only: ElementSymbol_t, H, He, Li, Be
+    use Element_symbol_m, only: ElementSymbol_t, H, He, Li, Be, B, C, N, O
     use erloff, only: &
             ErrorList_t, MessageList_t, Info, Internal, Module_, Procedure_
     use iso_varying_string, only: operator(//)
-    use Isotope_m, only: Isotope_t, find, H_1, H_2, He_3, He_4, Li_6, Li_7, Be_9
+    use Isotope_m, only: &
+            Isotope_t, &
+            find, &
+            H_1, &
+            H_2, &
+            He_3, &
+            He_4, &
+            Li_6, &
+            Li_7, &
+            Be_9, &
+            B_10, &
+            B_11, &
+            C_12, &
+            C_13, &
+            N_14, &
+            N_15, &
+            O_16, &
+            O_17, &
+            O_18
     use Isotope_symbol_m, only: IsotopeSymbol_t
     use quaff, only: Amount_t, Mass_t, MolarMass_t, operator(/), sum
     use strff, only: join
@@ -72,7 +90,11 @@ module Element_m
             naturalHydrogen, &
             naturalHelium, &
             naturalLithium, &
-            naturalBeryllium
+            naturalBeryllium, &
+            naturalBoron, &
+            naturalCarbon, &
+            naturalNitrogen, &
+            naturalOxygen
 contains
     pure subroutine combineElementsByAtomFactors( &
             element1, factor1, element2, factor2, messages, errors, combined)
@@ -309,6 +331,43 @@ contains
         allocate(naturalBeryllium%components, source = &
                 [ElementComponent(Be_9, 1.0d0)])
     end function naturalBeryllium
+
+    pure function naturalBoron()
+        type(Element_t) :: naturalBoron
+
+        naturalBoron%symbol = B
+        allocate(naturalBoron%components, source = &
+                [ElementComponent(B_10, 0.199d0), &
+                 ElementComponent(B_11, 0.801d0)])
+    end function naturalBoron
+
+    pure function naturalCarbon()
+        type(Element_t) :: naturalCarbon
+
+        naturalCarbon%symbol = C
+        allocate(naturalCarbon%components, source = &
+                [ElementComponent(C_12, 0.9893d0), &
+                 ElementComponent(C_13, 0.0107d0)])
+    end function naturalCarbon
+
+    pure function naturalNitrogen()
+        type(Element_t) :: naturalNitrogen
+
+        naturalNitrogen%symbol = N
+        allocate(naturalNitrogen%components, source = &
+                [ElementComponent(N_14, 0.99636d0), &
+                 ElementComponent(N_15, 0.00364d0)])
+    end function naturalNitrogen
+
+    pure function naturalOxygen()
+        type(Element_t) :: naturalOxygen
+
+        naturalOxygen%symbol = O
+        allocate(naturalOxygen%components, source = &
+                [ElementComponent(O_16, 0.99757d0), &
+                 ElementComponent(O_17, 0.00038d0), &
+                 ElementComponent(O_18, 0.00205d0)])
+    end function naturalOxygen
 
     elemental function atomFractionFromIsotope(self, isotope) result(atom_fraction)
         class(Element_t), intent(in) :: self
