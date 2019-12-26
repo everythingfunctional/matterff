@@ -63,6 +63,10 @@ module Chemical_m
         module procedure combineChemicalsByWeightFactorsUnsafe
     end interface combineByWeightFactorsUnsafe
 
+    interface find
+        module procedure findChemical
+    end interface find
+
     character(len=*), parameter :: MODULE_NAME = "Chemical_m"
 
     public :: &
@@ -70,6 +74,7 @@ module Chemical_m
             combineByAtomFactorsUnsafe, &
             combineByWeightFactors, &
             combineByWeightFactorsUnsafe, &
+            find, &
             makeChemical, &
             makeChemicalUnsafe, &
             naturalHydrogenGas, &
@@ -357,4 +362,20 @@ contains
             end if
         end do
     end subroutine combineDuplicates
+
+    pure function findChemical(symbol, chemicals) result(position)
+        type(ChemicalSymbol_t), intent(in) :: symbol
+        type(Chemical_t), intent(in) :: chemicals(:)
+        integer :: position
+
+        integer :: i
+
+        position = 0
+        do i = 1, size(chemicals)
+            if (chemicals(i)%symbol == symbol) then
+                position = i
+                exit
+            end if
+        end do
+    end function findChemical
 end module Chemical_m

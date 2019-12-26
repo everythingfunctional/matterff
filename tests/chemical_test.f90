@@ -3,12 +3,13 @@ module chemical_test
             Chemical_t, &
             combineByAtomFactors, &
             combineByWeightFactors, &
+            find, &
             makeChemical, &
             naturalHydrogenGas, &
             naturalHeliumGas, &
             naturalWater
     use Chemical_component_m, only: ChemicalComponent_t, ChemicalComponent
-    use Chemical_symbol_m, only: hydrogenGasSymbol
+    use Chemical_symbol_m, only: hydrogenGasSymbol, heliumGasSymbol, waterSymbol
     use Element_m, only: &
             Element_t, fromAtomFractions, naturalHydrogen, naturalHelium
     use Element_component_m, only: ElementComponent
@@ -27,7 +28,7 @@ contains
     function test_chemical() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(7)
+        type(TestItem_t) :: individual_tests(9)
 
         individual_tests(1) = It( &
                 "Creating a chemical with elements not included in the symbol is an error", &
@@ -49,6 +50,10 @@ contains
         individual_tests(7) = It( &
                 "Water is 2/3 hydrogen and 1/3 oxygen by atom", &
                 checkWaterFractions)
+        individual_tests(8) = It( &
+                "Has a position of 0 if it's not in a list", checkNotFound)
+        individual_tests(9) = It( &
+                "Can be found in a list", checkFind)
         tests = Describe("Chemical_t", individual_tests)
     end function test_chemical
 
@@ -292,4 +297,27 @@ contains
                         1.0d0 / 3.0d0, &
                         water%atomFraction(O))
     end function checkWaterFractions
+
+    pure function checkNotFound() result(result_)
+        type(Result_t) :: result_
+
+        type(Chemical_t) :: chemicals(2)
+
+        chemicals(1) = naturalHydrogenGas()
+        chemicals(2) = naturalHeliumGas()
+
+        result_ = assertEquals(0, find(waterSymbol(), chemicals))
+    end function checkNotFound
+
+    pure function checkFind() result(result_)
+        type(Result_t) :: result_
+
+        type(Chemical_t) :: chemicals(3)
+
+        chemicals(1) = naturalHydrogenGas()
+        chemicals(2) = naturalHeliumGas()
+        chemicals(3) = naturalWater()
+
+        result_ = assertEquals(2, find(heliumGasSymbol(), chemicals))
+    end function checkFind
 end module chemical_test
