@@ -5,13 +5,14 @@ module chemical_test
             combineByWeightFactors, &
             makeChemical, &
             naturalHydrogenGas, &
-            naturalHeliumGas
+            naturalHeliumGas, &
+            naturalWater
     use Chemical_component_m, only: ChemicalComponent_t, ChemicalComponent
     use Chemical_symbol_m, only: hydrogenGasSymbol
     use Element_m, only: &
             Element_t, fromAtomFractions, naturalHydrogen, naturalHelium
     use Element_component_m, only: ElementComponent
-    use Element_symbol_m, only: H
+    use Element_symbol_m, only: H, O
     use erloff, only: ErrorList_t, MessageList_t
     use Isotope_m, only: H_1, H_2
     use Utilities_m, only: MISMATCH_TYPE
@@ -26,7 +27,7 @@ contains
     function test_chemical() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(6)
+        type(TestItem_t) :: individual_tests(7)
 
         individual_tests(1) = It( &
                 "Creating a chemical with elements not included in the symbol is an error", &
@@ -45,6 +46,9 @@ contains
                 checkCombineError)
         individual_tests(6) = It( &
                 "Combining chemicals results in correct fractios", checkCombine)
+        individual_tests(7) = It( &
+                "Water is 2/3 hydrogen and 1/3 oxygen by atom", &
+                checkWaterFractions)
         tests = Describe("Chemical_t", individual_tests)
     end function test_chemical
 
@@ -273,4 +277,19 @@ contains
             end if
         end if
     end function checkCombine
+
+    pure function checkWaterFractions() result(result_)
+        type(Result_t) :: result_
+
+        type(Chemical_t) :: water
+
+        water = naturalWater()
+        result_ = &
+                assertEquals( &
+                        2.0d0 / 3.0d0, &
+                        water%atomFraction(H)) &
+                .and.assertEquals( &
+                        1.0d0 / 3.0d0, &
+                        water%atomFraction(O))
+    end function checkWaterFractions
 end module chemical_test

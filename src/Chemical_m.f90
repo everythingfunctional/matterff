@@ -1,13 +1,14 @@
 module Chemical_m
     use Chemical_component_m, only: ChemicalComponent_t, ChemicalComponent
     use Chemical_symbol_m, only: &
-            ChemicalSymbol_t, hydrogenGasSymbol, heliumGasSymbol
+            ChemicalSymbol_t, hydrogenGasSymbol, heliumGasSymbol, waterSymbol
     use Element_m, only: &
             Element_t, &
             combineByAtomFactorsUnsafe, &
             find, &
             naturalHydrogen, &
-            naturalHelium
+            naturalHelium, &
+            naturalOxygen
     use Element_symbol_m, only: ElementSymbol_t
     use erloff, only: ErrorList_t, Internal, Module_, Procedure_
     use iso_varying_string, only: operator(//)
@@ -69,7 +70,8 @@ module Chemical_m
             makeChemical, &
             makeChemicalUnsafe, &
             naturalHydrogenGas, &
-            naturalHeliumGas
+            naturalHeliumGas, &
+            naturalWater
 contains
     pure subroutine combineChemicalsByAtomFactors( &
             chemical1, factor1, chemical2, factor2, errors, combined)
@@ -219,6 +221,15 @@ contains
         allocate(naturalHeliumGas%components(1))
         naturalHeliumGas%components(1) = ChemicalComponent(naturalHelium(), 1.0d0)
     end function naturalHeliumGas
+
+    pure function naturalWater()
+        type(Chemical_t) :: naturalWater
+
+        naturalWater%symbol = waterSymbol()
+        allocate(naturalWater%components(2))
+        naturalWater%components(1) = ChemicalComponent(naturalHydrogen(), 2.0d0)
+        naturalWater%components(2) = ChemicalComponent(naturalOxygen(), 1.0d0)
+    end function naturalWater
 
     elemental function atomFractionElement(self, element) result(atom_fraction)
         class(Chemical_t), intent(in) :: self

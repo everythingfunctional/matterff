@@ -1,7 +1,7 @@
 module Chemical_symbol_m
     use Chemical_symbol_component_m, only: &
             ChemicalSymbolComponent_t, ChemicalSymbolComponent
-    use Element_symbol_m, only: ElementSymbol_t, H, He
+    use Element_symbol_m, only: ElementSymbol_t, H, He, O
     use iso_varying_string, only: VARYING_STRING
     use strff, only: join
 
@@ -31,7 +31,7 @@ module Chemical_symbol_m
         module procedure allComponentsInList
     end interface operator(.allIn.)
 
-    public :: hydrogenGasSymbol, heliumGasSymbol
+    public :: hydrogenGasSymbol, heliumGasSymbol, waterSymbol
 contains
     pure function hydrogenGasSymbol()
         type(ChemicalSymbol_t) :: hydrogenGasSymbol
@@ -46,6 +46,14 @@ contains
         allocate(heliumGasSymbol%components, source = &
                 [ChemicalSymbolComponent(He, 1)])
     end function heliumGasSymbol
+
+    pure function waterSymbol()
+        type(ChemicalSymbol_t) :: waterSymbol
+
+        allocate(waterSymbol%components, source = &
+                [ChemicalSymbolComponent(H, 2), &
+                 ChemicalSymbolComponent(O, 1)])
+    end function waterSymbol
 
     elemental function chemicalSymbolEquals(lhs, rhs) result(areEqual)
         class(ChemicalSymbol_t), intent(in) :: lhs
