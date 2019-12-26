@@ -75,6 +75,22 @@ module Element_m
         module procedure findElement
     end interface find
 
+    interface fromAtomFractions
+        module procedure elementFromAtomFractions
+    end interface fromAtomFractions
+
+    interface fromAtomFractionsUnsafe
+        module procedure elementFromAtomFractionsUnsafe
+    end interface fromAtomFractionsUnsafe
+
+    interface fromWeightFractions
+        module procedure elementFromWeightFractions
+    end interface fromWeightFractions
+
+    interface fromWeightFractionsUnsafe
+        module procedure elementFromWeightFractionsUnsafe
+    end interface fromWeightFractionsUnsafe
+
     character(len=*), parameter :: MODULE_NAME = "Element_m"
 
     public :: &
@@ -184,14 +200,15 @@ contains
                 combined)
     end subroutine combineElementsByWeightFactorsUnsafe
 
-    pure subroutine fromAtomFractions(symbol, components, messages, errors, element)
+    pure subroutine elementFromAtomFractions( &
+            symbol, components, messages, errors, element)
         type(ElementSymbol_t), intent(in) :: symbol
         type(ElementComponent_t), intent(in) :: components(:)
         type(MessageList_t), intent(out) :: messages
         type(ErrorList_t), intent(out) :: errors
         type(Element_t), intent(out) :: element
 
-        character(len=*), parameter :: PROCEDURE_NAME = "fromAtomFractions"
+        character(len=*), parameter :: PROCEDURE_NAME = "elementFromAtomFractions"
         type(ErrorList_t) :: errors_
         type(ElementComponent_t) :: fixed_components(size(components))
         type(MessageList_t) :: messages_
@@ -205,7 +222,7 @@ contains
         else
             call fromAtomFractionsUnsafe(symbol, fixed_components, element)
         end if
-    end subroutine fromAtomFractions
+    end subroutine elementFromAtomFractions
 
     pure subroutine errorChecking(symbol, components, messages, errors, fixed_components)
         type(ElementSymbol_t), intent(in) :: symbol
@@ -249,23 +266,24 @@ contains
         end if
     end subroutine errorChecking
 
-    pure subroutine fromAtomFractionsUnsafe(symbol, components, element)
+    pure subroutine elementFromAtomFractionsUnsafe(symbol, components, element)
         type(ElementSymbol_t), intent(in) :: symbol
         type(ElementComponent_t), intent(in) :: components(:)
         type(Element_t), intent(out) :: element
 
         element%symbol = symbol
         call combineDuplicates(components, element%components)
-    end subroutine fromAtomFractionsUnsafe
+    end subroutine elementFromAtomFractionsUnsafe
 
-    pure subroutine fromWeightFractions(symbol, components, messages, errors, element)
+    pure subroutine elementFromWeightFractions( &
+            symbol, components, messages, errors, element)
         type(ElementSymbol_t), intent(in) :: symbol
         type(ElementComponent_t), intent(in) :: components(:)
         type(MessageList_t), intent(out) :: messages
         type(ErrorList_t), intent(out) :: errors
         type(Element_t), intent(out) :: element
 
-        character(len=*), parameter :: PROCEDURE_NAME = "fromWeightFractions"
+        character(len=*), parameter :: PROCEDURE_NAME = "elementFromWeightFractions"
         type(ErrorList_t) :: errors_
         type(ElementComponent_t) :: fixed_components(size(components))
         type(MessageList_t) :: messages_
@@ -279,9 +297,9 @@ contains
         else
             call fromWeightFractionsUnsafe(symbol, fixed_components, element)
         end if
-    end subroutine fromWeightFractions
+    end subroutine elementFromWeightFractions
 
-    pure subroutine fromWeightFractionsUnsafe(symbol, components, element)
+    pure subroutine elementFromWeightFractionsUnsafe(symbol, components, element)
         type(ElementSymbol_t), intent(in) :: symbol
         type(ElementComponent_t), intent(in) :: components(:)
         type(Element_t), intent(out) :: element
@@ -294,7 +312,7 @@ contains
                 symbol, &
                 ElementComponent(components%isotope, amounts / sum(amounts)), &
                 element)
-    end subroutine fromWeightFractionsUnsafe
+    end subroutine elementFromWeightFractionsUnsafe
 
     ! Atomic fractions are taken from the 17th Edition of the Chart of Nuclides
     pure function naturalHydrogen()

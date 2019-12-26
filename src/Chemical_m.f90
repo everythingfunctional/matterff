@@ -21,6 +21,9 @@ module Chemical_m
     implicit none
     private
 
+    ! It is assumed throughout this module that a Chemical will never be
+    ! uninitialized or empty. Any attempt to create an empty chemical or use a
+    ! chemical that has not been intialized will likely result in a memory error
     type, public :: Chemical_t
         private
         type(ChemicalSymbol_t) :: symbol
