@@ -2,7 +2,8 @@ module material_test
     use Chemical_m, only: &
             Chemical_t, makeChemical, naturalHydrogenGas, naturalWater
     use Chemical_component_m, only: ChemicalComponent_t, ChemicalComponent
-    use Chemical_symbol_m, only: ChemicalSymbol_t, hydrogenGasSymbol
+    use Chemical_symbol_m, only: &
+            ChemicalSymbol_t, hydrogenGasSymbol, waterSymbol
     use Element_m, only: Element_t, fromAtomFractions, naturalHydrogen
     use Element_component_m, only: ElementComponent
     use Element_symbol_m, only: ElementSymbol_t, H
@@ -11,7 +12,7 @@ module material_test
     use Material_m, only: Material_t, fromAtomFractions, fromWeightFractions
     use Material_component_m, only: MaterialComponent_t, MaterialComponent
     use quaff_asserts_m, only: assertEquals
-    use Utilities_m, only: INVALID_ARGUMENT_TYPE
+    use Utilities_m, only: INVALID_ARGUMENT_TYPE, NORMALIZED_FRACTIONS_TYPE
     use Vegetables_m, only: &
             Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
 
@@ -23,7 +24,7 @@ contains
     function test_material() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(5)
+        type(TestItem_t) :: individual_tests(8)
 
         individual_tests(1) = It( &
                 "Creating a material with negative fractions is an error", &
@@ -40,6 +41,14 @@ contains
         individual_tests(5) = It( &
                 "A single chemical material has the same molar mass", &
                 checkSingleChemicalMolarMass)
+        individual_tests(6) = It( &
+                "Keeps track of its components", checkKeepsTrack)
+        individual_tests(7) = It( &
+                "Has normalized fractions of its components", &
+                checkNormalizedFractions)
+        individual_tests(8) = It( &
+                "Normalizing fractions of chemicals produces a message", &
+                checkNormalizedMessages)
         tests = Describe("Material_t", individual_tests)
     end function test_material
 
@@ -221,6 +230,122 @@ contains
             result_ = assertEquals(chemical%molarMass(), material%molarMass())
         end if
     end function checkSingleChemicalMolarMass
+
+    pure function checkKeepsTrack() result(result_)
+        type(Result_t) :: result_
+
+        type(MaterialComponent_t) :: components(2)
+        type(ErrorList_t) :: errors
+        type(Material_t) :: from_atom_fractions
+        type(Material_t) :: from_weight_fractions
+        type(MessageList_t) :: messages
+
+        components(1) = MaterialComponent(naturalHydrogenGas(), 0.6d0)
+        components(2) = MaterialComponent(naturalWater(), 0.4d0)
+        call fromAtomFractions( &
+                components, messages, errors, from_atom_fractions)
+        if (errors%hasAny()) then
+            result_ = fail(errors%toString())
+        else
+            call fromWeightFractions( &
+                    components, messages, errors, from_weight_fractions)
+            if (errors%hasAny()) then
+                result_ = fail(errors%toString())
+            else
+                result_ = &
+                        assertEquals( &
+                                0.6d0, &
+                                from_atom_fractions%atomFraction(hydrogenGasSymbol()), &
+                                "H2 atom fraction") &
+                        .and.assertEquals( &
+                                0.4d0, &
+                                from_atom_fractions%atomFraction(waterSymbol()), &
+                                "H2O atom fraction") &
+                        .and.assertEquals( &
+                                0.6d0, &
+                                from_weight_fractions%weightFraction(hydrogenGasSymbol()), &
+                                "H2 weight fraction") &
+                        .and.assertEquals( &
+                                0.4d0, &
+                                from_weight_fractions%weightFraction(waterSymbol()), &
+                                "H2O weight fraction")
+            end if
+        end if
+    end function checkKeepsTrack
+
+    pure function checkNormalizedFractions() result(result_)
+        type(Result_t) :: result_
+
+        type(MaterialComponent_t) :: components(2)
+        type(ErrorList_t) :: errors
+        type(Material_t) :: from_atom_fractions
+        type(Material_t) :: from_weight_fractions
+        type(MessageList_t) :: messages
+
+        components(1) = MaterialComponent(naturalHydrogenGas(), 0.06d0)
+        components(2) = MaterialComponent(naturalWater(), 0.04d0)
+        call fromAtomFractions( &
+                components, messages, errors, from_atom_fractions)
+        if (errors%hasAny()) then
+            result_ = fail(errors%toString())
+        else
+            call fromWeightFractions( &
+                    components, messages, errors, from_weight_fractions)
+            if (errors%hasAny()) then
+                result_ = fail(errors%toString())
+            else
+                result_ = &
+                        assertEquals( &
+                                0.6d0, &
+                                from_atom_fractions%atomFraction(hydrogenGasSymbol()), &
+                                "H2 atom fraction") &
+                        .and.assertEquals( &
+                                0.4d0, &
+                                from_atom_fractions%atomFraction(waterSymbol()), &
+                                "H2O atom fraction") &
+                        .and.assertEquals( &
+                                0.6d0, &
+                                from_weight_fractions%weightFraction(hydrogenGasSymbol()), &
+                                "H2 weight fraction") &
+                        .and.assertEquals( &
+                                0.4d0, &
+                                from_weight_fractions%weightFraction(waterSymbol()), &
+                                "H2O weight fraction")
+            end if
+        end if
+    end function checkNormalizedFractions
+
+    pure function checkNormalizedMessages() result(result_)
+        type(Result_t) :: result_
+
+        type(MaterialComponent_t) :: components(2)
+        type(ErrorList_t) :: errors
+        type(Material_t) :: material
+        type(MessageList_t) :: messages_from_atom_fractions
+        type(MessageList_t) :: messages_from_weight_fractions
+
+        components(1) = MaterialComponent(naturalHydrogenGas(), 0.06d0)
+        components(2) = MaterialComponent(naturalWater(), 0.04d0)
+        call fromAtomFractions( &
+                components, messages_from_atom_fractions, errors, material)
+        if (errors%hasAny()) then
+            result_ = fail(errors%toString())
+        else
+            call fromWeightFractions( &
+                    components, messages_from_weight_fractions, errors, material)
+            if (errors%hasAny()) then
+                result_ = fail(errors%toString())
+            else
+                result_ = &
+                        assertThat( &
+                                messages_from_atom_fractions.hasType.NORMALIZED_FRACTIONS_TYPE, &
+                                messages_from_atom_fractions%toString()) &
+                        .and.assertThat( &
+                                messages_from_weight_fractions.hasType.NORMALIZED_FRACTIONS_TYPE, &
+                                messages_from_weight_fractions%toString())
+            end if
+        end if
+    end function checkNormalizedMessages
 
     pure function assertAllIsotope(isotope, material, from) result(result_)
         type(Isotope_t), intent(in) :: isotope
