@@ -13,3 +13,9 @@
 [submodule "erloff"]
 	path = erloff
 	url = https://gitlab.com/everythingfunctional/erloff.git
+[submodule "parff"]
+	path = parff
+	url = https://gitlab.com/everythingfunctional/parff.git
+[submodule "jsonff"]
+	path = jsonff
+	url = https://gitlab.com/everythingfunctional/jsonff.git

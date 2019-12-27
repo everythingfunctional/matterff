@@ -159,6 +159,8 @@ sourceDirs =
     , "iso_varying_string" </> "src"
     , "strff" </> "src"
     , "quaff" </> "src"
+    , "parff" </> "src"
+    , "jsonff" </> "src"
     ]
 shakeDir = "_shake"
 buildDir = "build"
