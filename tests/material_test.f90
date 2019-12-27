@@ -1,15 +1,24 @@
 module material_test
     use Chemical_m, only: &
-            Chemical_t, makeChemical, naturalHydrogenGas, naturalWater
+            Chemical_t, &
+            makeChemical, &
+            naturalHeliumGas, &
+            naturalHydrogenGas, &
+            naturalWater
     use Chemical_component_m, only: ChemicalComponent_t, ChemicalComponent
     use Chemical_symbol_m, only: &
-            ChemicalSymbol_t, hydrogenGasSymbol, waterSymbol
+            ChemicalSymbol_t, heliumGasSymbol, hydrogenGasSymbol, waterSymbol
     use Element_m, only: Element_t, fromAtomFractions, naturalHydrogen
     use Element_component_m, only: ElementComponent
     use Element_symbol_m, only: ElementSymbol_t, H
     use erloff, only: ErrorList_t, MessageList_t
     use Isotope_m, only: Isotope_t, H_1
-    use Material_m, only: Material_t, fromAtomFractions, fromWeightFractions
+    use Material_m, only: &
+            Material_t, &
+            combineByAtomFactors, &
+            combineByWeightFactors, &
+            fromAtomFractions, &
+            fromWeightFractions
     use Material_component_m, only: MaterialComponent_t, MaterialComponent
     use quaff_asserts_m, only: assertEquals
     use Utilities_m, only: INVALID_ARGUMENT_TYPE, NORMALIZED_FRACTIONS_TYPE
@@ -24,7 +33,7 @@ contains
     function test_material() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(9)
+        type(TestItem_t) :: individual_tests(10)
 
         individual_tests(1) = It( &
                 "Creating a material with negative fractions is an error", &
@@ -52,6 +61,8 @@ contains
         individual_tests(9) = It( &
                 "Created with duplicate chemicals has sum of duplicates", &
                 checkDuplicates)
+        individual_tests(10) = It( &
+                "Combining materials results in correct fractions", checkCombine)
         tests = Describe("Material_t", individual_tests)
     end function test_material
 
@@ -379,6 +390,73 @@ contains
             end if
         end if
     end function checkDuplicates
+
+    pure function checkCombine() result(result_)
+        type(Result_t) :: result_
+
+        type(ErrorList_t) :: errors
+        type(Material_t) :: from_atom_factors
+        type(Material_t) :: from_weight_factors
+        type(Material_t) :: helium
+        type(MaterialComponent_t) :: helium_components(1)
+        type(Material_t) :: hydrogen
+        type(MaterialComponent_t) :: hydrogen_components(1)
+        type(MessageList_t) :: messages
+
+        hydrogen_components(1) = MaterialComponent(naturalHydrogenGas(), 1.0d0)
+        call fromAtomFractions(hydrogen_components, messages, errors, hydrogen)
+        if (errors%hasAny()) then
+            result_ = fail(errors%toString())
+        else
+            helium_components(1) = MaterialComponent(naturalHeliumGas(), 1.0d0)
+            call fromAtomFractions(helium_components, messages, errors, helium)
+            if (errors%hasAny()) then
+                result_ = fail(errors%toString())
+            else
+                call combineByAtomFactors( &
+                        hydrogen, &
+                        0.6d0, &
+                        helium, &
+                        0.4d0, &
+                        messages, &
+                        errors, &
+                        from_atom_factors)
+                if (errors%hasAny()) then
+                    result_ = fail(errors%toString())
+                else
+                    call combineByWeightFactors( &
+                            hydrogen, &
+                            0.6d0, &
+                            helium, &
+                            0.4d0, &
+                            messages, &
+                            errors, &
+                            from_weight_factors)
+                    if (errors%hasAny()) then
+                        result_ = fail(errors%toString())
+                    else
+                        result_ = &
+                                assertEquals( &
+                                        0.6d0, &
+                                        from_atom_factors%atomFraction(hydrogenGasSymbol()), &
+                                        "H2 atom fraction") &
+                                .and.assertEquals( &
+                                        0.4d0, &
+                                        from_atom_factors%atomFraction(heliumGasSymbol()), &
+                                        "He atom fraction") &
+                                .and.assertEquals( &
+                                        0.6d0, &
+                                        from_weight_factors%weightFraction(hydrogenGasSymbol()), &
+                                        "H2 weight fraction") &
+                                .and.assertEquals( &
+                                        0.4d0, &
+                                        from_weight_factors%weightFraction(heliumGasSymbol()), &
+                                        "He weight fraction")
+                    end if
+                end if
+            end if
+        end if
+    end function checkCombine
 
     pure function assertAllIsotope(isotope, material, from) result(result_)
         type(Isotope_t), intent(in) :: isotope
