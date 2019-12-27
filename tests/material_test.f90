@@ -1,7 +1,7 @@
 module material_test
-    use Chemical_m, only: Chemical_t, makeChemical
+    use Chemical_m, only: Chemical_t, makeChemical, naturalHydrogenGas
     use Chemical_component_m, only: ChemicalComponent_t, ChemicalComponent
-    use Chemical_symbol_m, only: hydrogenGasSymbol
+    use Chemical_symbol_m, only: ChemicalSymbol_t, hydrogenGasSymbol
     use Element_m, only: Element_t, fromAtomFractions, naturalHydrogen
     use Element_component_m, only: ElementComponent
     use Element_symbol_m, only: ElementSymbol_t, H
@@ -20,7 +20,7 @@ contains
     function test_material() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(2)
+        type(TestItem_t) :: individual_tests(3)
 
         individual_tests(1) = It( &
                 "A single isotope material is all that isotope", &
@@ -28,6 +28,9 @@ contains
         individual_tests(2) = It( &
                 "A single element material is all that element", &
                 checkSingleElement)
+        individual_tests(3) = It( &
+                "A single chemical material is all that chemical", &
+                checkSingleChemical)
         tests = Describe("Material_t", individual_tests)
     end function test_material
 
@@ -126,6 +129,41 @@ contains
         end if
     end function checkSingleElement
 
+    pure function checkSingleChemical() result(result_)
+        type(Result_t) :: result_
+
+        type(ErrorList_t) :: errors
+        type(Material_t) :: from_atom_fractions
+        type(Material_t) :: from_weight_fractions
+        type(MaterialComponent_t) :: material_components(1)
+        type(MessageList_t) :: messages
+
+        material_components(1) = MaterialComponent(naturalHydrogenGas(), 1.0d0)
+        call fromAtomFractions( &
+                material_components, &
+                messages, &
+                errors, &
+                from_atom_fractions)
+        if (errors%hasAny()) then
+            result_ = fail(errors%toString())
+        else
+            call fromWeightFractions( &
+                    material_components, &
+                    messages, &
+                    errors, &
+                    from_weight_fractions)
+            if (errors%hasAny()) then
+                result_ = fail(errors%toString())
+            else
+                result_ =  &
+                        assertAllChemical( &
+                                hydrogenGasSymbol(), from_atom_fractions, "atom fractions") &
+                        .and.assertAllChemical( &
+                                hydrogenGasSymbol(), from_weight_fractions, "weight fractions")
+            end if
+        end if
+    end function checkSingleChemical
+
     pure function assertAllIsotope(isotope, material, from) result(result_)
         type(Isotope_t), intent(in) :: isotope
         type(Material_t), intent(in) :: material
@@ -159,4 +197,21 @@ contains
                         material%weightFraction(element), &
                         "weight fraction from " // from)
     end function assertAllElement
+
+    pure function assertAllChemical(chemical, material, from) result(result_)
+        type(ChemicalSymbol_t), intent(in) :: chemical
+        type(Material_t), intent(in) :: material
+        character(len=*), intent(in) :: from
+        type(Result_t) :: result_
+
+        result_ = &
+                assertEquals( &
+                        1.0d0, &
+                        material%atomFraction(chemical), &
+                        "atom fraction from " // from) &
+                .and.assertEquals( &
+                        1.0d0, &
+                        material%weightFraction(chemical), &
+                        "weight fraction from " // from)
+    end function assertAllChemical
 end module material_test

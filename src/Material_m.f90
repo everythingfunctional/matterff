@@ -1,5 +1,6 @@
 module Material_m
     use Chemical_m, only: Chemical_t, find
+    use Chemical_symbol_m, only: ChemicalSymbol_t
     use Element_symbol_m, only: ElementSymbol_t
     use erloff, only: &
             ErrorList_t, MessageList_t, Info, Internal, Module_, Procedure_
@@ -26,18 +27,22 @@ module Material_m
         type(MaterialComponent_t), allocatable :: components(:)
     contains
         private
+        procedure :: atomFractionChemical
         procedure :: atomFractionElement
         procedure :: atomFractionIsotope
         procedure :: atomFractionIsotopeSymbol
         generic, public :: atomFraction => &
+                atomFractionChemical, &
                 atomFractionElement, &
                 atomFractionIsotope, &
                 atomFractionIsotopeSymbol
         procedure, public :: molarMass
+        procedure :: weightFractionChemical
         procedure :: weightFractionElement
         procedure :: weightFractionIsotope
         procedure :: weightFractionIsotopeSymbol
         generic, public :: weightFraction => &
+                weightFractionChemical, &
                 weightFractionElement, &
                 weightFractionIsotope, &
                 weightFractionIsotopeSymbol
@@ -268,6 +273,21 @@ contains
                 material)
     end subroutine materialFromWeightFractionsUnsafe
 
+    elemental function atomFractionChemical(self, chemical) result(atom_fraction)
+        class(Material_t), intent(in) :: self
+        type(ChemicalSymbol_t), intent(in) :: chemical
+        double precision :: atom_fraction
+
+        integer :: position
+
+        position = find(chemical, self%components%chemical)
+        if (position > 0) then
+            atom_fraction = self%components(position)%fraction
+        else
+            atom_fraction = 0.0d0
+        end if
+    end function atomFractionChemical
+
     elemental function atomFractionElement(self, element) result(atom_fraction)
         class(Material_t), intent(in) :: self
         type(ElementSymbol_t), intent(in) :: element
@@ -303,12 +323,29 @@ contains
         molarMass = sum(self%components%fraction * self%components%chemical%molarMass())
     end function molarMass
 
-    elemental function weightFractionElement(self, element) result(atom_fraction)
+    elemental function weightFractionChemical(self, chemical) result(weight_fraction)
+        class(Material_t), intent(in) :: self
+        type(ChemicalSymbol_t), intent(in) :: chemical
+        double precision :: weight_fraction
+
+        type(MolarMass_t) :: masses(size(self%components))
+        integer :: position
+
+        position = find(chemical, self%components%chemical)
+        if (position > 0) then
+            masses = self%components%fraction * self%components%chemical%molarMass()
+            weight_fraction = masses(position) / sum(masses)
+        else
+            weight_fraction = 0.0d0
+        end if
+    end function weightFractionChemical
+
+    elemental function weightFractionElement(self, element) result(weight_fraction)
         class(Material_t), intent(in) :: self
         type(ElementSymbol_t), intent(in) :: element
-        double precision :: atom_fraction
+        double precision :: weight_fraction
 
-        atom_fraction = sum( &
+        weight_fraction = sum( &
                 self%components%chemical%weightFraction(element) &
                 * self%components%fraction)
     end function weightFractionElement
