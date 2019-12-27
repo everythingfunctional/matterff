@@ -1,7 +1,7 @@
 module Isotope_m
     use Element_symbol_m, only: ElementSymbol_t
-    use erloff, only: ErrorList_t, Fatal, Module_, Procedure_
-    use iso_varying_string, only: VARYING_STRING, operator(//)
+    use erloff, only: ErrorList_t, Fatal, Module_, Procedure_, UNKNOWN_TYPE_TYPE
+    use iso_varying_string, only: VARYING_STRING, operator(//), char
     use Isotope_symbol_m, only: &
             IsotopeSymbol_t, &
             H_1_SYM, &
@@ -22,8 +22,10 @@ module Isotope_m
             O_17_SYM, &
             O_18_SYM
     use jsonff, only: &
+            JsonElement_t, &
             JsonMember_t, &
             JsonObject_t, &
+            JsonString_t, &
             jsonMemberUnsafe, &
             jsonNumber, &
             jsonObject, &
@@ -49,6 +51,15 @@ module Isotope_m
     interface find
         module procedure findIsotope
     end interface find
+
+    interface fromJson
+        module procedure isotopeFromJson
+    end interface fromJson
+
+    interface fromString
+        module procedure fromStringC
+        module procedure fromStringS
+    end interface fromString
 
     ! Atomic masses are taken from the 17th Edition of the Chart of Nuclides
     ! Where atomic mass is not provided for an isotope in the table, the
@@ -81,7 +92,7 @@ module Isotope_m
 
     character(len=*), parameter :: MODULE_NAME = "Isotope_m"
 
-    public :: find, getIsotope, fromString
+    public :: find, fromJson, fromString, getIsotope
 contains
     pure subroutine getIsotope(element_symbol, mass_number, errors, isotope)
         character(len=2), intent(in) :: element_symbol
@@ -177,12 +188,41 @@ contains
                 "Unknown Isotope: " // trim(element_symbol) // "-" // toString(mass_number)))
     end subroutine getIsotope
 
-    pure subroutine fromString(string, errors, isotope)
+    pure subroutine isotopeFromJson(json, errors, isotope)
+        type(JsonObject_t), intent(in) :: json
+        type(ErrorList_t), intent(out) :: errors
+        type(Isotope_t), intent(out) :: isotope
+
+        character(len=*), parameter :: PROCEDURE_NAME = "isotopeFromJson"
+        type(ErrorList_t) :: errors_
+        type(JsonElement_t) :: isotope_element
+
+        call json%getElement("isotope", errors_, isotope_element)
+        if (errors_%hasAny()) then
+            call errors%appendErrors( &
+                    errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+        else
+            select type (isotope_string => isotope_element%element)
+            type is (JsonString_t)
+                call fromString(isotope_string%getValue(), errors_, isotope)
+                call errors%appendErrors( &
+                        errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+            class default
+                call errors%appendError(Fatal( &
+                        UNKNOWN_TYPE_TYPE, &
+                        Module_(MODULE_NAME), &
+                        Procedure_(PROCEDURE_NAME), &
+                        "Expected to get a JsonString but got" // isotope_string%toCompactString()))
+            end select
+        end if
+    end subroutine isotopeFromJson
+
+    pure subroutine fromStringC(string, errors, isotope)
         character(len=*), intent(in) :: string
         type(ErrorList_t), intent(out) :: errors
         type(Isotope_t), intent(out) :: isotope
 
-        character(len=*), parameter :: PROCEDURE_NAME = "fromString"
+        character(len=*), parameter :: PROCEDURE_NAME = "fromStringC"
         character(len=2) :: element_symbol
         type(ErrorList_t) :: errors_
         integer :: hyphen_position
@@ -213,7 +253,19 @@ contains
                     Procedure_(PROCEDURE_NAME), &
                     "No '-' between element and mass number: " // string))
         end if
-    end subroutine fromString
+    end subroutine fromStringC
+
+    pure subroutine fromStringS(string, errors, isotope)
+        type(VARYING_STRING), intent(in) :: string
+        type(ErrorList_t), intent(out) :: errors
+        type(Isotope_t), intent(out) :: isotope
+
+        type(ErrorList_t) :: errors_
+
+        call fromString(char(string), errors_, isotope)
+        call errors%appendErrors( &
+                errors_, Module_(MODULE_NAME), Procedure_("fromStringS"))
+    end subroutine fromStringS
 
     elemental function is(self, element)
         class(Isotope_t), intent(in) :: self
