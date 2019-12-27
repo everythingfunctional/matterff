@@ -16,7 +16,7 @@ module Chemical_m
     use Isotope_symbol_m, only: IsotopeSymbol_t
     use quaff, only: Amount_t, Mass_t, MolarMass_t, operator(/), sum
     use strff, only: join
-    use Utilities_m, only: MISMATCH_TYPE
+    use Utilities_m, only: INVALID_ARGUMENT_TYPE, MISMATCH_TYPE
 
     implicit none
     private
@@ -193,7 +193,15 @@ contains
         character(len=*), parameter :: PROCEDURE_NAME = "makeChemical"
 
         if (all(symbol%includes(components%element%symbol))) then
-            call makeChemicalUnsafe(symbol, components, chemical)
+            if (all(components%multiplier > 0.0d0)) then
+                call makeChemicalUnsafe(symbol, components, chemical)
+            else
+                call errors%appendError(Internal( &
+                        INVALID_ARGUMENT_TYPE, &
+                        Module_(MODULE_NAME), &
+                        Procedure_(PROCEDURE_NAME), &
+                        "All multipliers must be greater than 0."))
+            end if
         else
             call errors%appendError(Internal( &
                     MISMATCH_TYPE, &

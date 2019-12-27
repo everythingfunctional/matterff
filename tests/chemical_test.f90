@@ -16,7 +16,7 @@ module chemical_test
     use Element_symbol_m, only: H, O
     use erloff, only: ErrorList_t, MessageList_t
     use Isotope_m, only: H_1, H_2
-    use Utilities_m, only: MISMATCH_TYPE
+    use Utilities_m, only: INVALID_ARGUMENT_TYPE, MISMATCH_TYPE
     use Vegetables_m, only: &
             Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
 
@@ -28,31 +28,34 @@ contains
     function test_chemical() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(9)
+        type(TestItem_t) :: individual_tests(10)
 
         individual_tests(1) = It( &
                 "Creating a chemical with elements not included in the symbol is an error", &
                 checkNotInSymbol)
         individual_tests(2) = It( &
+                "Creating a chemical with negative multipliers is an error", &
+                checkNegativeMultipliers)
+        individual_tests(3) = It( &
                 "A single element chemical is all that element", &
                 checkSingleElement)
-        individual_tests(3) = It( &
+        individual_tests(4) = It( &
                 "A single isotope chemical is all that isotope", &
                 checkSingleIsotope)
-        individual_tests(4) = It( &
+        individual_tests(5) = It( &
                 "Created with duplicate elements has sum of duplicates", &
                 checkDuplicate)
-        individual_tests(5) = It( &
+        individual_tests(6) = It( &
                 "Combining chemicals of different types is an error", &
                 checkCombineError)
-        individual_tests(6) = It( &
-                "Combining chemicals results in correct fractios", checkCombine)
         individual_tests(7) = It( &
+                "Combining chemicals results in correct fractios", checkCombine)
+        individual_tests(8) = It( &
                 "Water is 2/3 hydrogen and 1/3 oxygen by atom", &
                 checkWaterFractions)
-        individual_tests(8) = It( &
+        individual_tests(9) = It( &
                 "Has a position of 0 if it's not in a list", checkNotFound)
-        individual_tests(9) = It("Can be found in a list", checkFind)
+        individual_tests(10) = It("Can be found in a list", checkFind)
         tests = Describe("Chemical_t", individual_tests)
     end function test_chemical
 
@@ -71,6 +74,21 @@ contains
                 chemical)
         result_ = assertThat(errors.hasType.MISMATCH_TYPE, errors%toString())
     end function checkNotInSymbol
+
+    pure function checkNegativeMultipliers() result(result_)
+        type(Result_t) :: result_
+
+        type(ChemicalComponent_t) :: components(1)
+        type(Chemical_t) :: chemical
+        type(ErrorList_t) :: errors
+
+        components(1) = ChemicalComponent(naturalHydrogen(), -2.0d0)
+        call makeChemical(hydrogenGasSymbol(), components, errors, chemical)
+
+        result_ = assertThat( &
+                errors.hasType.INVALID_ARGUMENT_TYPE, &
+                errors%toString())
+    end function checkNegativeMultipliers
 
     pure function checkSingleElement() result(result_)
         type(Result_t) :: result_
