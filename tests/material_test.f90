@@ -1,5 +1,6 @@
 module material_test
-    use Chemical_m, only: Chemical_t, makeChemical, naturalHydrogenGas
+    use Chemical_m, only: &
+            Chemical_t, makeChemical, naturalHydrogenGas, naturalWater
     use Chemical_component_m, only: ChemicalComponent_t, ChemicalComponent
     use Chemical_symbol_m, only: ChemicalSymbol_t, hydrogenGasSymbol
     use Element_m, only: Element_t, fromAtomFractions, naturalHydrogen
@@ -9,6 +10,7 @@ module material_test
     use Isotope_m, only: Isotope_t, H_1
     use Material_m, only: Material_t, fromAtomFractions, fromWeightFractions
     use Material_component_m, only: MaterialComponent_t, MaterialComponent
+    use quaff_asserts_m, only: assertEquals
     use Utilities_m, only: INVALID_ARGUMENT_TYPE
     use Vegetables_m, only: &
             Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
@@ -21,7 +23,7 @@ contains
     function test_material() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(4)
+        type(TestItem_t) :: individual_tests(5)
 
         individual_tests(1) = It( &
                 "Creating a material with negative fractions is an error", &
@@ -35,6 +37,9 @@ contains
         individual_tests(4) = It( &
                 "A single chemical material is all that chemical", &
                 checkSingleChemical)
+        individual_tests(5) = It( &
+                "A single chemical material has the same molar mass", &
+                checkSingleChemicalMolarMass)
         tests = Describe("Material_t", individual_tests)
     end function test_material
 
@@ -197,6 +202,25 @@ contains
             end if
         end if
     end function checkSingleChemical
+
+    pure function checkSingleChemicalMolarMass() result(result_)
+        type(Result_t) :: result_
+
+        type(Chemical_t) :: chemical
+        type(MaterialComponent_t) :: components(1)
+        type(ErrorList_t) :: errors
+        type(Material_t) :: material
+        type(MessageList_t) :: messages
+
+        chemical = naturalWater()
+        components(1) = MaterialComponent(chemical, 1.0d0)
+        call fromAtomFractions(components, messages, errors, material)
+        if (errors%hasAny()) then
+            result_ = fail(errors%toString())
+        else
+            result_ = assertEquals(chemical%molarMass(), material%molarMass())
+        end if
+    end function checkSingleChemicalMolarMass
 
     pure function assertAllIsotope(isotope, material, from) result(result_)
         type(Isotope_t), intent(in) :: isotope
