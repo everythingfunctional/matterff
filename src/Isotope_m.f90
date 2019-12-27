@@ -21,6 +21,13 @@ module Isotope_m
             O_16_SYM, &
             O_17_SYM, &
             O_18_SYM
+    use jsonff, only: &
+            JsonMember_t, &
+            JsonObject_t, &
+            jsonMemberUnsafe, &
+            jsonNumber, &
+            jsonObject, &
+            jsonStringUnsafe
     use quaff, only: MolarMass_t
     use strff, only: toString
     use Utilities_m, only: INVALID_ARGUMENT_TYPE
@@ -35,6 +42,7 @@ module Isotope_m
     contains
         private
         procedure, public :: is
+        procedure, public :: toJsonWithFraction
         procedure, public :: toString => isotopeToString
     end type Isotope_t
 
@@ -214,6 +222,19 @@ contains
 
         is = self%symbol%is(element)
     end function is
+
+    pure function toJsonWithFraction(self, fraction) result(json)
+        class(Isotope_t), intent(in) :: self
+        double precision, intent(in) :: fraction
+        type(JsonObject_t) :: json
+
+        type(JsonMember_t) :: members(3)
+
+        members(1) = jsonMemberUnsafe("fraction", jsonNumber(fraction))
+        members(2) = jsonMemberUnsafe("isotope", jsonStringUnsafe(self%symbol%toString()))
+        members(3) = jsonMemberUnsafe("atomicMass", jsonStringUnsafe(self%atomic_mass%toString()))
+        json = jsonObject(members)
+    end function toJsonWithFraction
 
     elemental function isotopeToString(self) result(string)
         class(Isotope_t), intent(in) :: self
