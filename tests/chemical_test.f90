@@ -52,8 +52,7 @@ contains
                 checkWaterFractions)
         individual_tests(8) = It( &
                 "Has a position of 0 if it's not in a list", checkNotFound)
-        individual_tests(9) = It( &
-                "Can be found in a list", checkFind)
+        individual_tests(9) = It("Can be found in a list", checkFind)
         tests = Describe("Chemical_t", individual_tests)
     end function test_chemical
 

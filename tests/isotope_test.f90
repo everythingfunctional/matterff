@@ -27,8 +27,7 @@ contains
                 "Is not a different element", checkNotDifferentElement)
         individual_tests(3) = It( &
                 "Has a position of 0 if it's not in a list", checkNotFound)
-        individual_tests(4) = It( &
-                "Can be found in a list", checkFind)
+        individual_tests(4) = It("Can be found in a list", checkFind)
         tests = Describe("Isotope_t", individual_tests)
     end function test_isotope
 

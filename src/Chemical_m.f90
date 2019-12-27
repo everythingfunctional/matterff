@@ -26,7 +26,7 @@ module Chemical_m
     ! chemical that has not been intialized will likely result in a memory error
     type, public :: Chemical_t
         private
-        type(ChemicalSymbol_t) :: symbol
+        type(ChemicalSymbol_t), public :: symbol
         type(ChemicalComponent_t), allocatable :: components(:)
     contains
         private

@@ -65,8 +65,7 @@ contains
                 checkNaturalElements)
         individual_tests(11) = It( &
                 "Has a position of 0 if it's not in a list", checkNotFound)
-        individual_tests(12) = It( &
-                "Can be found in a list", checkFind)
+        individual_tests(12) = It("Can be found in a list", checkFind)
         tests = Describe("Element_t", individual_tests)
     end function test_element
 
