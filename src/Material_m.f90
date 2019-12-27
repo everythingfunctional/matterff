@@ -1,5 +1,6 @@
 module Material_m
     use Chemical_m, only: Chemical_t, find
+    use Element_symbol_m, only: ElementSymbol_t
     use erloff, only: &
             ErrorList_t, MessageList_t, Info, Internal, Module_, Procedure_
     use iso_varying_string, only: operator(//)
@@ -25,15 +26,21 @@ module Material_m
         type(MaterialComponent_t), allocatable :: components(:)
     contains
         private
-        procedure :: atomFractionFromIsotope
-        procedure :: atomFractionFromIsotopeSymbol
+        procedure :: atomFractionElement
+        procedure :: atomFractionIsotope
+        procedure :: atomFractionIsotopeSymbol
         generic, public :: atomFraction => &
-                atomFractionFromIsotope, atomFractionFromIsotopeSymbol
+                atomFractionElement, &
+                atomFractionIsotope, &
+                atomFractionIsotopeSymbol
         procedure, public :: molarMass
-        procedure :: weightFractionFromIsotope
-        procedure :: weightFractionFromIsotopeSymbol
+        procedure :: weightFractionElement
+        procedure :: weightFractionIsotope
+        procedure :: weightFractionIsotopeSymbol
         generic, public :: weightFraction => &
-                weightFractionFromIsotope, weightFractionFromIsotopeSymbol
+                weightFractionElement, &
+                weightFractionIsotope, &
+                weightFractionIsotopeSymbol
     end type Material_t
 
     interface combineByAtomFactors
@@ -261,15 +268,25 @@ contains
                 material)
     end subroutine materialFromWeightFractionsUnsafe
 
-    elemental function atomFractionFromIsotope(self, isotope) result(atom_fraction)
+    elemental function atomFractionElement(self, element) result(atom_fraction)
+        class(Material_t), intent(in) :: self
+        type(ElementSymbol_t), intent(in) :: element
+        double precision :: atom_fraction
+
+        atom_fraction = sum( &
+                self%components%chemical%atomFraction(element) &
+                * self%components%fraction)
+    end function atomFractionElement
+
+    elemental function atomFractionIsotope(self, isotope) result(atom_fraction)
         class(Material_t), intent(in) :: self
         type(Isotope_t), intent(in) :: isotope
         double precision :: atom_fraction
 
         atom_fraction = self%atomFraction(isotope%symbol)
-    end function atomFractionFromIsotope
+    end function atomFractionIsotope
 
-    elemental function atomFractionFromIsotopeSymbol(self, isotope) result(atom_fraction)
+    elemental function atomFractionIsotopeSymbol(self, isotope) result(atom_fraction)
         class(Material_t), intent(in) :: self
         type(IsotopeSymbol_t), intent(in) :: isotope
         double precision :: atom_fraction
@@ -277,7 +294,7 @@ contains
         atom_fraction = sum( &
                 self%components%chemical%atomFraction(isotope) &
                 * self%components%fraction)
-    end function atomFractionFromIsotopeSymbol
+    end function atomFractionIsotopeSymbol
 
     elemental function molarMass(self)
         class(Material_t), intent(in) :: self
@@ -286,15 +303,25 @@ contains
         molarMass = sum(self%components%fraction * self%components%chemical%molarMass())
     end function molarMass
 
-    elemental function weightFractionFromIsotope(self, isotope) result(weight_fraction)
+    elemental function weightFractionElement(self, element) result(atom_fraction)
+        class(Material_t), intent(in) :: self
+        type(ElementSymbol_t), intent(in) :: element
+        double precision :: atom_fraction
+
+        atom_fraction = sum( &
+                self%components%chemical%weightFraction(element) &
+                * self%components%fraction)
+    end function weightFractionElement
+
+    elemental function weightFractionIsotope(self, isotope) result(weight_fraction)
         class(Material_t), intent(in) :: self
         type(Isotope_t), intent(in) :: isotope
         double precision :: weight_fraction
 
         weight_fraction = self%weightFraction(isotope%symbol)
-    end function weightFractionFromIsotope
+    end function weightFractionIsotope
 
-    elemental function weightFractionFromIsotopeSymbol(self, isotope) result(weight_fraction)
+    elemental function weightFractionIsotopeSymbol(self, isotope) result(weight_fraction)
         class(Material_t), intent(in) :: self
         type(IsotopeSymbol_t), intent(in) :: isotope
         double precision :: weight_fraction
@@ -302,7 +329,7 @@ contains
         weight_fraction = sum( &
                 self%components%chemical%atomFraction(isotope) &
                 * self%components%fraction)
-    end function weightFractionFromIsotopeSymbol
+    end function weightFractionIsotopeSymbol
 
     pure subroutine combineDuplicates(inputs, combined)
         type(MaterialComponent_t), intent(in) :: inputs(:)

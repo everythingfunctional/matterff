@@ -44,15 +44,15 @@ module Element_m
         type(ElementComponent_t), allocatable :: components(:)
     contains
         private
-        procedure :: atomFractionFromIsotope
-        procedure :: atomFractionFromSymbol
+        procedure :: atomFractionIsotope
+        procedure :: atomFractionSymbol
         generic, public :: atomFraction => &
-                atomFractionFromIsotope, atomFractionFromSymbol
+                atomFractionIsotope, atomFractionSymbol
         procedure, public :: atomicMass
-        procedure :: weightFractionFromIsotope
-        procedure :: weightFractionFromSymbol
+        procedure :: weightFractionIsotope
+        procedure :: weightFractionSymbol
         generic, public :: weightFraction => &
-                weightFractionFromIsotope, weightFractionFromSymbol
+                weightFractionIsotope, weightFractionSymbol
     end type Element_t
 
     interface combineByAtomFactors
@@ -387,15 +387,15 @@ contains
                  ElementComponent(O_18, 0.00205d0)])
     end function naturalOxygen
 
-    elemental function atomFractionFromIsotope(self, isotope) result(atom_fraction)
+    elemental function atomFractionIsotope(self, isotope) result(atom_fraction)
         class(Element_t), intent(in) :: self
         type(Isotope_t), intent(in) :: isotope
         double precision :: atom_fraction
 
         atom_fraction = self%atomFraction(isotope%symbol)
-    end function atomFractionFromIsotope
+    end function atomFractionIsotope
 
-    elemental function atomFractionFromSymbol(self, isotope) result(atom_fraction)
+    elemental function atomFractionSymbol(self, isotope) result(atom_fraction)
         class(Element_t), intent(in) :: self
         type(IsotopeSymbol_t), intent(in) :: isotope
         double precision :: atom_fraction
@@ -408,7 +408,7 @@ contains
         else
             atom_fraction = 0.0d0
         end if
-    end function atomFractionFromSymbol
+    end function atomFractionSymbol
 
     elemental function atomicMass(self)
         class(Element_t), intent(in) :: self
@@ -417,15 +417,15 @@ contains
         atomicMass = sum(self%components%fraction * self%components%isotope%atomic_mass)
     end function atomicMass
 
-    elemental function weightFractionFromIsotope(self, isotope) result(weight_fraction)
+    elemental function weightFractionIsotope(self, isotope) result(weight_fraction)
         class(Element_t), intent(in) :: self
         type(Isotope_t), intent(in) :: isotope
         double precision :: weight_fraction
 
         weight_fraction = self%weightFraction(isotope%symbol)
-    end function weightFractionFromIsotope
+    end function weightFractionIsotope
 
-    elemental function weightFractionFromSymbol(self, isotope) result(weight_fraction)
+    elemental function weightFractionSymbol(self, isotope) result(weight_fraction)
         class(Element_t), intent(in) :: self
         type(IsotopeSymbol_t), intent(in) :: isotope
         double precision :: weight_fraction
@@ -440,7 +440,7 @@ contains
         else
             weight_fraction = 0.0d0
         end if
-    end function weightFractionFromSymbol
+    end function weightFractionSymbol
 
     pure subroutine combineDuplicates(inputs, combined)
         type(ElementComponent_t), intent(in) :: inputs(:)
