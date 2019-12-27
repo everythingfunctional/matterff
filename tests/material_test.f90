@@ -24,7 +24,7 @@ contains
     function test_material() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(8)
+        type(TestItem_t) :: individual_tests(9)
 
         individual_tests(1) = It( &
                 "Creating a material with negative fractions is an error", &
@@ -49,6 +49,9 @@ contains
         individual_tests(8) = It( &
                 "Normalizing fractions of chemicals produces a message", &
                 checkNormalizedMessages)
+        individual_tests(9) = It( &
+                "Created with duplicate chemicals has sum of duplicates", &
+                checkDuplicates)
         tests = Describe("Material_t", individual_tests)
     end function test_material
 
@@ -346,6 +349,36 @@ contains
             end if
         end if
     end function checkNormalizedMessages
+
+    pure function checkDuplicates() result(result_)
+        type(Result_t) :: result_
+
+        type(MaterialComponent_t) :: components(2)
+        type(ErrorList_t) :: errors
+        type(Material_t) :: from_atom_fractions
+        type(Material_t) :: from_weight_fractions
+        type(MessageList_t) :: messages
+
+        components(1) = MaterialComponent(naturalHydrogenGas(), 0.6d0)
+        components(2) = MaterialComponent(naturalHydrogenGas(), 0.4d0)
+        call fromAtomFractions( &
+                components, messages, errors, from_atom_fractions)
+        if (errors%hasAny()) then
+            result_ = fail(errors%toString())
+        else
+            call fromWeightFractions( &
+                    components, messages, errors, from_weight_fractions)
+            if (errors%hasAny()) then
+                result_ = fail(errors%toString())
+            else
+                result_ = &
+                        assertAllChemical( &
+                                hydrogenGasSymbol(), from_atom_fractions, "atom fractions") &
+                        .and.assertAllChemical( &
+                                hydrogenGasSymbol(), from_weight_fractions, "weight fractions")
+            end if
+        end if
+    end function checkDuplicates
 
     pure function assertAllIsotope(isotope, material, from) result(result_)
         type(Isotope_t), intent(in) :: isotope
