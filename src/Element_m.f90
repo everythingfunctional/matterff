@@ -174,7 +174,8 @@ contains
                 element1%symbol, &
                 ElementComponent( &
                         [element1%components%isotope, element2%components%isotope], &
-                        [element1%components%fraction * factor1, element2%components%fraction * factor2]), &
+                        [element1%weightFraction(element1%components%isotope%symbol) * factor1, &
+                        element2%weightFraction(element2%components%isotope%symbol) * factor2]), &
                 messages_, &
                 errors_, &
                 combined)
@@ -196,7 +197,8 @@ contains
                 element1%symbol, &
                 ElementComponent( &
                         [element1%components%isotope, element2%components%isotope], &
-                        [element1%components%fraction * factor1, element2%components%fraction * factor2]), &
+                        [element1%weightFraction(element1%components%isotope%symbol) * factor1, &
+                        element2%weightFraction(element2%components%isotope%symbol) * factor2]), &
                 combined)
     end subroutine combineElementsByWeightFactorsUnsafe
 

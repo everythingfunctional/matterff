@@ -338,8 +338,8 @@ contains
         double precision :: normalizer
         integer :: num_inputs
         integer :: prev_num_components
-        type(Element_t) :: working_element
         type(ChemicalComponent_t), allocatable :: working_components(:)
+        type(Element_t) :: working_element
 
         num_inputs = size(inputs)
         allocate(combined(1))

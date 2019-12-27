@@ -1,5 +1,5 @@
 module Material_m
-    use Chemical_m, only: Chemical_t, find
+    use Chemical_m, only: Chemical_t, combineByAtomFactorsUnsafe, find
     use Chemical_symbol_m, only: ChemicalSymbol_t
     use Element_symbol_m, only: ElementSymbol_t
     use erloff, only: &
@@ -151,7 +151,8 @@ contains
         call fromWeightFractions( &
                 MaterialComponent( &
                         [material1%components%chemical, material2%components%chemical], &
-                        [material1%components%fraction * factor1, material2%components%fraction * factor2]), &
+                        [material1%weightFraction(material1%components%chemical%symbol) * factor1, &
+                        material2%weightFraction(material2%components%chemical%symbol) * factor2]), &
                 messages_, &
                 errors_, &
                 combined)
@@ -172,7 +173,8 @@ contains
         call fromWeightFractionsUnsafe( &
                 MaterialComponent( &
                         [material1%components%chemical, material2%components%chemical], &
-                        [material1%components%fraction * factor1, material2%components%fraction * factor2]), &
+                        [material1%weightFraction(material1%components%chemical%symbol) * factor1, &
+                        material2%weightFraction(material2%components%chemical%symbol) * factor2]), &
                 combined)
     end subroutine combineMaterialsByWeightFactorsUnsafe
 
@@ -346,8 +348,8 @@ contains
         double precision :: weight_fraction
 
         weight_fraction = sum( &
-                self%components%chemical%weightFraction(element) &
-                * self%components%fraction)
+                self%weightFraction(self%components%chemical%symbol) &
+                * self%components%chemical%weightFraction(element))
     end function weightFractionElement
 
     elemental function weightFractionIsotope(self, isotope) result(weight_fraction)
@@ -364,8 +366,8 @@ contains
         double precision :: weight_fraction
 
         weight_fraction = sum( &
-                self%components%chemical%atomFraction(isotope) &
-                * self%components%fraction)
+                self%weightFraction(self%components%chemical%symbol) &
+                * self%components%chemical%weightFraction(isotope))
     end function weightFractionIsotopeSymbol
 
     pure subroutine combineDuplicates(inputs, combined)
@@ -375,8 +377,10 @@ contains
         integer :: duplicate_position
         integer :: i
         integer :: new_num_components
+        double precision :: normalizer
         integer :: num_inputs
         integer :: prev_num_components
+        type(Chemical_t) :: working_chemical
         type(MaterialComponent_t), allocatable :: working_components(:)
 
         num_inputs = size(inputs)
@@ -395,6 +399,14 @@ contains
                 deallocate(working_components)
                 combined(new_num_components) = inputs(i)
             else
+                normalizer = inputs(i)%fraction + combined(duplicate_position)%fraction
+                working_chemical = combined(duplicate_position)%chemical
+                call combineByAtomFactorsUnsafe( &
+                        working_chemical, &
+                        combined(duplicate_position)%fraction / normalizer, &
+                        inputs(i)%chemical, &
+                        inputs(i)%fraction / normalizer, &
+                        combined(duplicate_position)%chemical)
                 combined(duplicate_position)%fraction = &
                         combined(duplicate_position)%fraction + inputs(i)%fraction
             end if
