@@ -9,8 +9,9 @@ module material_test
     use Isotope_m, only: Isotope_t, H_1
     use Material_m, only: Material_t, fromAtomFractions, fromWeightFractions
     use Material_component_m, only: MaterialComponent_t, MaterialComponent
+    use Utilities_m, only: INVALID_ARGUMENT_TYPE
     use Vegetables_m, only: &
-            Result_t, TestItem_t, assertEquals, Describe, fail, It
+            Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
 
     implicit none
     private
@@ -20,19 +21,52 @@ contains
     function test_material() result(tests)
         type(TestItem_t) :: tests
 
-        type(TestItem_t) :: individual_tests(3)
+        type(TestItem_t) :: individual_tests(4)
 
         individual_tests(1) = It( &
+                "Creating a material with negative fractions is an error", &
+                checkNegativeFractions)
+        individual_tests(2) = It( &
                 "A single isotope material is all that isotope", &
                 checkSingleIsotope)
-        individual_tests(2) = It( &
+        individual_tests(3) = It( &
                 "A single element material is all that element", &
                 checkSingleElement)
-        individual_tests(3) = It( &
+        individual_tests(4) = It( &
                 "A single chemical material is all that chemical", &
                 checkSingleChemical)
         tests = Describe("Material_t", individual_tests)
     end function test_material
+
+    pure function checkNegativeFractions() result(result_)
+        type(Result_t) :: result_
+
+        type(MaterialComponent_t) :: components(1)
+        type(Material_t) :: material
+        type(ErrorList_t) :: errors_from_atom_fractions
+        type(ErrorList_t) :: errors_from_weight_fractions
+        type(MessageList_t) :: messages
+
+        components(1) = MaterialComponent(naturalHydrogenGas(), -1.0d0)
+        call fromAtomFractions( &
+                components, &
+                messages, &
+                errors_from_atom_fractions, &
+                material)
+        call fromWeightFractions( &
+                components, &
+                messages, &
+                errors_from_weight_fractions, &
+                material)
+
+        result_ = &
+                assertThat( &
+                        errors_from_atom_fractions.hasType.INVALID_ARGUMENT_TYPE, &
+                        errors_from_atom_fractions%toString()) &
+                .and.assertThat( &
+                        errors_from_weight_fractions.hasType.INVALID_ARGUMENT_TYPE, &
+                        errors_from_weight_fractions%toString())
+    end function checkNegativeFractions
 
     pure function checkSingleIsotope() result(result_)
         type(Result_t) :: result_
