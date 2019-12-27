@@ -1,6 +1,7 @@
 module Isotope_m
     use Element_symbol_m, only: ElementSymbol_t
-    use iso_varying_string, only: VARYING_STRING
+    use erloff, only: ErrorList_t, Fatal, Module_, Procedure_
+    use iso_varying_string, only: VARYING_STRING, operator(//)
     use Isotope_symbol_m, only: &
             IsotopeSymbol_t, &
             H_1_SYM, &
@@ -21,6 +22,8 @@ module Isotope_m
             O_17_SYM, &
             O_18_SYM
     use quaff, only: MolarMass_t
+    use strff, only: toString
+    use Utilities_m, only: INVALID_ARGUMENT_TYPE
 
     implicit none
     private
@@ -32,7 +35,7 @@ module Isotope_m
     contains
         private
         procedure, public :: is
-        procedure, public :: toString
+        procedure, public :: toString => isotopeToString
     end type Isotope_t
 
     interface find
@@ -68,8 +71,142 @@ module Isotope_m
     type(Isotope_t), parameter, public :: O_17 = Isotope_t(O_17_SYM, MolarMass_t(kilograms_per_mol = 16.9991317d-3))
     type(Isotope_t), parameter, public :: O_18 = Isotope_t(O_18_SYM, MolarMass_t(kilograms_per_mol = 17.999161d-3))
 
-    public :: find
+    character(len=*), parameter :: MODULE_NAME = "Isotope_m"
+
+    public :: find, getIsotope, fromString
 contains
+    pure subroutine getIsotope(element_symbol, mass_number, errors, isotope)
+        character(len=2), intent(in) :: element_symbol
+        integer, intent(in) :: mass_number
+        type(ErrorList_t), intent(out) :: errors
+        type(Isotope_t), intent(out) :: isotope
+
+        character(len=*), parameter :: PROCEDURE_NAME = "getIsotope"
+
+        select case (element_symbol)
+        case ("H ")
+            select case (mass_number)
+            case (1)
+                isotope = H_1
+            case (2)
+                isotope = H_2
+            case (3)
+                isotope = H_3
+            case default
+                goto 99
+            end select
+        case ("He")
+            select case (mass_number)
+            case (3)
+                isotope = He_3
+            case (4)
+                isotope = He_4
+            case default
+                goto 99
+            end select
+        case ("Li")
+            select case (mass_number)
+            case (6)
+                isotope = Li_6
+            case (7)
+                isotope = Li_7
+            case default
+                goto 99
+            end select
+        case ("Be")
+            select case (mass_number)
+            case (9)
+                isotope = Be_9
+            case default
+                goto 99
+            end select
+        case ("B ")
+            select case (mass_number)
+            case (10)
+                isotope = B_10
+            case (11)
+                isotope = B_11
+            case default
+                goto 99
+            end select
+        case ("C ")
+            select case (mass_number)
+            case (12)
+                isotope = C_12
+            case (13)
+                isotope = C_13
+            case default
+                goto 99
+            end select
+        case ("N ")
+            select case (mass_number)
+            case (14)
+                isotope = N_14
+            case (15)
+                isotope = N_15
+            case default
+                goto 99
+            end select
+        case ("O ")
+            select case (mass_number)
+            case (16)
+                isotope = O_16
+            case (17)
+                isotope = O_17
+            case (18)
+                isotope = O_18
+            case default
+                goto 99
+            end select
+        case default
+            goto 99
+        end select
+        return
+        99 call errors%appendError(Fatal( &
+                INVALID_ARGUMENT_TYPE, &
+                Module_(MODULE_NAME), &
+                Procedure_(PROCEDURE_NAME), &
+                "Unknown Isotope: " // trim(element_symbol) // "-" // toString(mass_number)))
+    end subroutine getIsotope
+
+    pure subroutine fromString(string, errors, isotope)
+        character(len=*), intent(in) :: string
+        type(ErrorList_t), intent(out) :: errors
+        type(Isotope_t), intent(out) :: isotope
+
+        character(len=*), parameter :: PROCEDURE_NAME = "fromString"
+        character(len=2) :: element_symbol
+        type(ErrorList_t) :: errors_
+        integer :: hyphen_position
+        integer :: mass_number
+        character(len=3) :: mass_number_part
+        integer :: status
+
+        hyphen_position = index(string, "-")
+        if (hyphen_position > 0) then
+            element_symbol = string(1:hyphen_position-1)
+            mass_number_part = string(hyphen_position+1:)
+            read(mass_number_part, *, iostat=status) mass_number
+            if (status == 0) then
+                call getIsotope(element_symbol, mass_number, errors_, isotope)
+                call errors%appendErrors( &
+                        errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+            else
+                call errors%appendError(Fatal( &
+                        INVALID_ARGUMENT_TYPE, &
+                        Module_(MODULE_NAME), &
+                        Procedure_(PROCEDURE_NAME), &
+                        "Unable to read mass number in: " // string))
+            end if
+        else
+            call errors%appendError(Fatal( &
+                    INVALID_ARGUMENT_TYPE, &
+                    Module_(MODULE_NAME), &
+                    Procedure_(PROCEDURE_NAME), &
+                    "No '-' between element and mass number: " // string))
+        end if
+    end subroutine fromString
+
     elemental function is(self, element)
         class(Isotope_t), intent(in) :: self
         type(ElementSymbol_t), intent(in) :: element
@@ -78,12 +215,12 @@ contains
         is = self%symbol%is(element)
     end function is
 
-    elemental function toString(self) result(string)
+    elemental function isotopeToString(self) result(string)
         class(Isotope_t), intent(in) :: self
         type(VARYING_STRING) :: string
 
         string = self%symbol%toString()
-    end function toString
+    end function isotopeToString
 
     pure function findIsotope(symbol, isotopes) result(position)
         type(IsotopeSymbol_t), intent(in) :: symbol
