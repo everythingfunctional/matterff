@@ -1,5 +1,10 @@
 module Material_m
-    use Chemical_m, only: Chemical_t, combineByAtomFactorsUnsafe, find
+    use Chemical_m, only: &
+            Chemical_t, &
+            combineByAtomFactorsUnsafe, &
+            find, &
+            naturalHydrogenGas, &
+            naturalHeliumGas
     use Chemical_symbol_m, only: ChemicalSymbol_t
     use Element_symbol_m, only: ElementSymbol_t
     use erloff, only: &
@@ -27,6 +32,9 @@ module Material_m
         type(MaterialComponent_t), allocatable :: components(:)
     contains
         private
+        procedure :: amountElement
+        procedure :: amountIsotope
+        generic, public :: amount => amountElement, amountIsotope
         procedure :: atomFractionChemical
         procedure :: atomFractionElement
         procedure :: atomFractionIsotope
@@ -90,7 +98,9 @@ module Material_m
             fromAtomFractions, &
             fromAtomFractionsUnsafe, &
             fromWeightFractions, &
-            fromWeightFractionsUnsafe
+            fromWeightFractionsUnsafe, &
+            pureNaturalHydrogenGas, &
+            pureNaturalHeliumGas
 contains
     pure subroutine combineMaterialsByAtomFactors( &
             material1, factor1, material2, factor2, messages, errors, combined)
@@ -274,6 +284,38 @@ contains
                 MaterialComponent(components%chemical, amounts / sum(amounts)), &
                 material)
     end subroutine materialFromWeightFractionsUnsafe
+
+    pure function pureNaturalHydrogenGas()
+        type(Material_t) :: pureNaturalHydrogenGas
+
+        allocate(pureNaturalHydrogenGas%components(1))
+        pureNaturalHydrogenGas%components(1) = MaterialComponent(naturalHydrogenGas(), 1.0d0)
+    end function pureNaturalHydrogenGas
+
+    pure function pureNaturalHeliumGas()
+        type(Material_t) :: pureNaturalHeliumGas
+
+        allocate(pureNaturalHeliumGas%components(1))
+        pureNaturalHeliumGas%components(1) = MaterialComponent(naturalHeliumGas(), 1.0d0)
+    end function pureNaturalHeliumGas
+
+    elemental function amountElement(self, total_amount, element) result(amount)
+        class(Material_t), intent(in) :: self
+        type(Amount_t), intent(in) :: total_amount
+        type(ElementSymbol_t), intent(in) :: element
+        type(Amount_t) :: amount
+
+        amount = sum(self%components%chemical%amount(total_amount, element) * self%components%fraction)
+    end function amountElement
+
+    elemental function amountIsotope(self, total_amount, isotope) result(amount)
+        class(Material_t), intent(in) :: self
+        type(Amount_t), intent(in) :: total_amount
+        type(Isotope_t), intent(in) :: isotope
+        type(Amount_t) :: amount
+
+        amount = sum(self%components%chemical%amount(total_amount, isotope) * self%components%fraction)
+    end function amountIsotope
 
     elemental function atomFractionChemical(self, chemical) result(atom_fraction)
         class(Material_t), intent(in) :: self

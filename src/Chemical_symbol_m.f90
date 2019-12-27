@@ -31,8 +31,15 @@ module Chemical_symbol_m
         module procedure allComponentsInList
     end interface operator(.allIn.)
 
-    public :: hydrogenGasSymbol, heliumGasSymbol, waterSymbol
+    public :: ChemicalSymbol, hydrogenGasSymbol, heliumGasSymbol, waterSymbol
 contains
+    pure function ChemicalSymbol(components)
+        type(ChemicalSymbolComponent_t), intent(in) :: components(:)
+        type(ChemicalSymbol_t) :: ChemicalSymbol
+
+        allocate(ChemicalSymbol%components, source = components)
+    end function ChemicalSymbol
+
     pure function hydrogenGasSymbol()
         type(ChemicalSymbol_t) :: hydrogenGasSymbol
 

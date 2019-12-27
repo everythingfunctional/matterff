@@ -30,6 +30,9 @@ module Chemical_m
         type(ChemicalComponent_t), allocatable :: components(:)
     contains
         private
+        procedure :: amountElement
+        procedure :: amountIsotope
+        generic, public :: amount => amountElement, amountIsotope
         procedure :: atomFractionElement
         procedure :: atomFractionIsotope
         procedure :: atomFractionIsotopeSymbol
@@ -246,6 +249,32 @@ contains
         naturalWater%components(1) = ChemicalComponent(naturalHydrogen(), 2.0d0)
         naturalWater%components(2) = ChemicalComponent(naturalOxygen(), 1.0d0)
     end function naturalWater
+
+    elemental function amountElement(self, total_amount, element) result(amount)
+        class(Chemical_t), intent(in) :: self
+        type(Amount_t), intent(in) :: total_amount
+        type(ElementSymbol_t), intent(in) :: element
+        type(Amount_t) :: amount
+
+        type(Amount_t), parameter :: ZERO = Amount_t(mols = 0.0d0)
+        integer :: position
+
+        position = find(element, self%components%element)
+        if (position > 0) then
+            amount = self%components(position)%multiplier * total_amount
+        else
+            amount = ZERO
+        end if
+    end function amountElement
+
+    elemental function amountIsotope(self, total_amount, isotope) result(amount)
+        class(Chemical_t), intent(in) :: self
+        type(Amount_t), intent(in) :: total_amount
+        type(Isotope_t), intent(in) :: isotope
+        type(Amount_t) :: amount
+
+        amount = sum(self%components%multiplier * self%components%element%atomFraction(isotope) * total_amount)
+    end function amountIsotope
 
     elemental function atomFractionElement(self, element) result(atom_fraction)
         class(Chemical_t), intent(in) :: self
