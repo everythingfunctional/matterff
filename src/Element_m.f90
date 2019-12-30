@@ -1,9 +1,16 @@
 module Element_m
-    use Element_component_m, only: ElementComponent_t, ElementComponent
-    use Element_symbol_m, only: ElementSymbol_t, H, He, Li, Be, B, C, N, O
+    use Element_component_m, only: ElementComponent_t, ElementComponent, fromJson
+    use Element_symbol_m, only: &
+            ElementSymbol_t, ElementSymbol, H, He, Li, Be, B, C, N, O
     use erloff, only: &
-            ErrorList_t, MessageList_t, Info, Internal, Module_, Procedure_
-    use iso_varying_string, only: operator(//)
+            ErrorList_t, &
+            MessageList_t, &
+            Fatal, &
+            Info, &
+            Internal, &
+            Module_, &
+            Procedure_
+    use iso_varying_string, only: VARYING_STRING, operator(//), char
     use Isotope_m, only: &
             Isotope_t, &
             find, &
@@ -24,6 +31,18 @@ module Element_m
             O_17, &
             O_18
     use Isotope_symbol_m, only: IsotopeSymbol_t
+    use jsonff, only: &
+            JsonArray_t, &
+            JsonElement_t, &
+            JsonMember_t, &
+            JsonObject_t, &
+            JsonString_t, &
+            jsonArray, &
+            jsonElement, &
+            jsonMemberUnsafe, &
+            jsonNumber, &
+            jsonObject, &
+            jsonStringUnsafe
     use quaff, only: Amount_t, Mass_t, MolarMass_t, operator(/), sum
     use strff, only: join
     use Utilities_m, only: &
@@ -49,6 +68,7 @@ module Element_m
         generic, public :: atomFraction => &
                 atomFractionIsotope, atomFractionSymbol
         procedure, public :: atomicMass
+        procedure, public :: toJsonWithMultiplier
         procedure :: weightFractionIsotope
         procedure :: weightFractionSymbol
         generic, public :: weightFraction => &
@@ -91,6 +111,15 @@ module Element_m
         module procedure elementFromWeightFractionsUnsafe
     end interface fromWeightFractionsUnsafe
 
+    interface fromJson
+        module procedure elementFromJson
+    end interface fromJson
+
+    interface getNatural
+        module procedure getNaturalC
+        module procedure getNaturalS
+    end interface getNatural
+
     character(len=*), parameter :: MODULE_NAME = "Element_m"
 
     public :: &
@@ -103,6 +132,7 @@ module Element_m
             fromAtomFractionsUnsafe, &
             fromWeightFractions, &
             fromWeightFractionsUnsafe, &
+            fromJson, &
             naturalHydrogen, &
             naturalHelium, &
             naturalLithium, &
@@ -316,6 +346,229 @@ contains
                 element)
     end subroutine elementFromWeightFractionsUnsafe
 
+    pure subroutine elementFromJson(json, messages, errors, element)
+        type(JsonObject_t), intent(in) :: json
+        type(MessageList_t), intent(out) :: messages
+        type(ErrorList_t), intent(out) :: errors
+        type(Element_t), intent(out) :: element
+
+        character(len=*), parameter :: PROCEDURE_NAME = "elementFromJson"
+        type(ElementComponent_t), allocatable :: components(:)
+        type(JsonElement_t) :: element_element
+        type(ElementSymbol_t) :: element_symbol
+        type(ErrorList_t) :: errors_
+        type(JsonElement_t) :: fractions_element
+        integer :: i
+        type(JsonElement_t) :: isotope_element
+        type(MessageList_t) :: messages_
+        integer :: num_isotopes
+
+        call json%getElement("element", errors_, element_element)
+        if (errors_%hasAny()) then
+            call json%getElement("natural", errors_, element_element)
+            if (errors_%hasAny()) then
+                call errors%appendError(Fatal( &
+                        INVALID_ARGUMENT_TYPE, &
+                        Module_(MODULE_NAME), &
+                        Procedure_(PROCEDURE_NAME), &
+                        "element composition must either have element and" &
+                        // " atomFractions or weightFractions, or be natural"))
+            else
+                select type (element_string => element_element%element)
+                type is (JsonString_t)
+                    ! Look up natural composition here
+                    call getNatural(element_string%getValue(), errors_, element)
+                    call errors%appendErrors( &
+                            errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+                class default
+                    call errors%appendError(Fatal( &
+                            INVALID_ARGUMENT_TYPE, &
+                            Module_(MODULE_NAME), &
+                            Procedure_(PROCEDURE_NAME), &
+                            "natural must be a string"))
+                end select
+            end if
+        else
+            select type (element_string => element_element%element)
+            type is (JsonString_t)
+                element_symbol = ElementSymbol(element_string%getValue())
+                call json%getElement("atomFractions", errors_, fractions_element)
+                if (errors_%hasAny()) then
+                    call json%getElement("weightFractions", errors_, fractions_element)
+                    if (errors_%hasAny()) then
+                        call errors%appendError(Fatal( &
+                                INVALID_ARGUMENT_TYPE, &
+                                Module_(MODULE_NAME), &
+                                Procedure_(PROCEDURE_NAME), &
+                                "element composition must either have" &
+                                // " atomFractions or weightFractions"))
+                    else
+                        ! Create from weight fractions here
+                        select type (fractions_array => fractions_element%element)
+                        type is (JsonArray_t)
+                            num_isotopes = fractions_array%length()
+                            allocate(components(num_isotopes))
+                            do i = 1, num_isotopes
+                                call fractions_array%getElement(i, errors_, isotope_element)
+                                if (errors_%hasAny()) then
+                                    call errors%appendErrors( &
+                                            errors_, &
+                                            Module_(MODULE_NAME), &
+                                            Procedure_(PROCEDURE_NAME))
+                                    return
+                                else
+                                    select type (isotope => isotope_element%element)
+                                    type is (JsonObject_t)
+                                        call fromJson(isotope, errors_, components(i))
+                                        if (errors_%hasAny()) then
+                                            call errors%appendErrors( &
+                                                    errors_, &
+                                                    Module_(MODULE_NAME), &
+                                                    Procedure_(PROCEDURE_NAME))
+                                            return
+                                        end if
+                                    class default
+                                        call errors%appendError(Fatal( &
+                                                INVALID_ARGUMENT_TYPE, &
+                                                Module_(MODULE_NAME), &
+                                                Procedure_(PROCEDURE_NAME), &
+                                                "weightFractions array must all be objects"))
+                                        return
+                                    end select
+                                end if
+                            end do
+                            call fromWeightFractions( &
+                                    element_symbol, &
+                                    components, &
+                                    messages_, &
+                                    errors_, &
+                                    element)
+                            call messages%appendMessages( &
+                                    messages_, &
+                                    Module_(MODULE_NAME), &
+                                    Procedure_(PROCEDURE_NAME))
+                            call errors%appendErrors( &
+                                    errors_, &
+                                    Module_(MODULE_NAME), &
+                                    Procedure_(PROCEDURE_NAME))
+                        class default
+                            call errors%appendError(Fatal( &
+                                    INVALID_ARGUMENT_TYPE, &
+                                    Module_(MODULE_NAME), &
+                                    Procedure_(PROCEDURE_NAME), &
+                                    "atomFractions must be an array"))
+                        end select
+                    end if
+                else
+                    select type (fractions_array => fractions_element%element)
+                    type is (JsonArray_t)
+                        ! Create from atom fractions here
+                        num_isotopes = fractions_array%length()
+                        allocate(components(num_isotopes))
+                        do i = 1, num_isotopes
+                            call fractions_array%getElement(i, errors_, isotope_element)
+                            if (errors_%hasAny()) then
+                                call errors%appendErrors( &
+                                        errors_, &
+                                        Module_(MODULE_NAME), &
+                                        Procedure_(PROCEDURE_NAME))
+                                return
+                            else
+                                select type (isotope => isotope_element%element)
+                                type is (JsonObject_t)
+                                    call fromJson(isotope, errors_, components(i))
+                                    if (errors_%hasAny()) then
+                                        call errors%appendErrors( &
+                                                errors_, &
+                                                Module_(MODULE_NAME), &
+                                                Procedure_(PROCEDURE_NAME))
+                                        return
+                                    end if
+                                class default
+                                    call errors%appendError(Fatal( &
+                                            INVALID_ARGUMENT_TYPE, &
+                                            Module_(MODULE_NAME), &
+                                            Procedure_(PROCEDURE_NAME), &
+                                            "atomFractions array must all be objects"))
+                                    return
+                                end select
+                            end if
+                        end do
+                        call fromAtomFractions( &
+                                element_symbol, &
+                                components, &
+                                messages_, &
+                                errors_, &
+                                element)
+                        call messages%appendMessages( &
+                                messages_, &
+                                Module_(MODULE_NAME), &
+                                Procedure_(PROCEDURE_NAME))
+                        call errors%appendErrors( &
+                                errors_, &
+                                Module_(MODULE_NAME), &
+                                Procedure_(PROCEDURE_NAME))
+                    class default
+                        call errors%appendError(Fatal( &
+                                INVALID_ARGUMENT_TYPE, &
+                                Module_(MODULE_NAME), &
+                                Procedure_(PROCEDURE_NAME), &
+                                "atomFractions must be an array"))
+                    end select
+                end if
+            class default
+                call errors%appendError(Fatal( &
+                        INVALID_ARGUMENT_TYPE, &
+                        Module_(MODULE_NAME), &
+                        Procedure_(PROCEDURE_NAME), &
+                        "element identifier must be a string"))
+            end select
+        end if
+    end subroutine elementFromJson
+
+    pure subroutine getNaturalC(symbol, errors, element)
+        character(len=*), intent(in) :: symbol
+        type(ErrorList_t), intent(out) :: errors
+        type(Element_t), intent(out) :: element
+
+        select case (symbol)
+        case ("H")
+            element = naturalHydrogen()
+        case ("He")
+            element = naturalHelium()
+        case ("Li")
+            element = naturalLithium()
+        case ("Be")
+            element = naturalBeryllium()
+        case ("B")
+            element = naturalBoron()
+        case ("C")
+            element = naturalCarbon()
+        case ("N")
+            element = naturalNitrogen()
+        case ("O")
+            element = naturalOxygen()
+        case default
+            call errors%appendError(Fatal( &
+                    INVALID_ARGUMENT_TYPE, &
+                    Module_(MODULE_NAME), &
+                    Procedure_("getNaturalC"), &
+                    "No natural composition available for " // symbol))
+        end select
+    end subroutine getNaturalC
+
+    pure subroutine getNaturalS(symbol, errors, element)
+        type(VARYING_STRING), intent(in) :: symbol
+        type(ErrorList_t), intent(out) :: errors
+        type(Element_t), intent(out) :: element
+
+        type(ErrorList_t) :: errors_
+
+        call getNatural(char(symbol), errors_, element)
+        call errors%appendErrors( &
+                errors_, Module_(MODULE_NAME), Procedure_("getNaturalS"))
+    end subroutine getNaturalS
+
     ! Atomic fractions are taken from the 17th Edition of the Chart of Nuclides
     pure function naturalHydrogen()
         type(Element_t) :: naturalHydrogen
@@ -418,6 +671,27 @@ contains
 
         atomicMass = sum(self%components%fraction * self%components%isotope%atomic_mass)
     end function atomicMass
+
+    pure function toJsonWithMultiplier(self, multiplier) result(json)
+        class(Element_t), intent(in) :: self
+        double precision, intent(in) :: multiplier
+        type(JsonObject_t) :: json
+
+        integer :: i
+        type(JsonElement_t) :: isotopes(size(self%components))
+        type(JsonMember_t) :: members(3)
+
+        do i = 1, size(self%components)
+            isotopes(i) = jsonElement( &
+                    self%components(i)%isotope%toJsonWithFraction( &
+                            self%components(i)%fraction))
+        end do
+        members(1) = jsonMemberUnsafe("multiplier", jsonNumber(multiplier))
+        members(2) = jsonMemberUnsafe( &
+                "element", jsonStringUnsafe(self%symbol%toString()))
+        members(3) = jsonMemberUnsafe("atomFractions", jsonArray(isotopes))
+        json = jsonObject(members)
+    end function toJsonWithMultiplier
 
     elemental function weightFractionIsotope(self, isotope) result(weight_fraction)
         class(Element_t), intent(in) :: self

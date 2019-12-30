@@ -1,5 +1,5 @@
 module Element_symbol_m
-    use iso_varying_string, only: VARYING_STRING, assignment(=)
+    use iso_varying_string, only: VARYING_STRING, assignment(=), char
 
     implicit none
     private
@@ -14,6 +14,11 @@ module Element_symbol_m
         procedure, public :: toString
     end type ElementSymbol_t
 
+    interface ElementSymbol
+        module procedure ElementSymbolC
+        module procedure ElementSymbolS
+    end interface ElementSymbol
+
     type(ElementSymbol_t), parameter, public :: H = ElementSymbol_t("H ")
     type(ElementSymbol_t), parameter, public :: He = ElementSymbol_t("He")
     type(ElementSymbol_t), parameter, public :: Li = ElementSymbol_t("Li")
@@ -22,7 +27,23 @@ module Element_symbol_m
     type(ElementSymbol_t), parameter, public :: C = ElementSymbol_t("C ")
     type(ElementSymbol_t), parameter, public :: N = ElementSymbol_t("N ")
     type(ElementSymbol_t), parameter, public :: O = ElementSymbol_t("O ")
+
+    public :: ElementSymbol
 contains
+    pure function ElementSymbolC(symbol)
+        character(len=*), intent(in) :: symbol
+        type(ElementSymbol_t) :: ElementSymbolC
+
+        ElementSymbolC%symbol = symbol
+    end function ElementSymbolC
+
+    pure function ElementSymbolS(symbol)
+        type(VARYING_STRING), intent(in) :: symbol
+        type(ElementSymbol_t) :: ElementSymbolS
+
+        ElementSymbolS = ElementSymbol(char(symbol))
+    end function ElementSymbolS
+
     elemental function elementSymbolEquals(lhs, rhs)
         class(ElementSymbol_t), intent(in) :: lhs
         type(ElementSymbol_t), intent(in) :: rhs
