@@ -1,7 +1,13 @@
 module Chemical_m
-    use Chemical_component_m, only: ChemicalComponent_t, ChemicalComponent
+    use Chemical_component_m, only: &
+            ChemicalComponent_t, ChemicalComponent, fromJson
     use Chemical_symbol_m, only: &
-            ChemicalSymbol_t, hydrogenGasSymbol, heliumGasSymbol, waterSymbol
+            ChemicalSymbol_t, &
+            fromJson, &
+            fromString, &
+            hydrogenGasSymbol, &
+            heliumGasSymbol, &
+            waterSymbol
     use Element_m, only: &
             Element_t, &
             combineByAtomFactorsUnsafe, &
@@ -10,10 +16,22 @@ module Chemical_m
             naturalHelium, &
             naturalOxygen
     use Element_symbol_m, only: ElementSymbol_t
-    use erloff, only: ErrorList_t, Internal, Module_, Procedure_
-    use iso_varying_string, only: operator(//)
+    use erloff, only: &
+            ErrorList_t, MessageList_t, Fatal, Internal, Module_, Procedure_
+    use iso_varying_string, only: VARYING_STRING, operator(//), char
     use Isotope_m, only: Isotope_t
     use Isotope_symbol_m, only: IsotopeSymbol_t
+    use jsonff, only: &
+            JsonArray_t, &
+            JsonElement_t, &
+            JsonMember_t, &
+            JsonObject_t, &
+            JsonString_t, &
+            JsonArray, &
+            JsonElement, &
+            JsonMemberUnsafe, &
+            JsonNumber, &
+            JsonObject
     use quaff, only: Amount_t, Mass_t, MolarMass_t, operator(/), sum
     use strff, only: join
     use Utilities_m, only: INVALID_ARGUMENT_TYPE, MISMATCH_TYPE
@@ -41,6 +59,7 @@ module Chemical_m
                 atomFractionIsotope, &
                 atomFractionIsotopeSymbol
         procedure, public :: molarMass
+        procedure, public :: toJsonWithFraction
         procedure :: weightFractionElement
         procedure :: weightFractionIsotope
         procedure :: weightFractionIsotopeSymbol
@@ -66,9 +85,18 @@ module Chemical_m
         module procedure combineChemicalsByWeightFactorsUnsafe
     end interface combineByWeightFactorsUnsafe
 
+    interface getNatural
+        module procedure getNaturalC
+        module procedure getNaturalS
+    end interface getNatural
+
     interface find
         module procedure findChemical
     end interface find
+
+    interface fromJson
+        module procedure chemicalFromJson
+    end interface fromJson
 
     character(len=*), parameter :: MODULE_NAME = "Chemical_m"
 
@@ -78,6 +106,7 @@ module Chemical_m
             combineByWeightFactors, &
             combineByWeightFactorsUnsafe, &
             find, &
+            fromJson, &
             makeChemical, &
             makeChemicalUnsafe, &
             naturalHydrogenGas, &
@@ -225,6 +254,160 @@ contains
         call combineDuplicates(components, chemical%components)
     end subroutine makeChemicalUnsafe
 
+    pure subroutine chemicalFromJson(json, messages, errors, chemical)
+        type(JsonObject_t), intent(in) :: json
+        type(MessageList_t), intent(out) :: messages
+        type(ErrorList_t), intent(out) :: errors
+        type(Chemical_t), intent(out) :: chemical
+
+        character(len=*), parameter :: PROCEDURE_NAME = "chemicalFromJson"
+        type(JsonElement_t) :: component_element
+        type(ChemicalComponent_t), allocatable :: components(:)
+        type(JsonElement_t) :: elements_element
+        type(ErrorList_t) :: errors_
+        integer :: i
+        type(MessageList_t) :: messages_
+        integer :: num_components
+        type(ChemicalSymbol_t) :: symbol
+        type(JsonElement_t) :: symbol_element
+
+        call json%getElement("chemical", errors_, symbol_element)
+        if (errors_%hasAny()) then
+            call json%getElement("natural", errors_, symbol_element)
+            if (errors_%hasAny()) then
+                call errors%appendError(Fatal( &
+                        INVALID_ARGUMENT_TYPE, &
+                        Module_(MODULE_NAME), &
+                        Procedure_(PROCEDURE_NAME), &
+                        "chemical must have chemical and elements or natural"))
+            else
+                select type (symbol => symbol_element%element)
+                type is (JsonString_t)
+                    call getNatural(symbol%getValue(), errors_, chemical)
+                    call errors%appendErrors( &
+                            errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+                class default
+                    call errors%appendError(Fatal( &
+                            INVALID_ARGUMENT_TYPE, &
+                            Module_(MODULE_NAME), &
+                            Procedure_(PROCEDURE_NAME), &
+                            "natural must be a string"))
+                end select
+            end if
+        else
+            select type (symbol_array => symbol_element%element)
+            type is (JsonArray_t)
+                call fromJson(symbol_array, errors_, symbol)
+                if (errors_%hasAny()) then
+                    call errors%appendErrors( &
+                            errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+                    return
+                end if
+            type is (JsonString_t)
+                call fromString(symbol_array%getValue(), errors_, symbol)
+                if (errors_%hasAny()) then
+                    call errors%appendErrors( &
+                            errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+                    return
+                end if
+            class default
+                call errors%appendError(Fatal( &
+                        INVALID_ARGUMENT_TYPE, &
+                        Module_(MODULE_NAME), &
+                        Procedure_(PROCEDURE_NAME), &
+                        "chemical must be an array or a string"))
+                return
+            end select
+            call json%getElement("elements", errors_, elements_element)
+            if (errors_%hasAny()) then
+                call errors%appendError(Fatal( &
+                        INVALID_ARGUMENT_TYPE, &
+                        Module_(MODULE_NAME), &
+                        Procedure_(PROCEDURE_NAME), &
+                        "chemical must contain list of element compositions"))
+            else
+                select type (elements_array => elements_element%element)
+                type is (JsonArray_t)
+                    num_components = elements_array%length()
+                    allocate(components(num_components))
+                    do i = 1, num_components
+                        call elements_array%getElement(i, errors_, component_element)
+                        if (errors_%hasAny()) then
+                            call errors%appendErrors( &
+                                    errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+                            return
+                        else
+                            select type (element => component_element%element)
+                            type is (JsonObject_t)
+                                call fromJson(element, messages_, errors_, components(i))
+                                call messages%appendMessages( &
+                                        messages_, &
+                                        Module_(MODULE_NAME), &
+                                        Procedure_(PROCEDURE_NAME))
+                                if (errors_%hasAny()) then
+                                    call errors%appendErrors( &
+                                            errors_, &
+                                            Module_(MODULE_NAME), &
+                                            Procedure_(PROCEDURE_NAME))
+                                    return
+                                end if
+                            class default
+                                call errors%appendError(Fatal( &
+                                        INVALID_ARGUMENT_TYPE, &
+                                        Module_(MODULE_NAME), &
+                                        Procedure_(PROCEDURE_NAME), &
+                                        "elements array must all be objects"))
+                                return
+                            end select
+                        end if
+                    end do
+                    call makeChemical(symbol, components, errors_, chemical)
+                    call errors%appendErrors( &
+                            errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+                class default
+                    call errors%appendError(Fatal( &
+                            INVALID_ARGUMENT_TYPE, &
+                            Module_(MODULE_NAME), &
+                            Procedure_(PROCEDURE_NAME), &
+                            "elements must be an array"))
+                end select
+            end if
+        end if
+    end subroutine chemicalFromJson
+
+    pure subroutine getNaturalC(symbol, errors, chemical)
+        character(len=*), intent(in) :: symbol
+        type(ErrorList_t), intent(out) :: errors
+        type(Chemical_t), intent(out) :: chemical
+
+        select case (symbol)
+        case ("H2")
+            chemical = naturalHydrogenGas()
+        case ("He", "He1")
+            chemical = naturalHeliumGas()
+        case ("H2O", "H2O1", "water")
+            chemical = naturalWater()
+        case default
+            call errors%appendError(Fatal( &
+                    INVALID_ARGUMENT_TYPE, &
+                    Module_(MODULE_NAME), &
+                    Procedure_("getNaturalC"), &
+                    "No natural composition available for " // symbol))
+        end select
+    end subroutine getNaturalC
+
+    pure subroutine getNaturalS(symbol, errors, chemical)
+        type(VARYING_STRING), intent(in) :: symbol
+        type(ErrorList_t), intent(out) :: errors
+        type(Chemical_t), intent(out) :: chemical
+
+        type(ErrorList_t) :: errors_
+
+        call getNatural(char(symbol), errors_, chemical)
+        call errors%appendErrors( &
+                errors_, Module_(MODULE_NAME), Procedure_("getNaturalS"))
+    end subroutine getNaturalS
+
     pure function naturalHydrogenGas()
         type(Chemical_t) :: naturalHydrogenGas
 
@@ -318,6 +501,26 @@ contains
 
         molarMass = sum(self%components%multiplier * self%components%element%atomicMass())
     end function molarMass
+
+    pure function toJsonWithFraction(self, fraction) result(json)
+        class(Chemical_t), intent(in) :: self
+        double precision, intent(in) :: fraction
+        type(JsonObject_t) :: json
+
+        integer :: i
+        type(JsonElement_t) :: elements(size(self%components))
+        type(JsonMember_t) :: members(3)
+
+        do i = 1, size(self%components)
+            elements(i) = JsonElement( &
+                    self%components(i)%element%toJsonWithMultiplier( &
+                            self%components(i)%multiplier))
+        end do
+        members(1) = JsonMemberUnsafe("fraction", JsonNumber(fraction))
+        members(2) = JsonMemberUnsafe("chemical", self%symbol%toJson())
+        members(3) = JsonMemberUnsafe("elements", JsonArray(elements))
+        json = JsonObject(members)
+    end function toJsonWithFraction
 
     elemental function weightFractionElement(self, element) result(weight_fraction)
         class(Chemical_t), intent(in) :: self

@@ -3,7 +3,7 @@ module Chemical_symbol_m
             ChemicalSymbolComponent_t, ChemicalSymbolComponent, fromJson
     use Element_symbol_m, only: ElementSymbol_t, H, He, O
     use erloff, only: ErrorList_t, Fatal, Module_, Procedure_
-    use iso_varying_string, only: VARYING_STRING
+    use iso_varying_string, only: VARYING_STRING, char
     use jsonff, only: &
             JsonArray_t, &
             JsonElement_t, &
@@ -44,11 +44,17 @@ module Chemical_symbol_m
         module procedure chemicalSymbolFromJson
     end interface fromJson
 
+    interface fromString
+        module procedure fromStringC
+        module procedure fromStringS
+    end interface fromString
+
     character(len=*), parameter :: MODULE_NAME = "Chemical_symbol_m"
 
     public :: &
             ChemicalSymbol, &
             fromJson, &
+            fromString, &
             hydrogenGasSymbol, &
             heliumGasSymbol, &
             waterSymbol
@@ -100,6 +106,39 @@ contains
         end do
         symbol = ChemicalSymbol(components)
     end subroutine chemicalSymbolFromJson
+
+    pure subroutine fromStringC(string, errors, symbol)
+        character(len=*), intent(in) :: string
+        type(ErrorList_t), intent(out) :: errors
+        type(ChemicalSymbol_t), intent(out) :: symbol
+
+        select case (string)
+        case ("H2")
+            symbol = hydrogenGasSymbol()
+        case ("He", "He1")
+            symbol = heliumGasSymbol()
+        case ("H2O", "H2O1", "water")
+            symbol = waterSymbol()
+        case default
+            call errors%appendError(Fatal( &
+                    INVALID_ARGUMENT_TYPE, &
+                    Module_(MODULE_NAME), &
+                    Procedure_("fromStringC"), &
+                    "No chemical symbol available for " // string))
+        end select
+    end subroutine fromStringC
+
+    pure subroutine fromStringS(string, errors, symbol)
+        type(VARYING_STRING), intent(in) :: string
+        type(ErrorList_t), intent(out) :: errors
+        type(ChemicalSymbol_t), intent(out) :: symbol
+
+        type(ErrorList_t) :: errors_
+
+        call fromString(char(string), errors_, symbol)
+        call errors%appendErrors( &
+                errors_, Module_(MODULE_NAME), Procedure_("fromStringS"))
+    end subroutine fromStringS
 
     pure function hydrogenGasSymbol()
         type(ChemicalSymbol_t) :: hydrogenGasSymbol
