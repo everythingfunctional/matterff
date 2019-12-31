@@ -456,7 +456,7 @@ contains
                                     INVALID_ARGUMENT_TYPE, &
                                     Module_(MODULE_NAME), &
                                     Procedure_(PROCEDURE_NAME), &
-                                    "atomFractions must be an array"))
+                                    "weightFractions must be an array"))
                         end select
                     end if
                 else

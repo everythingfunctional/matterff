@@ -1,9 +1,17 @@
 module Chemical_symbol_m
     use Chemical_symbol_component_m, only: &
-            ChemicalSymbolComponent_t, ChemicalSymbolComponent
+            ChemicalSymbolComponent_t, ChemicalSymbolComponent, fromJson
     use Element_symbol_m, only: ElementSymbol_t, H, He, O
+    use erloff, only: ErrorList_t, Fatal, Module_, Procedure_
     use iso_varying_string, only: VARYING_STRING
+    use jsonff, only: &
+            JsonArray_t, &
+            JsonElement_t, &
+            JsonObject_t, &
+            JsonArray, &
+            JsonElement
     use strff, only: join
+    use Utilities_m, only: INVALID_ARGUMENT_TYPE
 
     implicit none
     private
@@ -16,6 +24,7 @@ module Chemical_symbol_m
         procedure :: chemicalSymbolEquals
         generic, public :: operator(==) => chemicalSymbolEquals
         procedure, public :: includes
+        procedure, public :: toJson
         procedure, public :: toString
     end type ChemicalSymbol_t
 
@@ -31,7 +40,18 @@ module Chemical_symbol_m
         module procedure allComponentsInList
     end interface operator(.allIn.)
 
-    public :: ChemicalSymbol, hydrogenGasSymbol, heliumGasSymbol, waterSymbol
+    interface fromJson
+        module procedure chemicalSymbolFromJson
+    end interface fromJson
+
+    character(len=*), parameter :: MODULE_NAME = "Chemical_symbol_m"
+
+    public :: &
+            ChemicalSymbol, &
+            fromJson, &
+            hydrogenGasSymbol, &
+            heliumGasSymbol, &
+            waterSymbol
 contains
     pure function ChemicalSymbol(components)
         type(ChemicalSymbolComponent_t), intent(in) :: components(:)
@@ -39,6 +59,47 @@ contains
 
         allocate(ChemicalSymbol%components, source = components)
     end function ChemicalSymbol
+
+    pure subroutine chemicalSymbolFromJson(json, errors, symbol)
+        type(JsonArray_t), intent(in) :: json
+        type(ErrorList_t), intent(out) :: errors
+        type(ChemicalSymbol_t), intent(out) :: symbol
+
+        character(len=*), parameter :: PROCEDURE_NAME = "chemicalSymbolFromJson"
+        type(JsonElement_t) :: component_element
+        type(ChemicalSymbolComponent_t), allocatable :: components(:)
+        type(ErrorList_t) :: errors_
+        integer :: i
+        integer :: num_components
+
+        num_components = json%length()
+        allocate(components(num_components))
+        do i = 1, num_components
+            call json%getElement(i, errors_, component_element)
+            if (errors_%hasAny()) then
+                call errors%appendErrors( &
+                        errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+            else
+                select type (component_object => component_element%element)
+                type is (JsonObject_t)
+                    call fromJson(component_object, errors_, components(i))
+                    if (errors_%hasAny()) then
+                        call errors%appendErrors( &
+                                errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+                        return
+                    end if
+                class default
+                    call errors%appendError(Fatal( &
+                            INVALID_ARGUMENT_TYPE, &
+                            Module_(MODULE_NAME), &
+                            Procedure_(PROCEDURE_NAME), &
+                            "chemical symbol array must all be objects"))
+                    return
+                end select
+            end if
+        end do
+        symbol = ChemicalSymbol(components)
+    end subroutine chemicalSymbolFromJson
 
     pure function hydrogenGasSymbol()
         type(ChemicalSymbol_t) :: hydrogenGasSymbol
@@ -80,6 +141,19 @@ contains
 
         includes = any(self%components%element == element)
     end function includes
+
+    pure function toJson(self) result(json)
+        class(ChemicalSymbol_t), intent(in) :: self
+        type(JsonArray_t) :: json
+
+        integer :: i
+        type(JsonElement_t) :: json_elements(size(self%components))
+
+        do i = 1, size(self%components)
+            json_elements(i) = JsonElement(self%components(i)%toJson())
+        end do
+        json = JsonArray(json_elements)
+    end function toJson
 
     elemental function toString(self) result(string)
         class(ChemicalSymbol_t), intent(in) :: self
