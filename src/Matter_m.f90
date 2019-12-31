@@ -1,16 +1,19 @@
 module Matter_m
     use Chemical_symbol_m, only: ChemicalSymbol_t
     use Element_symbol_m, only: ElementSymbol_t
-    use erloff, only: ErrorList_t, Internal, Module_, Procedure_
+    use erloff, only: &
+            ErrorList_t, MessageList_t, Fatal, Internal, Module_, Procedure_
     use Isotope_m, only: Isotope_t
     use jsonff, only: &
+            JsonElement_t, &
             JsonMember_t, &
             JsonObject_t, &
+            JsonString_t, &
             JsonMemberUnsafe, &
             JsonObject, &
             JsonStringUnsafe
-    use Material_m, only: Material_t, combineByAtomFactorsUnsafe
-    use quaff, only: Amount_t, Mass_t, operator(*), operator(/)
+    use Material_m, only: Material_t, combineByAtomFactorsUnsafe, fromJson
+    use quaff, only: Amount_t, Mass_t, operator(*), operator(/), fromString
     use Utilities_m, only: INVALID_ARGUMENT_TYPE
 
     implicit none
@@ -51,9 +54,13 @@ module Matter_m
         module procedure createMatterWithMassUnsafe
     end interface createMatterUnsafe
 
+    interface fromJson
+        module procedure matterFromJson
+    end interface fromJson
+
     character(len=*), parameter :: MODULE_NAME = "Matter_m"
 
-    public :: operator(+), createMatter, createMatterUnsafe
+    public :: operator(+), createMatter, createMatterUnsafe, fromJson
 contains
     pure subroutine createMatterWithAmount(amount, material, errors, matter)
         type(Amount_t), intent(in) :: amount
@@ -103,6 +110,126 @@ contains
 
         call createMatterUnsafe(mass / material%molarMass(), material, matter)
     end subroutine createMatterWithMassUnsafe
+
+    pure subroutine matterFromJson(json, messages, errors, matter)
+        type(JsonObject_t), intent(in) :: json
+        type(MessageList_t), intent(out) :: messages
+        type(ErrorList_t), intent(out) :: errors
+        type(Matter_t), intent(out) :: matter
+
+        character(len=*), parameter :: PROCEDURE_NAME = "matterFromJson"
+        type(Amount_t) :: amount
+        type(JsonElement_t) :: amount_element
+        type(ErrorList_t) :: errors_
+        type(Mass_t) :: mass
+        type(Material_t) :: material
+        type(JsonElement_t) :: material_element
+        type(MessageList_t) :: messages_
+
+        call json%getElement("amount", errors_, amount_element)
+        if (errors_%hasAny()) then
+            call json%getElement("mass", errors_, amount_element)
+            if (errors_%hasAny()) then
+                call errors%appendError(Fatal( &
+                        INVALID_ARGUMENT_TYPE, &
+                        Module_(MODULE_NAME), &
+                        Procedure_(PROCEDURE_NAME), &
+                        "matter must have amount or mass"))
+            else
+                select type (mass_string => amount_element%element)
+                type is (JsonString_t)
+                    call fromString(mass_string%getValue(), errors_, mass)
+                    if (errors%hasAny()) then
+                        call errors%appendErrors( &
+                                errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+                    else
+                        call json%getElement("material", errors_, material_element)
+                        if (errors%hasAny()) then
+                            call errors%appendErrors( &
+                                    errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+                        else
+                            select type (material_object => material_element%element)
+                            type is (JsonObject_t)
+                                call fromJson(material_object, messages_, errors_, material)
+                                call messages%appendMessages( &
+                                        messages_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+                                if (errors_%hasAny()) then
+                                    call errors%appendErrors( &
+                                            errors_, &
+                                            Module_(MODULE_NAME), &
+                                            Procedure_(PROCEDURE_NAME))
+                                else
+                                    call createMatter(mass, material, errors_, matter)
+                                    call errors%appendErrors( &
+                                            errors_, &
+                                            Module_(MODULE_NAME), &
+                                            Procedure_(PROCEDURE_NAME))
+                                end if
+                            class default
+                                call errors%appendError(Fatal( &
+                                        INVALID_ARGUMENT_TYPE, &
+                                        Module_(MODULE_NAME), &
+                                        Procedure_(PROCEDURE_NAME), &
+                                        "material must be an object"))
+                            end select
+                        end if
+                    end if
+                class default
+                    call errors%appendError(Fatal( &
+                            INVALID_ARGUMENT_TYPE, &
+                            Module_(MODULE_NAME), &
+                            Procedure_(PROCEDURE_NAME), &
+                            "mass must be a string"))
+                end select
+            end if
+        else
+            select type (amount_string => amount_element%element)
+            type is (JsonString_t)
+                call fromString(amount_string%getValue(), errors_, amount)
+                if (errors_%hasAny()) then
+                    call errors%appendErrors( &
+                            errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+                else
+                    call json%getElement("material", errors_, material_element)
+                    if (errors%hasAny()) then
+                        call errors%appendErrors( &
+                                errors_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+                    else
+                        select type (material_object => material_element%element)
+                        type is (JsonObject_t)
+                            call fromJson(material_object, messages_, errors_, material)
+                            call messages%appendMessages( &
+                                    messages_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+                            if (errors_%hasAny()) then
+                                call errors%appendErrors( &
+                                        errors_, &
+                                        Module_(MODULE_NAME), &
+                                        Procedure_(PROCEDURE_NAME))
+                            else
+                                call createMatter(amount, material, errors_, matter)
+                                call errors%appendErrors( &
+                                        errors_, &
+                                        Module_(MODULE_NAME), &
+                                        Procedure_(PROCEDURE_NAME))
+                            end if
+                        class default
+                            call errors%appendError(Fatal( &
+                                    INVALID_ARGUMENT_TYPE, &
+                                    Module_(MODULE_NAME), &
+                                    Procedure_(PROCEDURE_NAME), &
+                                    "material must be an object"))
+                        end select
+                    end if
+                end if
+            class default
+                call errors%appendError(Fatal( &
+                        INVALID_ARGUMENT_TYPE, &
+                        Module_(MODULE_NAME), &
+                        Procedure_(PROCEDURE_NAME), &
+                        "amount must be a string"))
+            end select
+        end if
+    end subroutine matterFromJson
 
     pure function combineMatter(matter1, matter2) result(combined)
         type(Matter_t), intent(in) :: matter1
