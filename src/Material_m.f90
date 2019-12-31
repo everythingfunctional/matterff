@@ -8,11 +8,27 @@ module Material_m
     use Chemical_symbol_m, only: ChemicalSymbol_t
     use Element_symbol_m, only: ElementSymbol_t
     use erloff, only: &
-            ErrorList_t, MessageList_t, Info, Internal, Module_, Procedure_
+            ErrorList_t, &
+            MessageList_t, &
+            Fatal, &
+            Info, &
+            Internal, &
+            Module_, &
+            Procedure_
     use iso_varying_string, only: operator(//)
     use Isotope_m, only: Isotope_t
     use Isotope_symbol_m, only: IsotopeSymbol_t
-    use Material_component_m, only: MaterialComponent_t, MaterialComponent
+    use jsonff, only: &
+            JsonArray_t, &
+            JsonElement_t, &
+            JsonMember_t, &
+            JsonObject_t, &
+            JsonArray, &
+            JsonElement, &
+            JsonMemberUnsafe, &
+            JsonObject
+    use Material_component_m, only: &
+            MaterialComponent_t, MaterialComponent, fromJson
     use quaff, only: Amount_t, Mass_t, MolarMass_t, operator(/), sum
     use strff, only: join
     use Utilities_m, only: &
@@ -45,6 +61,7 @@ module Material_m
                 atomFractionIsotope, &
                 atomFractionIsotopeSymbol
         procedure, public :: molarMass
+        procedure, public :: toJson
         procedure :: weightFractionChemical
         procedure :: weightFractionElement
         procedure :: weightFractionIsotope
@@ -88,6 +105,10 @@ module Material_m
         module procedure materialFromWeightFractionsUnsafe
     end interface fromWeightFractionsUnsafe
 
+    interface fromJson
+        module procedure materialFromJson
+    end interface fromJson
+
     character(len=*), parameter :: MODULE_NAME = "Material_m"
 
     public :: &
@@ -99,6 +120,7 @@ module Material_m
             fromAtomFractionsUnsafe, &
             fromWeightFractions, &
             fromWeightFractionsUnsafe, &
+            fromJson, &
             pureNaturalHydrogenGas, &
             pureNaturalHeliumGas
 contains
@@ -285,6 +307,149 @@ contains
                 material)
     end subroutine materialFromWeightFractionsUnsafe
 
+    pure subroutine materialFromJson(json, messages, errors, material)
+        type(JsonObject_t), intent(in) :: json
+        type(MessageList_t), intent(out) :: messages
+        type(ErrorList_t), intent(out) :: errors
+        type(Material_t), intent(out) :: material
+
+        character(len=*), parameter :: PROCEDURE_NAME = "materialFromJson"
+        type(JsonElement_t) :: chemical_element
+        type(MaterialComponent_t), allocatable :: components(:)
+        type(ErrorList_t) :: errors_
+        type(JsonElement_t) :: fractions_element
+        integer :: i
+        type(MessageList_t) :: messages_
+        integer :: num_chemicals
+
+        call json%getElement("atomFractions", errors_, fractions_element)
+        if (errors_%hasAny()) then
+            call json%getElement("weightFractions", errors_, fractions_element)
+            if (errors_%hasAny()) then
+                call errors%appendError(Fatal( &
+                        INVALID_ARGUMENT_TYPE, &
+                        Module_(MODULE_NAME), &
+                        Procedure_(PROCEDURE_NAME), &
+                        "material must either have" &
+                        // " atomFractions or weightFractions"))
+            else
+                ! Create from weight fractions here
+                select type (fractions_array => fractions_element%element)
+                type is (JsonArray_t)
+                    num_chemicals = fractions_array%length()
+                    allocate(components(num_chemicals))
+                    do i = 1, num_chemicals
+                        call fractions_array%getElement(i, errors_, chemical_element)
+                        if (errors_%hasAny()) then
+                            call errors%appendErrors( &
+                                    errors_, &
+                                    Module_(MODULE_NAME), &
+                                    Procedure_(PROCEDURE_NAME))
+                            return
+                        else
+                            select type (chemical => chemical_element%element)
+                            type is (JsonObject_t)
+                                call fromJson(chemical, messages_, errors_, components(i))
+                                call messages%appendMessages( &
+                                        messages_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+                                if (errors_%hasAny()) then
+                                    call errors%appendErrors( &
+                                            errors_, &
+                                            Module_(MODULE_NAME), &
+                                            Procedure_(PROCEDURE_NAME))
+                                    return
+                                end if
+                            class default
+                                call errors%appendError(Fatal( &
+                                        INVALID_ARGUMENT_TYPE, &
+                                        Module_(MODULE_NAME), &
+                                        Procedure_(PROCEDURE_NAME), &
+                                        "weightFractions array must all be objects"))
+                                return
+                            end select
+                        end if
+                    end do
+                    call fromWeightFractions( &
+                            components, &
+                            messages_, &
+                            errors_, &
+                            material)
+                    call messages%appendMessages( &
+                            messages_, &
+                            Module_(MODULE_NAME), &
+                            Procedure_(PROCEDURE_NAME))
+                    call errors%appendErrors( &
+                            errors_, &
+                            Module_(MODULE_NAME), &
+                            Procedure_(PROCEDURE_NAME))
+                class default
+                    call errors%appendError(Fatal( &
+                            INVALID_ARGUMENT_TYPE, &
+                            Module_(MODULE_NAME), &
+                            Procedure_(PROCEDURE_NAME), &
+                            "weightFractions must be an array"))
+                end select
+            end if
+        else
+            select type (fractions_array => fractions_element%element)
+            type is (JsonArray_t)
+                ! Create from atom fractions here
+                num_chemicals = fractions_array%length()
+                allocate(components(num_chemicals))
+                do i = 1, num_chemicals
+                    call fractions_array%getElement(i, errors_, chemical_element)
+                    if (errors_%hasAny()) then
+                        call errors%appendErrors( &
+                                errors_, &
+                                Module_(MODULE_NAME), &
+                                Procedure_(PROCEDURE_NAME))
+                        return
+                    else
+                        select type (chemical => chemical_element%element)
+                        type is (JsonObject_t)
+                            call fromJson(chemical, messages_, errors_, components(i))
+                            call messages%appendMessages( &
+                                    messages_, Module_(MODULE_NAME), Procedure_(PROCEDURE_NAME))
+                            if (errors_%hasAny()) then
+                                call errors%appendErrors( &
+                                        errors_, &
+                                        Module_(MODULE_NAME), &
+                                        Procedure_(PROCEDURE_NAME))
+                                return
+                            end if
+                        class default
+                            call errors%appendError(Fatal( &
+                                    INVALID_ARGUMENT_TYPE, &
+                                    Module_(MODULE_NAME), &
+                                    Procedure_(PROCEDURE_NAME), &
+                                    "atomFractions array must all be objects"))
+                            return
+                        end select
+                    end if
+                end do
+                call fromAtomFractions( &
+                        components, &
+                        messages_, &
+                        errors_, &
+                        material)
+                call messages%appendMessages( &
+                        messages_, &
+                        Module_(MODULE_NAME), &
+                        Procedure_(PROCEDURE_NAME))
+                call errors%appendErrors( &
+                        errors_, &
+                        Module_(MODULE_NAME), &
+                        Procedure_(PROCEDURE_NAME))
+            class default
+                call errors%appendError(Fatal( &
+                        INVALID_ARGUMENT_TYPE, &
+                        Module_(MODULE_NAME), &
+                        Procedure_(PROCEDURE_NAME), &
+                        "atomFractions must be an array"))
+            end select
+        end if
+    end subroutine materialFromJson
+
     pure function pureNaturalHydrogenGas()
         type(Material_t) :: pureNaturalHydrogenGas
 
@@ -366,6 +531,23 @@ contains
 
         molarMass = sum(self%components%fraction * self%components%chemical%molarMass())
     end function molarMass
+
+    pure function toJson(self) result(json)
+        class(Material_t), intent(in) :: self
+        type(JsonObject_t) :: json
+
+        integer :: i
+        type(JsonElement_t) :: chemicals(size(self%components))
+        type(JsonMember_t) :: member
+
+        do i = 1, size(self%components)
+            chemicals(i) = jsonElement( &
+                    self%components(i)%chemical%toJsonWithFraction( &
+                            self%components(i)%fraction))
+        end do
+        member = JsonMemberUnsafe("atomFractions", JsonArray(chemicals))
+        json = JsonObject([member])
+    end function toJson
 
     elemental function weightFractionChemical(self, chemical) result(weight_fraction)
         class(Material_t), intent(in) :: self
