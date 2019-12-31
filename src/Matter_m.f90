@@ -3,6 +3,12 @@ module Matter_m
     use Element_symbol_m, only: ElementSymbol_t
     use erloff, only: ErrorList_t, Internal, Module_, Procedure_
     use Isotope_m, only: Isotope_t
+    use jsonff, only: &
+            JsonMember_t, &
+            JsonObject_t, &
+            JsonMemberUnsafe, &
+            JsonObject, &
+            JsonStringUnsafe
     use Material_m, only: Material_t, combineByAtomFactorsUnsafe
     use quaff, only: Amount_t, Mass_t, operator(*), operator(/)
     use Utilities_m, only: INVALID_ARGUMENT_TYPE
@@ -28,6 +34,7 @@ module Matter_m
         procedure :: massIsotope
         generic, public :: mass => &
                 totalMass, massChemical, massElement, massIsotope
+        procedure, public :: toJson
     end type Matter_t
 
     interface operator(+)
@@ -172,4 +179,15 @@ contains
 
         mass = self%mass() * self%material%weightFraction(isotope)
     end function massIsotope
+
+    pure function toJson(self) result(json)
+        class(Matter_t), intent(in) :: self
+        type(JsonObject_t) :: json
+
+        type(JsonMember_t) :: members(2)
+
+        members(1) = JsonMemberUnsafe("amount", JsonStringUnsafe(self%amount_%toString()))
+        members(2) = JsonMemberUnsafe("material", self%material%toJson())
+        json = JsonObject(members)
+    end function toJson
 end module Matter_m
