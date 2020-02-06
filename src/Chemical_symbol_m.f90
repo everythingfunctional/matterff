@@ -59,8 +59,8 @@ module Chemical_symbol_m
             heliumGasSymbol, &
             hydrogenGasSymbol, &
             nitrogenGasSymbol, &
-            xenonGasSymbol, &
-            waterSymbol
+            waterSymbol, &
+            xenonGasSymbol
 contains
     pure function ChemicalSymbol(components)
         type(ChemicalSymbolComponent_t), intent(in) :: components(:)
@@ -116,12 +116,18 @@ contains
         type(ChemicalSymbol_t), intent(out) :: symbol
 
         select case (string)
-        case ("H2")
-            symbol = hydrogenGasSymbol()
+        case ("Ar", "Ar1")
+            symbol = argonGasSymbol()
         case ("He", "He1")
             symbol = heliumGasSymbol()
+        case ("H2")
+            symbol = hydrogenGasSymbol()
+        case ("N2")
+            symbol = nitrogenGasSymbol()
         case ("H2O", "H2O1", "water")
             symbol = waterSymbol()
+        case ("Xe", "Xe1")
+            symbol = xenonGasSymbol()
         case default
             call errors%appendError(Fatal( &
                     INVALID_ARGUMENT_TYPE, &

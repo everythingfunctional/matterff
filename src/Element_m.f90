@@ -562,6 +562,10 @@ contains
             element = naturalNitrogen()
         case ("O")
             element = naturalOxygen()
+        case ("Ar")
+            element = naturalArgon()
+        case ("Xe")
+            element = naturalXenon()
         case default
             call errors%appendError(Fatal( &
                     INVALID_ARGUMENT_TYPE, &

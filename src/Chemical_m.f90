@@ -390,12 +390,18 @@ contains
         type(Chemical_t), intent(out) :: chemical
 
         select case (symbol)
-        case ("H2")
-            chemical = naturalHydrogenGas()
+        case ("Ar", "Ar1")
+            chemical = naturalArgonGas()
         case ("He", "He1")
             chemical = naturalHeliumGas()
+        case ("H2")
+            chemical = naturalHydrogenGas()
+        case ("N2")
+            chemical = naturalNitrogenGas()
         case ("H2O", "H2O1", "water")
             chemical = naturalWater()
+        case ("Xe", "Xe1")
+            chemical = naturalXenonGas()
         case default
             call errors%appendError(Fatal( &
                     INVALID_ARGUMENT_TYPE, &
@@ -449,14 +455,6 @@ contains
         naturalNitrogenGas%components(1) = ChemicalComponent(naturalNitrogen(), 2.0d0)
     end function naturalNitrogenGas
 
-    pure function naturalXenonGas()
-        type(Chemical_t) :: naturalXenonGas
-
-        naturalXenonGas%symbol = xenonGasSymbol()
-        allocate(naturalXenonGas%components(1))
-        naturalXenonGas%components(1) = ChemicalComponent(naturalXenon(), 1.0d0)
-    end function naturalXenonGas
-
     pure function naturalWater()
         type(Chemical_t) :: naturalWater
 
@@ -465,6 +463,14 @@ contains
         naturalWater%components(1) = ChemicalComponent(naturalHydrogen(), 2.0d0)
         naturalWater%components(2) = ChemicalComponent(naturalOxygen(), 1.0d0)
     end function naturalWater
+
+    pure function naturalXenonGas()
+        type(Chemical_t) :: naturalXenonGas
+
+        naturalXenonGas%symbol = xenonGasSymbol()
+        allocate(naturalXenonGas%components(1))
+        naturalXenonGas%components(1) = ChemicalComponent(naturalXenon(), 1.0d0)
+    end function naturalXenonGas
 
     elemental function amountElement(self, total_amount, element) result(amount)
         class(Chemical_t), intent(in) :: self

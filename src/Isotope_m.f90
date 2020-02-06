@@ -203,6 +203,40 @@ contains
             case default
                 goto 99
             end select
+        case ("Ar")
+            select case (mass_number)
+            case (36)
+                isotope = Ar_36
+            case (38)
+                isotope = Ar_38
+            case (40)
+                isotope = Ar_40
+            case default
+                goto 99
+            end select
+        case ("Xe")
+            select case (mass_number)
+            case (124)
+                isotope = Xe_124
+            case (126)
+                isotope = Xe_126
+            case (128)
+                isotope = Xe_128
+            case (129)
+                isotope = Xe_129
+            case (130)
+                isotope = Xe_130
+            case (131)
+                isotope = Xe_131
+            case (132)
+                isotope = Xe_132
+            case (134)
+                isotope = Xe_134
+            case (136)
+                isotope = Xe_136
+            case default
+                goto 99
+            end select
         case default
             goto 99
         end select
