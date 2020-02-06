@@ -9,6 +9,7 @@ module Chemical_m
             hydrogenGasSymbol, &
             heliumGasSymbol, &
             kryptonGasSymbol, &
+            oxygenGasSymbol, &
             nitrogenGasSymbol, &
             waterSymbol, &
             xenonGasSymbol
@@ -122,6 +123,7 @@ module Chemical_m
             naturalHydrogenGas, &
             naturalKryptonGas, &
             naturalNitrogenGas, &
+            naturalOxygenGas, &
             naturalWater, &
             naturalXenonGas
 contains
@@ -403,6 +405,8 @@ contains
             chemical = naturalKryptonGas()
         case ("N2")
             chemical = naturalNitrogenGas()
+        case ("O2")
+            chemical = naturalOxygenGas()
         case ("H2O", "H2O1", "water")
             chemical = naturalWater()
         case ("Xe", "Xe1")
@@ -467,6 +471,14 @@ contains
         allocate(naturalNitrogenGas%components(1))
         naturalNitrogenGas%components(1) = ChemicalComponent(naturalNitrogen(), 2.0d0)
     end function naturalNitrogenGas
+
+    pure function naturalOxygenGas()
+        type(Chemical_t) :: naturalOxygenGas
+
+        naturalOxygenGas%symbol = oxygenGasSymbol()
+        allocate(naturalOxygenGas%components(1))
+        naturalOxygenGas%components(1) = ChemicalComponent(naturalOxygen(), 2.0d0)
+    end function naturalOxygenGas
 
     pure function naturalWater()
         type(Chemical_t) :: naturalWater

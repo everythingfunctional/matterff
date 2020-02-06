@@ -60,6 +60,7 @@ module Chemical_symbol_m
             hydrogenGasSymbol, &
             kryptonGasSymbol, &
             nitrogenGasSymbol, &
+            oxygenGasSymbol, &
             waterSymbol, &
             xenonGasSymbol
 contains
@@ -127,6 +128,8 @@ contains
             symbol = kryptonGasSymbol()
         case ("N2")
             symbol = nitrogenGasSymbol()
+        case ("O2")
+            symbol = oxygenGasSymbol()
         case ("H2O", "H2O1", "water")
             symbol = waterSymbol()
         case ("Xe", "Xe1")
@@ -173,6 +176,13 @@ contains
                 [ChemicalSymbolComponent(H, 2)])
     end function hydrogenGasSymbol
 
+    pure function kryptonGasSymbol()
+        type(ChemicalSymbol_t) :: kryptonGasSymbol
+
+        allocate(kryptonGasSymbol%components, source = &
+                [ChemicalSymbolComponent(Kr, 1)])
+    end function kryptonGasSymbol
+
     pure function nitrogenGasSymbol()
         type(ChemicalSymbol_t) :: nitrogenGasSymbol
 
@@ -180,12 +190,12 @@ contains
                 [ChemicalSymbolComponent(N, 2)])
     end function nitrogenGasSymbol
 
-    pure function kryptonGasSymbol()
-        type(ChemicalSymbol_t) :: kryptonGasSymbol
+    pure function oxygenGasSymbol()
+        type(ChemicalSymbol_t) :: oxygenGasSymbol
 
-        allocate(kryptonGasSymbol%components, source = &
-                [ChemicalSymbolComponent(Kr, 1)])
-    end function kryptonGasSymbol
+        allocate(oxygenGasSymbol%components, source = &
+                [ChemicalSymbolComponent(O, 2)])
+    end function oxygenGasSymbol
 
     pure function waterSymbol()
         type(ChemicalSymbol_t) :: waterSymbol

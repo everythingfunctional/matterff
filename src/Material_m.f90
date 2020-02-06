@@ -7,6 +7,7 @@ module Material_m
             naturalHeliumGas, &
             naturalHydrogenGas, &
             naturalKryptonGas, &
+            naturalOxygenGas, &
             naturalNitrogenGas, &
             naturalXenonGas
     use Chemical_symbol_m, only: ChemicalSymbol_t
@@ -130,6 +131,7 @@ module Material_m
             pureNaturalHydrogenGas, &
             pureNaturalKryptonGas, &
             pureNaturalNitrogenGas, &
+            pureNaturalOxygenGas, &
             pureNaturalXenonGas
 contains
     pure subroutine combineMaterialsByAtomFactors( &
@@ -492,6 +494,13 @@ contains
         allocate(pureNaturalNitrogenGas%components(1))
         pureNaturalNitrogenGas%components(1) = MaterialComponent(naturalNitrogenGas(), 1.0d0)
     end function pureNaturalNitrogenGas
+
+    pure function pureNaturalOxygenGas()
+        type(Material_t) :: pureNaturalOxygenGas
+
+        allocate(pureNaturalOxygenGas%components(1))
+        pureNaturalOxygenGas%components(1) = MaterialComponent(naturalOxygenGas(), 1.0d0)
+    end function pureNaturalOxygenGas
 
     pure function pureNaturalXenonGas()
         type(Material_t) :: pureNaturalXenonGas
