@@ -5,6 +5,7 @@ module Material_m
             find, &
             naturalHeliumGas, &
             naturalHydrogenGas, &
+            naturalNitrogenGas, &
             naturalXenonGas
     use Chemical_symbol_m, only: ChemicalSymbol_t
     use Element_symbol_m, only: ElementSymbol_t
@@ -122,8 +123,10 @@ module Material_m
             fromWeightFractions, &
             fromWeightFractionsUnsafe, &
             fromJson, &
+            pureNaturalHeliumGas, &
             pureNaturalHydrogenGas, &
-            pureNaturalHeliumGas
+            pureNaturalNitrogenGas, &
+            pureNaturalXenonGas
 contains
     pure subroutine combineMaterialsByAtomFactors( &
             material1, factor1, material2, factor2, messages, errors, combined)
@@ -464,6 +467,13 @@ contains
         allocate(pureNaturalHydrogenGas%components(1))
         pureNaturalHydrogenGas%components(1) = MaterialComponent(naturalHydrogenGas(), 1.0d0)
     end function pureNaturalHydrogenGas
+
+    pure function pureNaturalNitrogenGas()
+        type(Material_t) :: pureNaturalNitrogenGas
+
+        allocate(pureNaturalNitrogenGas%components(1))
+        pureNaturalNitrogenGas%components(1) = MaterialComponent(naturalNitrogenGas(), 1.0d0)
+    end function pureNaturalNitrogenGas
 
     pure function pureNaturalXenonGas()
         type(Material_t) :: pureNaturalXenonGas

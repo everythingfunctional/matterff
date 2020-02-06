@@ -7,6 +7,7 @@ module Chemical_m
             fromString, &
             hydrogenGasSymbol, &
             heliumGasSymbol, &
+            nitrogenGasSymbol, &
             waterSymbol, &
             xenonGasSymbol
     use Element_m, only: &
@@ -15,6 +16,7 @@ module Chemical_m
             find, &
             naturalHelium, &
             naturalHydrogen, &
+            naturalNitrogen, &
             naturalOxygen, &
             naturalXenon
     use Element_symbol_m, only: ElementSymbol_t
@@ -113,6 +115,7 @@ module Chemical_m
             makeChemicalUnsafe, &
             naturalHeliumGas, &
             naturalHydrogenGas, &
+            naturalNitrogenGas, &
             naturalWater, &
             naturalXenonGas
 contains
@@ -426,6 +429,14 @@ contains
         allocate(naturalHydrogenGas%components(1))
         naturalHydrogenGas%components(1) = ChemicalComponent(naturalHydrogen(), 2.0d0)
     end function naturalHydrogenGas
+
+    pure function naturalNitrogenGas()
+        type(Chemical_t) :: naturalNitrogenGas
+
+        naturalNitrogenGas%symbol = nitrogenGasSymbol()
+        allocate(naturalNitrogenGas%components(1))
+        naturalNitrogenGas%components(1) = ChemicalComponent(naturalNitrogen(), 2.0d0)
+    end function naturalNitrogenGas
 
     pure function naturalXenonGas()
         type(Chemical_t) :: naturalXenonGas

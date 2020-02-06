@@ -1,7 +1,7 @@
 module Chemical_symbol_m
     use Chemical_symbol_component_m, only: &
             ChemicalSymbolComponent_t, ChemicalSymbolComponent, fromJson
-    use Element_symbol_m, only: ElementSymbol_t, H, He, O, Xe
+    use Element_symbol_m, only: ElementSymbol_t, H, He, N, O, Xe
     use erloff, only: ErrorList_t, Fatal, Module_, Procedure_
     use iso_varying_string, only: VARYING_STRING, char
     use jsonff, only: &
@@ -57,6 +57,7 @@ module Chemical_symbol_m
             fromString, &
             heliumGasSymbol, &
             hydrogenGasSymbol, &
+            nitrogenGasSymbol, &
             xenonGasSymbol, &
             waterSymbol
 contains
@@ -154,6 +155,13 @@ contains
         allocate(hydrogenGasSymbol%components, source = &
                 [ChemicalSymbolComponent(H, 2)])
     end function hydrogenGasSymbol
+
+    pure function nitrogenGasSymbol()
+        type(ChemicalSymbol_t) :: nitrogenGasSymbol
+
+        allocate(nitrogenGasSymbol%components, source = &
+                [ChemicalSymbolComponent(N, 2)])
+    end function nitrogenGasSymbol
 
     pure function waterSymbol()
         type(ChemicalSymbol_t) :: waterSymbol
