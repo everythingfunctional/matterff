@@ -15,6 +15,7 @@ module element_test
             naturalNitrogen, &
             naturalOxygen, &
             naturalArgon, &
+            naturalKrypton, &
             naturalXenon
     use Element_component_m, only: ElementComponent
     use Element_symbol_m, only: H
@@ -426,6 +427,7 @@ contains
         type(Element_t) :: nitrogen
         type(Element_t) :: oxygen
         type(Element_t) :: argon
+        type(Element_t) :: krypton
         type(Element_t) :: xenon
 
         hydrogen = naturalHydrogen()
@@ -437,6 +439,7 @@ contains
         nitrogen = naturalNitrogen()
         oxygen = naturalOxygen()
         argon = naturalArgon()
+        krypton = naturalKrypton()
         xenon = naturalXenon()
 
         ! Atomic masses and tolerances are taken from the 17th Edition of the Chart of Nuclides
@@ -486,6 +489,11 @@ contains
                         argon%atomicMass(), &
                         0.001d0.unit.GRAMS_PER_MOL, &
                         "Ar") &
+                .and.assertEqualsWithinAbsolute( &
+                        83.798d0.unit.GRAMS_PER_MOL, &
+                        krypton%atomicMass(), &
+                        0.002d0.unit.GRAMS_PER_MOL, &
+                        "Kr") &
                 .and.assertEqualsWithinAbsolute( &
                         131.293d0.unit.GRAMS_PER_MOL, &
                         xenon%atomicMass(), &

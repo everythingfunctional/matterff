@@ -1,7 +1,7 @@
 module Chemical_symbol_m
     use Chemical_symbol_component_m, only: &
             ChemicalSymbolComponent_t, ChemicalSymbolComponent, fromJson
-    use Element_symbol_m, only: ElementSymbol_t, H, He, N, O, Ar, Xe
+    use Element_symbol_m, only: ElementSymbol_t, H, He, N, O, Ar, Kr, Xe
     use erloff, only: ErrorList_t, Fatal, Module_, Procedure_
     use iso_varying_string, only: VARYING_STRING, char
     use jsonff, only: &
@@ -58,6 +58,7 @@ module Chemical_symbol_m
             argonGasSymbol, &
             heliumGasSymbol, &
             hydrogenGasSymbol, &
+            kryptonGasSymbol, &
             nitrogenGasSymbol, &
             waterSymbol, &
             xenonGasSymbol
@@ -122,6 +123,8 @@ contains
             symbol = heliumGasSymbol()
         case ("H2")
             symbol = hydrogenGasSymbol()
+        case ("Kr", "Kr1")
+            symbol = kryptonGasSymbol()
         case ("N2")
             symbol = nitrogenGasSymbol()
         case ("H2O", "H2O1", "water")
@@ -176,6 +179,13 @@ contains
         allocate(nitrogenGasSymbol%components, source = &
                 [ChemicalSymbolComponent(N, 2)])
     end function nitrogenGasSymbol
+
+    pure function kryptonGasSymbol()
+        type(ChemicalSymbol_t) :: kryptonGasSymbol
+
+        allocate(kryptonGasSymbol%components, source = &
+                [ChemicalSymbolComponent(Kr, 1)])
+    end function kryptonGasSymbol
 
     pure function waterSymbol()
         type(ChemicalSymbol_t) :: waterSymbol

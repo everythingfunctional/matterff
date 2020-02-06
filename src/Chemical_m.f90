@@ -8,6 +8,7 @@ module Chemical_m
             argonGasSymbol, &
             hydrogenGasSymbol, &
             heliumGasSymbol, &
+            kryptonGasSymbol, &
             nitrogenGasSymbol, &
             waterSymbol, &
             xenonGasSymbol
@@ -20,6 +21,7 @@ module Chemical_m
             naturalNitrogen, &
             naturalOxygen, &
             naturalArgon, &
+            naturalKrypton, &
             naturalXenon
     use Element_symbol_m, only: ElementSymbol_t
     use erloff, only: &
@@ -118,6 +120,7 @@ module Chemical_m
             naturalArgonGas, &
             naturalHeliumGas, &
             naturalHydrogenGas, &
+            naturalKryptonGas, &
             naturalNitrogenGas, &
             naturalWater, &
             naturalXenonGas
@@ -396,6 +399,8 @@ contains
             chemical = naturalHeliumGas()
         case ("H2")
             chemical = naturalHydrogenGas()
+        case ("Kr", "Kr1")
+            chemical = naturalKryptonGas()
         case ("N2")
             chemical = naturalNitrogenGas()
         case ("H2O", "H2O1", "water")
@@ -446,6 +451,14 @@ contains
         allocate(naturalHydrogenGas%components(1))
         naturalHydrogenGas%components(1) = ChemicalComponent(naturalHydrogen(), 2.0d0)
     end function naturalHydrogenGas
+
+    pure function naturalKryptonGas()
+        type(Chemical_t) :: naturalKryptonGas
+
+        naturalKryptonGas%symbol = kryptonGasSymbol()
+        allocate(naturalKryptonGas%components(1))
+        naturalKryptonGas%components(1) = ChemicalComponent(naturalKrypton(), 1.0d0)
+    end function naturalKryptonGas
 
     pure function naturalNitrogenGas()
         type(Chemical_t) :: naturalNitrogenGas

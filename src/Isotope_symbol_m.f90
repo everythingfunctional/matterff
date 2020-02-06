@@ -1,6 +1,6 @@
 module Isotope_symbol_m
     use Element_symbol_m, only: &
-            ElementSymbol_t, H, He, Li, Be, B, C, N, O, Ar, Xe
+            ElementSymbol_t, H, He, Li, Be, B, C, N, O, Ar, Kr, Xe
     use iso_varying_string, only: VARYING_STRING, operator(//)
     use strff, only: toString
 
@@ -47,6 +47,13 @@ module Isotope_symbol_m
     type(IsotopeSymbol_t), parameter, public :: Ar_36_SYM = IsotopeSymbol_t(Ar, 36)
     type(IsotopeSymbol_t), parameter, public :: Ar_38_SYM = IsotopeSymbol_t(Ar, 38)
     type(IsotopeSymbol_t), parameter, public :: Ar_40_SYM = IsotopeSymbol_t(Ar, 40)
+
+    type(IsotopeSymbol_t), parameter, public :: Kr_78_SYM = IsotopeSymbol_t(Kr, 78)
+    type(IsotopeSymbol_t), parameter, public :: Kr_80_SYM = IsotopeSymbol_t(Kr, 80)
+    type(IsotopeSymbol_t), parameter, public :: Kr_82_SYM = IsotopeSymbol_t(Kr, 82)
+    type(IsotopeSymbol_t), parameter, public :: Kr_83_SYM = IsotopeSymbol_t(Kr, 83)
+    type(IsotopeSymbol_t), parameter, public :: Kr_84_SYM = IsotopeSymbol_t(Kr, 84)
+    type(IsotopeSymbol_t), parameter, public :: Kr_86_SYM = IsotopeSymbol_t(Kr, 86)
 
     type(IsotopeSymbol_t), parameter, public :: Xe_124_SYM = IsotopeSymbol_t(Xe, 124)
     type(IsotopeSymbol_t), parameter, public :: Xe_126_SYM = IsotopeSymbol_t(Xe, 126)

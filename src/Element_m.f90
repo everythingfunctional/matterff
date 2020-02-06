@@ -1,7 +1,19 @@
 module Element_m
     use Element_component_m, only: ElementComponent_t, ElementComponent, fromJson
     use Element_symbol_m, only: &
-            ElementSymbol_t, ElementSymbol, H, He, Li, Be, B, C, N, O, Ar, Xe
+            ElementSymbol_t, &
+            ElementSymbol, &
+            H, &
+            He, &
+            Li, &
+            Be, &
+            B, &
+            C, &
+            N, &
+            O, &
+            Ar, &
+            Kr, &
+            Xe
     use erloff, only: &
             ErrorList_t, &
             MessageList_t, &
@@ -33,6 +45,12 @@ module Element_m
             Ar_36, &
             Ar_38, &
             Ar_40, &
+            Kr_78, &
+            Kr_80, &
+            Kr_82, &
+            Kr_83, &
+            Kr_84, &
+            Kr_86, &
             Xe_124, &
             Xe_126, &
             Xe_128, &
@@ -154,6 +172,7 @@ module Element_m
             naturalNitrogen, &
             naturalOxygen, &
             naturalArgon, &
+            naturalKrypton, &
             naturalXenon
 contains
     pure subroutine combineElementsByAtomFactors( &
@@ -564,6 +583,8 @@ contains
             element = naturalOxygen()
         case ("Ar")
             element = naturalArgon()
+        case ("Kr")
+            element = naturalKrypton()
         case ("Xe")
             element = naturalXenon()
         case default
@@ -669,6 +690,19 @@ contains
                  ElementComponent(Ar_38, 0.000632d0), &
                  ElementComponent(Ar_40, 0.996003d0)])
     end function naturalArgon
+
+    pure function naturalKrypton()
+        type(Element_t) :: naturalKrypton
+
+        naturalKrypton%symbol = Kr
+        allocate(naturalKrypton%components, source = &
+                [ElementComponent(Kr_78, 0.00355d0), &
+                 ElementComponent(Kr_80, 0.02286d0), &
+                 ElementComponent(Kr_82, 0.11593d0), &
+                 ElementComponent(Kr_83, 0.115d0), &
+                 ElementComponent(Kr_84, 0.56987d0), &
+                 ElementComponent(Kr_86, 0.17279d0)])
+    end function naturalKrypton
 
     pure function naturalXenon()
         type(Element_t) :: naturalXenon

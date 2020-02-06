@@ -24,6 +24,12 @@ module Isotope_m
             Ar_36_SYM, &
             Ar_38_SYM, &
             Ar_40_SYM, &
+            Kr_78_SYM, &
+            Kr_80_SYM, &
+            Kr_82_SYM, &
+            Kr_83_SYM, &
+            Kr_84_SYM, &
+            Kr_86_SYM, &
             Xe_124_SYM, &
             Xe_126_SYM, &
             Xe_128_SYM, &
@@ -105,6 +111,13 @@ module Isotope_m
     type(Isotope_t), parameter, public :: Ar_36 = Isotope_t(Ar_36_SYM, MolarMass_t(kilograms_per_mol = 35.96754511d-3))
     type(Isotope_t), parameter, public :: Ar_38 = Isotope_t(Ar_38_SYM, MolarMass_t(kilograms_per_mol = 37.9627324d-3))
     type(Isotope_t), parameter, public :: Ar_40 = Isotope_t(Ar_40_SYM, MolarMass_t(kilograms_per_mol = 39.962383123d-3))
+
+    type(Isotope_t), parameter, public :: Kr_78 = Isotope_t(Kr_78_SYM, MolarMass_t(kilograms_per_mol = 77.920365d-3))
+    type(Isotope_t), parameter, public :: Kr_80 = Isotope_t(Kr_80_SYM, MolarMass_t(kilograms_per_mol = 79.916379d-3))
+    type(Isotope_t), parameter, public :: Kr_82 = Isotope_t(Kr_82_SYM, MolarMass_t(kilograms_per_mol = 81.913484d-3))
+    type(Isotope_t), parameter, public :: Kr_83 = Isotope_t(Kr_83_SYM, MolarMass_t(kilograms_per_mol = 82.914136d-3))
+    type(Isotope_t), parameter, public :: Kr_84 = Isotope_t(Kr_84_SYM, MolarMass_t(kilograms_per_mol = 83.911507d-3))
+    type(Isotope_t), parameter, public :: Kr_86 = Isotope_t(Kr_86_SYM, MolarMass_t(kilograms_per_mol = 85.9106107d-3))
 
     type(Isotope_t), parameter, public :: Xe_124 = Isotope_t(Xe_124_SYM, MolarMass_t(kilograms_per_mol = 123.905893d-3))
     type(Isotope_t), parameter, public :: Xe_126 = Isotope_t(Xe_126_SYM, MolarMass_t(kilograms_per_mol = 125.90427d-3))
@@ -211,6 +224,23 @@ contains
                 isotope = Ar_38
             case (40)
                 isotope = Ar_40
+            case default
+                goto 99
+            end select
+        case ("Kr")
+            select case (mass_number)
+            case (78)
+                isotope = Kr_78
+            case (80)
+                isotope = Kr_80
+            case (82)
+                isotope = Kr_82
+            case (83)
+                isotope = Kr_83
+            case (84)
+                isotope = Kr_84
+            case (86)
+                isotope = Kr_86
             case default
                 goto 99
             end select

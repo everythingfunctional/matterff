@@ -28,6 +28,7 @@ module Element_symbol_m
     type(ElementSymbol_t), parameter, public :: N = ElementSymbol_t("N ")
     type(ElementSymbol_t), parameter, public :: O = ElementSymbol_t("O ")
     type(ElementSymbol_t), parameter, public :: Ar = ElementSymbol_t("Ar")
+    type(ElementSymbol_t), parameter, public :: Kr = ElementSymbol_t("Kr")
     type(ElementSymbol_t), parameter, public :: Xe = ElementSymbol_t("Xe")
 
     public :: ElementSymbol
