@@ -21,6 +21,9 @@ module Isotope_m
             O_16_SYM, &
             O_17_SYM, &
             O_18_SYM, &
+            Ar_36_SYM, &
+            Ar_38_SYM, &
+            Ar_40_SYM, &
             Xe_124_SYM, &
             Xe_126_SYM, &
             Xe_128_SYM, &
@@ -98,6 +101,10 @@ module Isotope_m
     type(Isotope_t), parameter, public :: O_16 = Isotope_t(O_16_SYM, MolarMass_t(kilograms_per_mol = 15.9949146196d-3))
     type(Isotope_t), parameter, public :: O_17 = Isotope_t(O_17_SYM, MolarMass_t(kilograms_per_mol = 16.9991317d-3))
     type(Isotope_t), parameter, public :: O_18 = Isotope_t(O_18_SYM, MolarMass_t(kilograms_per_mol = 17.999161d-3))
+
+    type(Isotope_t), parameter, public :: Ar_36 = Isotope_t(Ar_36_SYM, MolarMass_t(kilograms_per_mol = 35.96754511d-3))
+    type(Isotope_t), parameter, public :: Ar_38 = Isotope_t(Ar_38_SYM, MolarMass_t(kilograms_per_mol = 37.9627324d-3))
+    type(Isotope_t), parameter, public :: Ar_40 = Isotope_t(Ar_40_SYM, MolarMass_t(kilograms_per_mol = 39.962383123d-3))
 
     type(Isotope_t), parameter, public :: Xe_124 = Isotope_t(Xe_124_SYM, MolarMass_t(kilograms_per_mol = 123.905893d-3))
     type(Isotope_t), parameter, public :: Xe_126 = Isotope_t(Xe_126_SYM, MolarMass_t(kilograms_per_mol = 125.90427d-3))

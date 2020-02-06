@@ -5,6 +5,7 @@ module Chemical_m
             ChemicalSymbol_t, &
             fromJson, &
             fromString, &
+            argonGasSymbol, &
             hydrogenGasSymbol, &
             heliumGasSymbol, &
             nitrogenGasSymbol, &
@@ -18,6 +19,7 @@ module Chemical_m
             naturalHydrogen, &
             naturalNitrogen, &
             naturalOxygen, &
+            naturalArgon, &
             naturalXenon
     use Element_symbol_m, only: ElementSymbol_t
     use erloff, only: &
@@ -113,6 +115,7 @@ module Chemical_m
             fromJson, &
             makeChemical, &
             makeChemicalUnsafe, &
+            naturalArgonGas, &
             naturalHeliumGas, &
             naturalHydrogenGas, &
             naturalNitrogenGas, &
@@ -413,6 +416,14 @@ contains
         call errors%appendErrors( &
                 errors_, Module_(MODULE_NAME), Procedure_("getNaturalS"))
     end subroutine getNaturalS
+
+    pure function naturalArgonGas()
+        type(Chemical_t) :: naturalArgonGas
+
+        naturalArgonGas%symbol = argonGasSymbol()
+        allocate(naturalArgonGas%components(1))
+        naturalArgonGas%components(1) = ChemicalComponent(naturalArgon(), 1.0d0)
+    end function naturalArgonGas
 
     pure function naturalHeliumGas()
         type(Chemical_t) :: naturalHeliumGas

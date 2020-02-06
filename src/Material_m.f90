@@ -3,6 +3,7 @@ module Material_m
             Chemical_t, &
             combineByAtomFactorsUnsafe, &
             find, &
+            naturalArgonGas, &
             naturalHeliumGas, &
             naturalHydrogenGas, &
             naturalNitrogenGas, &
@@ -123,6 +124,7 @@ module Material_m
             fromWeightFractions, &
             fromWeightFractionsUnsafe, &
             fromJson, &
+            pureNaturalArgonGas, &
             pureNaturalHeliumGas, &
             pureNaturalHydrogenGas, &
             pureNaturalNitrogenGas, &
@@ -453,6 +455,13 @@ contains
             end select
         end if
     end subroutine materialFromJson
+
+    pure function pureNaturalArgonGas()
+        type(Material_t) :: pureNaturalArgonGas
+
+        allocate(pureNaturalArgonGas%components(1))
+        pureNaturalArgonGas%components(1) = MaterialComponent(naturalArgonGas(), 1.0d0)
+    end function pureNaturalArgonGas
 
     pure function pureNaturalHeliumGas()
         type(Material_t) :: pureNaturalHeliumGas

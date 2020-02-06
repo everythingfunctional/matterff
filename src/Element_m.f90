@@ -1,7 +1,7 @@
 module Element_m
     use Element_component_m, only: ElementComponent_t, ElementComponent, fromJson
     use Element_symbol_m, only: &
-            ElementSymbol_t, ElementSymbol, H, He, Li, Be, B, C, N, O, Xe
+            ElementSymbol_t, ElementSymbol, H, He, Li, Be, B, C, N, O, Ar, Xe
     use erloff, only: &
             ErrorList_t, &
             MessageList_t, &
@@ -30,6 +30,9 @@ module Element_m
             O_16, &
             O_17, &
             O_18, &
+            Ar_36, &
+            Ar_38, &
+            Ar_40, &
             Xe_124, &
             Xe_126, &
             Xe_128, &
@@ -150,6 +153,7 @@ module Element_m
             naturalCarbon, &
             naturalNitrogen, &
             naturalOxygen, &
+            naturalArgon, &
             naturalXenon
 contains
     pure subroutine combineElementsByAtomFactors( &
@@ -651,6 +655,16 @@ contains
                  ElementComponent(O_17, 0.00038d0), &
                  ElementComponent(O_18, 0.00205d0)])
     end function naturalOxygen
+
+    pure function naturalArgon()
+        type(Element_t) :: naturalArgon
+
+        naturalArgon%symbol = Ar
+        allocate(naturalArgon%components, source = &
+                [ElementComponent(Ar_36, 0.003365d0), &
+                 ElementComponent(Ar_38, 0.000632d0), &
+                 ElementComponent(Ar_40, 0.996003d0)])
+    end function naturalArgon
 
     pure function naturalXenon()
         type(Element_t) :: naturalXenon
