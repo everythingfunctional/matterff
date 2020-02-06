@@ -51,7 +51,7 @@ module Material_m
     ! material that has not been intialized will likely result in a memory error
     type, public :: Material_t
         private
-        type(MaterialComponent_t), allocatable :: components(:)
+        type(MaterialComponent_t), public, allocatable :: components(:)
     contains
         private
         procedure :: amountElement
