@@ -13,7 +13,8 @@ module element_test
             naturalBoron, &
             naturalCarbon, &
             naturalNitrogen, &
-            naturalOxygen
+            naturalOxygen, &
+            naturalXenon
     use Element_component_m, only: ElementComponent
     use Element_symbol_m, only: H
     use erloff, only: ErrorList_t, MessageList_t
@@ -423,6 +424,7 @@ contains
         type(Element_t) :: carbon
         type(Element_t) :: nitrogen
         type(Element_t) :: oxygen
+        type(Element_t) :: xenon
 
         hydrogen = naturalHydrogen()
         helium = naturalHelium()
@@ -432,6 +434,7 @@ contains
         carbon = naturalCarbon()
         nitrogen = naturalNitrogen()
         oxygen = naturalOxygen()
+        xenon = naturalXenon()
 
         ! Atomic masses and tolerances are taken from the 17th Edition of the Chart of Nuclides
         result_ = &
@@ -474,7 +477,11 @@ contains
                         15.9994d0.unit.GRAMS_PER_MOL, &
                         oxygen%atomicMass(), &
                         0.0003d0.unit.GRAMS_PER_MOL, &
-                        "O")
+                        "O") &
+                .and.assertEqualsWithinAbsolute( &
+                        131.293d0.unit.GRAMS_PER_MOL, &
+                        xenon%atomicMass(), &
+                        0.0006d0.unit.GRAMS_PER_MOL)
     end function checkNaturalElements
 
     pure function checkNotFound() result(result_)

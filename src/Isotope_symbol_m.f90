@@ -1,5 +1,5 @@
 module Isotope_symbol_m
-    use Element_symbol_m, only: ElementSymbol_t, H, He, Li, Be, B, C, N, O
+    use Element_symbol_m, only: ElementSymbol_t, H, He, Li, Be, B, C, N, O, Xe
     use iso_varying_string, only: VARYING_STRING, operator(//)
     use strff, only: toString
 
@@ -42,6 +42,16 @@ module Isotope_symbol_m
     type(IsotopeSymbol_t), parameter, public :: O_16_SYM = IsotopeSymbol_t(O, 16)
     type(IsotopeSymbol_t), parameter, public :: O_17_SYM = IsotopeSymbol_t(O, 17)
     type(IsotopeSymbol_t), parameter, public :: O_18_SYM = IsotopeSymbol_t(O, 18)
+
+    type(IsotopeSymbol_t), parameter, public :: Xe_124_SYM = IsotopeSymbol_t(Xe, 124)
+    type(IsotopeSymbol_t), parameter, public :: Xe_126_SYM = IsotopeSymbol_t(Xe, 126)
+    type(IsotopeSymbol_t), parameter, public :: Xe_128_SYM = IsotopeSymbol_t(Xe, 128)
+    type(IsotopeSymbol_t), parameter, public :: Xe_129_SYM = IsotopeSymbol_t(Xe, 129)
+    type(IsotopeSymbol_t), parameter, public :: Xe_130_SYM = IsotopeSymbol_t(Xe, 130)
+    type(IsotopeSymbol_t), parameter, public :: Xe_131_SYM = IsotopeSymbol_t(Xe, 131)
+    type(IsotopeSymbol_t), parameter, public :: Xe_132_SYM = IsotopeSymbol_t(Xe, 132)
+    type(IsotopeSymbol_t), parameter, public :: Xe_134_SYM = IsotopeSymbol_t(Xe, 134)
+    type(IsotopeSymbol_t), parameter, public :: Xe_136_SYM = IsotopeSymbol_t(Xe, 136)
 contains
     elemental function is(self, element)
         class(IsotopeSymbol_t), intent(in) :: self

@@ -1,7 +1,7 @@
 module Chemical_symbol_m
     use Chemical_symbol_component_m, only: &
             ChemicalSymbolComponent_t, ChemicalSymbolComponent, fromJson
-    use Element_symbol_m, only: ElementSymbol_t, H, He, O
+    use Element_symbol_m, only: ElementSymbol_t, H, He, O, Xe
     use erloff, only: ErrorList_t, Fatal, Module_, Procedure_
     use iso_varying_string, only: VARYING_STRING, char
     use jsonff, only: &
@@ -55,8 +55,9 @@ module Chemical_symbol_m
             ChemicalSymbol, &
             fromJson, &
             fromString, &
-            hydrogenGasSymbol, &
             heliumGasSymbol, &
+            hydrogenGasSymbol, &
+            xenonGasSymbol, &
             waterSymbol
 contains
     pure function ChemicalSymbol(components)
@@ -140,19 +141,19 @@ contains
                 errors_, Module_(MODULE_NAME), Procedure_("fromStringS"))
     end subroutine fromStringS
 
-    pure function hydrogenGasSymbol()
-        type(ChemicalSymbol_t) :: hydrogenGasSymbol
-
-        allocate(hydrogenGasSymbol%components, source = &
-                [ChemicalSymbolComponent(H, 2)])
-    end function hydrogenGasSymbol
-
     pure function heliumGasSymbol()
         type(ChemicalSymbol_t) :: heliumGasSymbol
 
         allocate(heliumGasSymbol%components, source = &
                 [ChemicalSymbolComponent(He, 1)])
     end function heliumGasSymbol
+
+    pure function hydrogenGasSymbol()
+        type(ChemicalSymbol_t) :: hydrogenGasSymbol
+
+        allocate(hydrogenGasSymbol%components, source = &
+                [ChemicalSymbolComponent(H, 2)])
+    end function hydrogenGasSymbol
 
     pure function waterSymbol()
         type(ChemicalSymbol_t) :: waterSymbol
@@ -161,6 +162,13 @@ contains
                 [ChemicalSymbolComponent(H, 2), &
                  ChemicalSymbolComponent(O, 1)])
     end function waterSymbol
+
+    pure function xenonGasSymbol()
+        type(ChemicalSymbol_t) :: xenonGasSymbol
+
+        allocate(xenonGasSymbol%components, source = &
+                [ChemicalSymbolComponent(Xe, 1)])
+    end function xenonGasSymbol
 
     elemental function chemicalSymbolEquals(lhs, rhs) result(areEqual)
         class(ChemicalSymbol_t), intent(in) :: lhs

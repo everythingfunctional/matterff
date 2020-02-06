@@ -3,8 +3,9 @@ module Material_m
             Chemical_t, &
             combineByAtomFactorsUnsafe, &
             find, &
+            naturalHeliumGas, &
             naturalHydrogenGas, &
-            naturalHeliumGas
+            naturalXenonGas
     use Chemical_symbol_m, only: ChemicalSymbol_t
     use Element_symbol_m, only: ElementSymbol_t
     use erloff, only: &
@@ -450,6 +451,13 @@ contains
         end if
     end subroutine materialFromJson
 
+    pure function pureNaturalHeliumGas()
+        type(Material_t) :: pureNaturalHeliumGas
+
+        allocate(pureNaturalHeliumGas%components(1))
+        pureNaturalHeliumGas%components(1) = MaterialComponent(naturalHeliumGas(), 1.0d0)
+    end function pureNaturalHeliumGas
+
     pure function pureNaturalHydrogenGas()
         type(Material_t) :: pureNaturalHydrogenGas
 
@@ -457,12 +465,12 @@ contains
         pureNaturalHydrogenGas%components(1) = MaterialComponent(naturalHydrogenGas(), 1.0d0)
     end function pureNaturalHydrogenGas
 
-    pure function pureNaturalHeliumGas()
-        type(Material_t) :: pureNaturalHeliumGas
+    pure function pureNaturalXenonGas()
+        type(Material_t) :: pureNaturalXenonGas
 
-        allocate(pureNaturalHeliumGas%components(1))
-        pureNaturalHeliumGas%components(1) = MaterialComponent(naturalHeliumGas(), 1.0d0)
-    end function pureNaturalHeliumGas
+        allocate(pureNaturalXenonGas%components(1))
+        pureNaturalXenonGas%components(1) = MaterialComponent(naturalXenonGas(), 1.0d0)
+    end function pureNaturalXenonGas
 
     elemental function amountElement(self, total_amount, element) result(amount)
         class(Material_t), intent(in) :: self

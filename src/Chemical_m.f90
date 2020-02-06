@@ -7,14 +7,16 @@ module Chemical_m
             fromString, &
             hydrogenGasSymbol, &
             heliumGasSymbol, &
-            waterSymbol
+            waterSymbol, &
+            xenonGasSymbol
     use Element_m, only: &
             Element_t, &
             combineByAtomFactorsUnsafe, &
             find, &
-            naturalHydrogen, &
             naturalHelium, &
-            naturalOxygen
+            naturalHydrogen, &
+            naturalOxygen, &
+            naturalXenon
     use Element_symbol_m, only: ElementSymbol_t
     use erloff, only: &
             ErrorList_t, MessageList_t, Fatal, Internal, Module_, Procedure_
@@ -109,9 +111,10 @@ module Chemical_m
             fromJson, &
             makeChemical, &
             makeChemicalUnsafe, &
-            naturalHydrogenGas, &
             naturalHeliumGas, &
-            naturalWater
+            naturalHydrogenGas, &
+            naturalWater, &
+            naturalXenonGas
 contains
     pure subroutine combineChemicalsByAtomFactors( &
             chemical1, factor1, chemical2, factor2, errors, combined)
@@ -408,6 +411,14 @@ contains
                 errors_, Module_(MODULE_NAME), Procedure_("getNaturalS"))
     end subroutine getNaturalS
 
+    pure function naturalHeliumGas()
+        type(Chemical_t) :: naturalHeliumGas
+
+        naturalHeliumGas%symbol = heliumGasSymbol()
+        allocate(naturalHeliumGas%components(1))
+        naturalHeliumGas%components(1) = ChemicalComponent(naturalHelium(), 1.0d0)
+    end function naturalHeliumGas
+
     pure function naturalHydrogenGas()
         type(Chemical_t) :: naturalHydrogenGas
 
@@ -416,13 +427,13 @@ contains
         naturalHydrogenGas%components(1) = ChemicalComponent(naturalHydrogen(), 2.0d0)
     end function naturalHydrogenGas
 
-    pure function naturalHeliumGas()
-        type(Chemical_t) :: naturalHeliumGas
+    pure function naturalXenonGas()
+        type(Chemical_t) :: naturalXenonGas
 
-        naturalHeliumGas%symbol = heliumGasSymbol()
-        allocate(naturalHeliumGas%components(1))
-        naturalHeliumGas%components(1) = ChemicalComponent(naturalHelium(), 1.0d0)
-    end function naturalHeliumGas
+        naturalXenonGas%symbol = xenonGasSymbol()
+        allocate(naturalXenonGas%components(1))
+        naturalXenonGas%components(1) = ChemicalComponent(naturalXenon(), 1.0d0)
+    end function naturalXenonGas
 
     pure function naturalWater()
         type(Chemical_t) :: naturalWater

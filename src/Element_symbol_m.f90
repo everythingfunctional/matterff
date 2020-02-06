@@ -27,6 +27,7 @@ module Element_symbol_m
     type(ElementSymbol_t), parameter, public :: C = ElementSymbol_t("C ")
     type(ElementSymbol_t), parameter, public :: N = ElementSymbol_t("N ")
     type(ElementSymbol_t), parameter, public :: O = ElementSymbol_t("O ")
+    type(ElementSymbol_t), parameter, public :: Xe = ElementSymbol_t("Xe")
 
     public :: ElementSymbol
 contains

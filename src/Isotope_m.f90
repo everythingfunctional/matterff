@@ -20,7 +20,16 @@ module Isotope_m
             N_15_SYM, &
             O_16_SYM, &
             O_17_SYM, &
-            O_18_SYM
+            O_18_SYM, &
+            Xe_124_SYM, &
+            Xe_126_SYM, &
+            Xe_128_SYM, &
+            Xe_129_SYM, &
+            Xe_130_SYM, &
+            Xe_131_SYM, &
+            Xe_132_SYM, &
+            Xe_134_SYM, &
+            Xe_136_SYM
     use jsonff, only: &
             JsonElement_t, &
             JsonMember_t, &
@@ -89,6 +98,16 @@ module Isotope_m
     type(Isotope_t), parameter, public :: O_16 = Isotope_t(O_16_SYM, MolarMass_t(kilograms_per_mol = 15.9949146196d-3))
     type(Isotope_t), parameter, public :: O_17 = Isotope_t(O_17_SYM, MolarMass_t(kilograms_per_mol = 16.9991317d-3))
     type(Isotope_t), parameter, public :: O_18 = Isotope_t(O_18_SYM, MolarMass_t(kilograms_per_mol = 17.999161d-3))
+
+    type(Isotope_t), parameter, public :: Xe_124 = Isotope_t(Xe_124_SYM, MolarMass_t(kilograms_per_mol = 123.905893d-3))
+    type(Isotope_t), parameter, public :: Xe_126 = Isotope_t(Xe_126_SYM, MolarMass_t(kilograms_per_mol = 125.90427d-3))
+    type(Isotope_t), parameter, public :: Xe_128 = Isotope_t(Xe_128_SYM, MolarMass_t(kilograms_per_mol = 127.903531d-3))
+    type(Isotope_t), parameter, public :: Xe_129 = Isotope_t(Xe_129_SYM, MolarMass_t(kilograms_per_mol = 128.904779d-3))
+    type(Isotope_t), parameter, public :: Xe_130 = Isotope_t(Xe_130_SYM, MolarMass_t(kilograms_per_mol = 129.903508d-3))
+    type(Isotope_t), parameter, public :: Xe_131 = Isotope_t(Xe_131_SYM, MolarMass_t(kilograms_per_mol = 130.905082d-3))
+    type(Isotope_t), parameter, public :: Xe_132 = Isotope_t(Xe_132_SYM, MolarMass_t(kilograms_per_mol = 131.904153d-3))
+    type(Isotope_t), parameter, public :: Xe_134 = Isotope_t(Xe_134_SYM, MolarMass_t(kilograms_per_mol = 133.905394d-3))
+    type(Isotope_t), parameter, public :: Xe_136 = Isotope_t(Xe_136_SYM, MolarMass_t(kilograms_per_mol = 135.90722d-3))
 
     character(len=*), parameter :: MODULE_NAME = "Isotope_m"
 

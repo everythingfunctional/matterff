@@ -1,7 +1,7 @@
 module Element_m
     use Element_component_m, only: ElementComponent_t, ElementComponent, fromJson
     use Element_symbol_m, only: &
-            ElementSymbol_t, ElementSymbol, H, He, Li, Be, B, C, N, O
+            ElementSymbol_t, ElementSymbol, H, He, Li, Be, B, C, N, O, Xe
     use erloff, only: &
             ErrorList_t, &
             MessageList_t, &
@@ -29,7 +29,16 @@ module Element_m
             N_15, &
             O_16, &
             O_17, &
-            O_18
+            O_18, &
+            Xe_124, &
+            Xe_126, &
+            Xe_128, &
+            Xe_129, &
+            Xe_130, &
+            Xe_131, &
+            Xe_132, &
+            Xe_134, &
+            Xe_136
     use Isotope_symbol_m, only: IsotopeSymbol_t
     use jsonff, only: &
             JsonArray_t, &
@@ -140,7 +149,8 @@ module Element_m
             naturalBoron, &
             naturalCarbon, &
             naturalNitrogen, &
-            naturalOxygen
+            naturalOxygen, &
+            naturalXenon
 contains
     pure subroutine combineElementsByAtomFactors( &
             element1, factor1, element2, factor2, messages, errors, combined)
@@ -641,6 +651,22 @@ contains
                  ElementComponent(O_17, 0.00038d0), &
                  ElementComponent(O_18, 0.00205d0)])
     end function naturalOxygen
+
+    pure function naturalXenon()
+        type(Element_t) :: naturalXenon
+
+        naturalXenon%symbol = Xe
+        allocate(naturalXenon%components, source = &
+                [ElementComponent(Xe_124, 0.000952d0), &
+                 ElementComponent(Xe_126, 0.00089d0), &
+                 ElementComponent(Xe_128, 0.019102d0), &
+                 ElementComponent(Xe_129, 0.264006d0), &
+                 ElementComponent(Xe_130, 0.040710d0), &
+                 ElementComponent(Xe_131, 0.212324d0), &
+                 ElementComponent(Xe_132, 0.269086d0), &
+                 ElementComponent(Xe_134, 0.104357d0), &
+                 ElementComponent(Xe_136, 0.088573d0)])
+    end function naturalXenon
 
     elemental function atomFractionIsotope(self, isotope) result(atom_fraction)
         class(Element_t), intent(in) :: self
