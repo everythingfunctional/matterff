@@ -528,9 +528,11 @@ contains
         type(ElementSymbol_t), intent(in) :: element
         double precision :: atom_fraction
 
+        type(Element_t) :: elements(size(self%components))
         integer :: position
 
-        position = find(element, self%components%element)
+        elements = self%components%element
+        position = find(element, elements)
         if (position > 0) then
             atom_fraction = &
                     self%components(position)%multiplier &
@@ -591,10 +593,12 @@ contains
         type(ElementSymbol_t), intent(in) :: element
         double precision :: weight_fraction
 
+        type(Element_t) :: elements(size(self%components))
         type(MolarMass_t) :: masses(size(self%components))
         integer :: position
 
-        position = find(element, self%components%element)
+        elements = self%components%element
+        position = find(element, elements)
         if (position > 0) then
             masses = &
                     (self%components%multiplier / sum(self%components%multiplier)) &
@@ -628,6 +632,7 @@ contains
         type(ChemicalComponent_t), intent(in) :: inputs(:)
         type(ChemicalComponent_t), allocatable, intent(out) :: combined(:)
 
+        type(Element_t), allocatable :: combined_elements(:)
         integer :: duplicate_position
         integer :: i
         integer :: new_num_components
@@ -641,7 +646,10 @@ contains
         allocate(combined(1))
         combined(1) = inputs(1)
         do i = 2, num_inputs
-            duplicate_position = find(inputs(i)%element%symbol, combined%element)
+            allocate(combined_elements(size(combined)))
+            combined_elements = combined%element
+            duplicate_position = find(inputs(i)%element%symbol, combined_elements)
+            deallocate(combined_elements)
             if (duplicate_position == 0) then
                 prev_num_components = size(combined)
                 new_num_components = prev_num_components + 1

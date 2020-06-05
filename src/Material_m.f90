@@ -252,9 +252,11 @@ contains
         type(MaterialComponent_t), intent(out) :: fixed_components(size(components))
 
         character(len=*), parameter :: PROCEDURE_NAME = "errorChecking"
+        double precision :: component_fractions(size(components))
 
-        if (all(components%fraction > 0.0d0)) then
-            if (components%fraction.sumsTo.1.0d0) then
+        component_fractions = components%fraction
+        if (all(component_fractions > 0.0d0)) then
+            if (component_fractions.sumsTo.1.0d0) then
                 fixed_components = components
             else
                 call messages%appendMessage(Info( &
@@ -265,7 +267,7 @@ contains
                         // " fractions that did not sum to 1.0."))
                 fixed_components = MaterialComponent( &
                         components%chemical, &
-                        components%fraction / sum(components%fraction))
+                        component_fractions / sum(component_fractions))
             end if
         else
             call errors%appendError(Internal( &
@@ -541,9 +543,11 @@ contains
         type(ChemicalSymbol_t), intent(in) :: chemical
         double precision :: atom_fraction
 
+        type(Chemical_t) :: chemicals(size(self%components))
         integer :: position
 
-        position = find(chemical, self%components%chemical)
+        chemicals = self%components%chemical
+        position = find(chemical, chemicals)
         if (position > 0) then
             atom_fraction = self%components(position)%fraction
         else
@@ -608,12 +612,14 @@ contains
         type(ChemicalSymbol_t), intent(in) :: chemical
         double precision :: weight_fraction
 
+        type(Chemical_t) :: chemicals(size(self%components))
         type(MolarMass_t) :: masses(size(self%components))
         integer :: position
 
-        position = find(chemical, self%components%chemical)
+        chemicals = self%components%chemical
+        position = find(chemical, chemicals)
         if (position > 0) then
-            masses = self%components%fraction * self%components%chemical%molarMass()
+            masses = self%components%fraction * chemicals%molarMass()
             weight_fraction = masses(position) / sum(masses)
         else
             weight_fraction = 0.0d0
@@ -652,6 +658,7 @@ contains
         type(MaterialComponent_t), intent(in) :: inputs(:)
         type(MaterialComponent_t), allocatable, intent(out) :: combined(:)
 
+        type(Chemical_t), allocatable :: combined_chemicals(:)
         integer :: duplicate_position
         integer :: i
         integer :: new_num_components
@@ -665,7 +672,10 @@ contains
         allocate(combined(1))
         combined(1) = inputs(1)
         do i = 2, num_inputs
-            duplicate_position = find(inputs(i)%chemical%symbol, combined%chemical)
+            allocate(combined_chemicals(size(combined)))
+            combined_chemicals = combined%chemical
+            duplicate_position = find(inputs(i)%chemical%symbol, combined_chemicals)
+            deallocate(combined_chemicals)
             if (duplicate_position == 0) then
                 prev_num_components = size(combined)
                 new_num_components = prev_num_components + 1

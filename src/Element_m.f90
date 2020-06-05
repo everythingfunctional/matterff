@@ -297,10 +297,12 @@ contains
         type(ElementComponent_t), intent(out) :: fixed_components(size(components))
 
         character(len=*), parameter :: PROCEDURE_NAME = "errorChecking"
+        double precision :: fractions(size(components))
 
         if (all(components%isotope%is(symbol))) then
-            if (all(components%fraction > 0.0d0)) then
-                if (components%fraction.sumsTo.1.0d0) then
+            fractions = components%fraction
+            if (all(fractions > 0.0d0)) then
+                if (fractions.sumsTo.1.0d0) then
                     fixed_components = components
                 else
                     call messages%appendMessage(Info( &
@@ -733,9 +735,11 @@ contains
         type(IsotopeSymbol_t), intent(in) :: isotope
         double precision :: atom_fraction
 
+        type(Isotope_t) :: isotopes(size(self%components))
         integer :: position
 
-        position = find(isotope, self%components%isotope)
+        isotopes = self%components%isotope
+        position = find(isotope, isotopes)
         if (position > 0) then
             atom_fraction = self%components(position)%fraction
         else
@@ -784,10 +788,12 @@ contains
         type(IsotopeSymbol_t), intent(in) :: isotope
         double precision :: weight_fraction
 
+        type(Isotope_t) :: isotopes(size(self%components))
         type(MolarMass_t) :: masses(size(self%components))
         integer :: position
 
-        position = find(isotope, self%components%isotope)
+        isotopes = self%components%isotope
+        position = find(isotope, isotopes)
         if (position > 0) then
             masses = self%components%fraction * self%components%isotope%atomic_mass
             weight_fraction = masses(position) / sum(masses)
@@ -800,6 +806,7 @@ contains
         type(ElementComponent_t), intent(in) :: inputs(:)
         type(ElementComponent_t), allocatable, intent(out) :: combined(:)
 
+        type(Isotope_t), allocatable :: combined_isotopes(:)
         integer :: duplicate_position
         integer :: i
         integer :: new_num_components
@@ -811,7 +818,10 @@ contains
         allocate(combined(1))
         combined(1) = inputs(1)
         do i = 2, num_inputs
-            duplicate_position = find(inputs(i)%isotope%symbol, combined%isotope)
+            allocate(combined_isotopes(size(combined)))
+            combined_isotopes = combined%isotope
+            duplicate_position = find(inputs(i)%isotope%symbol, combined_isotopes)
+            deallocate(combined_isotopes)
             if (duplicate_position == 0) then
                 prev_num_components = size(combined)
                 new_num_components = prev_num_components + 1
