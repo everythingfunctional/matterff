@@ -1,0 +1,17 @@
+name = "matterff"
+version = "0.1.0"
+license = "MIT"
+author = "Brad Richardson"
+maintainer = "everythingfunctional@protonmail.com"
+copyright = "2020 Brad Richardson"
+
+[dependencies]
+erloff = { git = "https://gitlab.com/everythingfunctional/erloff.git", tag = "v1.0.0" }
+iso_varying_string = { git = "https://gitlab.com/everythingfunctional/iso_varying_string.git", tag = "v1.0.0" }
+jsonff = { git = "https://gitlab.com/everythingfunctional/jsonff.git", tag = "v1.0.0" }
+quaff = { git = "https://gitlab.com/everythingfunctional/quaff.git", tag = "v0.1.0" }
+strff = { git = "https://gitlab.com/everythingfunctional/strff.git", tag = "v1.0.0" }
+
+[dev-dependencies]
+quaff_asserts = { path = "build/dependencies/quaff/quaff_asserts" } # This is an ugly hack that needs to be fixed once fpm has a registry
+vegetables = { git = "https://gitlab.com/everythingfunctional/vegetables", tag = "v5.0.0" }
