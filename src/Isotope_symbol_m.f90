@@ -53,6 +53,7 @@ module Isotope_symbol_m
     type(IsotopeSymbol_t), parameter, public :: Kr_82_SYM = IsotopeSymbol_t(Kr, 82)
     type(IsotopeSymbol_t), parameter, public :: Kr_83_SYM = IsotopeSymbol_t(Kr, 83)
     type(IsotopeSymbol_t), parameter, public :: Kr_84_SYM = IsotopeSymbol_t(Kr, 84)
+    type(IsotopeSymbol_t), parameter, public :: Kr_85_SYM = IsotopeSymbol_t(Kr, 85)
     type(IsotopeSymbol_t), parameter, public :: Kr_86_SYM = IsotopeSymbol_t(Kr, 86)
 
     type(IsotopeSymbol_t), parameter, public :: Xe_124_SYM = IsotopeSymbol_t(Xe, 124)

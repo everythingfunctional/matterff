@@ -28,6 +28,7 @@ module Isotope_m
             Kr_80_SYM, &
             Kr_82_SYM, &
             Kr_83_SYM, &
+            Kr_85_SYM, &
             Kr_84_SYM, &
             Kr_86_SYM, &
             Xe_124_SYM, &
@@ -83,6 +84,7 @@ module Isotope_m
     ! Where atomic mass is not provided for an isotope in the table, the
     ! atomic mass is taken from:
     ! [1] https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl
+    ! [2] https://en.wikipedia.org/wiki/Krypton-85
     type(Isotope_t), parameter, public :: H_1 = Isotope_t(H_1_SYM, MolarMass_t(kilograms_per_mol = 1.0078250321d-3))
     type(Isotope_t), parameter, public :: H_2 = Isotope_t(H_2_SYM, MolarMass_t(kilograms_per_mol = 2.0141017779d-3))
     type(Isotope_t), parameter, public :: H_3 = Isotope_t(H_3_SYM, MolarMass_t(kilograms_per_mol = 3.0160492779d-3)) ! [1]
@@ -117,6 +119,7 @@ module Isotope_m
     type(Isotope_t), parameter, public :: Kr_82 = Isotope_t(Kr_82_SYM, MolarMass_t(kilograms_per_mol = 81.913484d-3))
     type(Isotope_t), parameter, public :: Kr_83 = Isotope_t(Kr_83_SYM, MolarMass_t(kilograms_per_mol = 82.914136d-3))
     type(Isotope_t), parameter, public :: Kr_84 = Isotope_t(Kr_84_SYM, MolarMass_t(kilograms_per_mol = 83.911507d-3))
+    type(Isotope_t), parameter, public :: Kr_85 = Isotope_t(Kr_85_SYM, MolarMass_t(kilograms_per_mol = 84.9125273d-3)) ! [2]
     type(Isotope_t), parameter, public :: Kr_86 = Isotope_t(Kr_86_SYM, MolarMass_t(kilograms_per_mol = 85.9106107d-3))
 
     type(Isotope_t), parameter, public :: Xe_124 = Isotope_t(Xe_124_SYM, MolarMass_t(kilograms_per_mol = 123.905893d-3))
