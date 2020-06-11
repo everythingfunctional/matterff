@@ -2,7 +2,7 @@ module Chemical_component_m
     use Element_m, only: Element_t, fromJson
     use erloff, only: ErrorList_t, MessageList_t, Fatal, Module_, Procedure_
     use jsonff, only: JsonElement_t, JsonNumber_t, JsonObject_t
-    use Utilities_m, only: INVALID_ARGUMENT_TYPE
+    use matterff_Utilities_m, only: INVALID_ARGUMENT_TYPE
 
     implicit none
     private

@@ -41,9 +41,9 @@ module Chemical_m
             JsonMemberUnsafe, &
             JsonNumber, &
             JsonObject
+    use matterff_Utilities_m, only: INVALID_ARGUMENT_TYPE, MISMATCH_TYPE
     use quaff, only: Amount_t, Mass_t, MolarMass_t, operator(/), sum
     use strff, only: join
-    use Utilities_m, only: INVALID_ARGUMENT_TYPE, MISMATCH_TYPE
 
     implicit none
     private

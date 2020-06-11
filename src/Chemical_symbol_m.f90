@@ -10,8 +10,8 @@ module Chemical_symbol_m
             JsonObject_t, &
             JsonArray, &
             JsonElement
+    use matterff_Utilities_m, only: INVALID_ARGUMENT_TYPE
     use strff, only: join
-    use Utilities_m, only: INVALID_ARGUMENT_TYPE
 
     implicit none
     private

@@ -1,6 +1,6 @@
-module Utilities_m
+module matterff_Utilities_m
     use erloff, only: MessageType_t
-    use Miscellaneous_m, only: operator(.safeEq.)
+    use quaff_Utilities_m, only: operator(.safeEq.)
 
     implicit none
     private
@@ -22,4 +22,4 @@ contains
 
         sumsTo = sum(numbers).safeEq.expected
     end function sumsTo
-end module Utilities_m
+end module matterff_Utilities_m

@@ -12,8 +12,8 @@ module Chemical_symbol_component_m
             JsonNumber, &
             JsonObject, &
             JsonStringUnsafe
+    use matterff_Utilities_m, only: INVALID_ARGUMENT_TYPE
     use strff, only: toString
-    use Utilities_m, only: INVALID_ARGUMENT_TYPE
 
     implicit none
     private

@@ -73,13 +73,13 @@ module Element_m
             jsonNumber, &
             jsonObject, &
             jsonStringUnsafe
-    use quaff, only: Amount_t, Mass_t, MolarMass_t, operator(/), sum
-    use strff, only: join
-    use Utilities_m, only: &
+    use matterff_Utilities_m, only: &
             operator(.sumsTo.), &
             INVALID_ARGUMENT_TYPE, &
             MISMATCH_TYPE, &
             NORMALIZED_FRACTIONS_TYPE
+    use quaff, only: Amount_t, Mass_t, MolarMass_t, operator(/), sum
+    use strff, only: join
 
     implicit none
     private

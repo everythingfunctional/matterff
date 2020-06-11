@@ -16,7 +16,7 @@ module chemical_test
     use Element_symbol_m, only: H, O
     use erloff, only: ErrorList_t, MessageList_t
     use Isotope_m, only: H_1, H_2
-    use Utilities_m, only: INVALID_ARGUMENT_TYPE, MISMATCH_TYPE
+    use matterff_Utilities_m, only: INVALID_ARGUMENT_TYPE, MISMATCH_TYPE
     use Vegetables_m, only: &
             Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
 

@@ -20,8 +20,8 @@ module material_test
             fromAtomFractions, &
             fromWeightFractions
     use Material_component_m, only: MaterialComponent_t, MaterialComponent
+    use matterff_Utilities_m, only: INVALID_ARGUMENT_TYPE, NORMALIZED_FRACTIONS_TYPE
     use quaff_asserts_m, only: assertEquals
-    use Utilities_m, only: INVALID_ARGUMENT_TYPE, NORMALIZED_FRACTIONS_TYPE
     use Vegetables_m, only: &
             Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
 

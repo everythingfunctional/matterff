@@ -1,7 +1,7 @@
 module isotope_from_string_test
     use erloff, only: ErrorList_t
     use Isotope_m, only: Isotope_t, fromString, H_1, He_4
-    use Utilities_m, only: INVALID_ARGUMENT_TYPE
+    use matterff_Utilities_m, only: INVALID_ARGUMENT_TYPE
     use Vegetables_m, only: &
             Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
 

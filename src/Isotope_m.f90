@@ -48,9 +48,9 @@ module Isotope_m
             jsonNumber, &
             jsonObject, &
             jsonStringUnsafe
+    use matterff_Utilities_m, only: INVALID_ARGUMENT_TYPE
     use quaff, only: MolarMass_t
     use strff, only: toString
-    use Utilities_m, only: INVALID_ARGUMENT_TYPE
 
     implicit none
     private

@@ -13,8 +13,8 @@ module Matter_m
             JsonObject, &
             JsonStringUnsafe
     use Material_m, only: Material_t, combineByAtomFactorsUnsafe, fromJson
+    use matterff_Utilities_m, only: INVALID_ARGUMENT_TYPE
     use quaff, only: Amount_t, Mass_t, operator(*), operator(/), fromString
-    use Utilities_m, only: INVALID_ARGUMENT_TYPE
 
     implicit none
     private

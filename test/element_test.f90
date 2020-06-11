@@ -21,10 +21,10 @@ module element_test
     use Element_symbol_m, only: H
     use erloff, only: ErrorList_t, MessageList_t
     use Isotope_m, only: Isotope_t, H_1, H_2, He_3
+    use matterff_Utilities_m, only: &
+            INVALID_ARGUMENT_TYPE, MISMATCH_TYPE, NORMALIZED_FRACTIONS_TYPE
     use quaff, only: operator(.unit.), GRAMS_PER_MOL
     use quaff_asserts_m, only: assertEqualsWithinAbsolute
-    use Utilities_m, only: &
-            INVALID_ARGUMENT_TYPE, MISMATCH_TYPE, NORMALIZED_FRACTIONS_TYPE
     use Vegetables_m, only: &
             Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
 
