@@ -504,9 +504,11 @@ contains
         type(Amount_t) :: amount
 
         type(Amount_t), parameter :: ZERO = Amount_t(mols = 0.0d0)
+        type(Element_t) :: elements(size(self%components))
         integer :: position
 
-        position = find(element, self%components%element)
+        elements = self%components%element
+        position = find(element, elements)
         if (position > 0) then
             amount = self%components(position)%multiplier * total_amount
         else
