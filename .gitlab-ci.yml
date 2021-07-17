@@ -1,9 +1,5 @@
 image: registry.gitlab.com/everythingfunctional/dockerfpm
 
-variables:
-    GIT_SUBMODULE_STRATEGY: normal
-
 test:
   script:
-    - fpm test
-    - valgrind --leak-check=full --error-exitcode=1 build/gfortran_debug/test/runTests
+    - fpm test # TODO: run with valgrind once gfortran memory leaks have been fixed, i.e.  --runner "valgrind --leak-check=full --error-exitcode=1"
