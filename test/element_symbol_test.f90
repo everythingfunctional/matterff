@@ -1,6 +1,6 @@
 module element_symbol_test
-    use matterff, only: H, He
     use iso_varying_string, only: operator(//)
+    use matterff, only: H, He
     use vegetables, only: &
             result_t, test_item_t, assert_not, assert_that, describe, it
 
