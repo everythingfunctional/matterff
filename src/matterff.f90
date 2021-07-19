@@ -12,6 +12,46 @@ module matterff
             Ar, &
             Kr, &
             Xe
+    use fallible_isotope_m, only: fallible_isotope_t
+    use isotope_m, only: &
+            isotope_t, &
+            find, &
+            H_1, &
+            H_2, &
+            H_3, &
+            He_3, &
+            He_4, &
+            Li_6, &
+            Li_7, &
+            Be_9, &
+            B_10, &
+            B_11, &
+            C_12, &
+            C_13, &
+            N_14, &
+            N_15, &
+            O_16, &
+            O_17, &
+            O_18, &
+            Ar_36, &
+            Ar_38, &
+            Ar_40, &
+            Kr_78, &
+            Kr_80, &
+            Kr_82, &
+            Kr_83, &
+            Kr_84, &
+            Kr_85, &
+            Kr_86, &
+            Xe_124, &
+            Xe_126, &
+            Xe_128, &
+            Xe_129, &
+            Xe_130, &
+            Xe_131, &
+            Xe_132, &
+            Xe_134, &
+            Xe_136
     use isotope_symbol_m, only: &
             isotope_symbol_t, &
             H_1_SYM, &

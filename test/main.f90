@@ -7,15 +7,24 @@ contains
     subroutine run()
         use element_symbol_test, only: &
                 element_symbol_hello => test_hello
+        use isotope_from_string_test, only: &
+                isotope_from_string_isotope_from_string => test_isotope_from_string
+        use isotope_json_test, only: &
+                isotope_json_isotope_json => test_isotope_json
         use isotope_symbol_test, only: &
                 isotope_symbol_isotope_symbol => test_isotope_symbol
+        use isotope_test, only: &
+                isotope_isotope => test_isotope
         use vegetables, only: test_item_t, test_that, run_tests
 
         type(test_item_t) :: tests
-        type(test_item_t) :: individual_tests(2)
+        type(test_item_t) :: individual_tests(5)
 
         individual_tests(1) = element_symbol_hello()
-        individual_tests(2) = isotope_symbol_isotope_symbol()
+        individual_tests(2) = isotope_from_string_isotope_from_string()
+        individual_tests(3) = isotope_json_isotope_json()
+        individual_tests(4) = isotope_symbol_isotope_symbol()
+        individual_tests(5) = isotope_isotope()
         tests = test_that(individual_tests)
 
         call run_tests(tests)
