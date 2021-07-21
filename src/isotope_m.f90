@@ -88,10 +88,12 @@ module isotope_m
 
     type :: isotope_t
         private
-        type(isotope_symbol_t), public :: symbol
-        type(molar_mass_t), public :: atomic_mass
+        type(isotope_symbol_t) :: symbol_
+        type(molar_mass_t) :: atomic_mass_
     contains
         private
+        procedure, public :: symbol
+        procedure, public :: atomic_mass
         procedure, public :: is
         procedure, public :: to_json_with_fraction
         procedure, public :: to_string => isotope_to_string
@@ -153,30 +155,44 @@ module isotope_m
     type(isotope_t), parameter :: Xe_134 = isotope_t(Xe_134_SYM, molar_mass_t(kilograms_per_mol = 133.905394d-3))
     type(isotope_t), parameter :: Xe_136 = isotope_t(Xe_136_SYM, molar_mass_t(kilograms_per_mol = 135.90722d-3))
 contains
+    elemental function symbol(self)
+        class(isotope_t), intent(in) :: self
+        type(isotope_symbol_t) :: symbol
+
+        symbol = self%symbol_
+    end function
+
+    elemental function atomic_mass(self)
+        class(isotope_t), intent(in) :: self
+        type(molar_mass_t) :: atomic_mass
+
+        atomic_mass = self%atomic_mass_
+    end function
+
     elemental function is(self, element)
         class(isotope_t), intent(in) :: self
         type(element_symbol_t), intent(in) :: element
         logical :: is
 
-        is = self%symbol%is(element)
+        is = self%symbol_%is(element)
     end function
 
-    function to_json_with_fraction(self, fraction) result(json)
+    impure elemental function to_json_with_fraction(self, fraction) result(json)
         class(isotope_t), intent(in) :: self
         double precision, intent(in) :: fraction
         type(json_object_t) :: json
 
         json = json_object_t([ &
                 json_member_unsafe("fraction", json_number_t(fraction)), &
-                json_member_unsafe("isotope", json_string_unsafe(self%symbol%to_string())), &
-                json_member_unsafe("atomic mass", json_string_unsafe(self%atomic_mass%to_string()))])
+                json_member_unsafe("isotope", json_string_unsafe(self%symbol_%to_string())), &
+                json_member_unsafe("atomic mass", json_string_unsafe(self%atomic_mass_%to_string()))])
     end function
 
     elemental function isotope_to_string(self) result(string)
         class(isotope_t), intent(in) :: self
         type(varying_string) :: string
 
-        string = self%symbol%to_string()
+        string = self%symbol_%to_string()
     end function
 
     pure function find_isotope(symbol, isotopes) result(position)
@@ -188,7 +204,7 @@ contains
 
         position = 0
         do i = 1, size(isotopes)
-            if (isotopes(i)%symbol == symbol) then
+            if (isotopes(i)%symbol_ == symbol) then
                 position = i
                 exit
             end if

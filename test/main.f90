@@ -5,8 +5,12 @@ program main
     call run()
 contains
     subroutine run()
+        use element_json_test, only: &
+                element_json_element_json => test_element_json
         use element_symbol_test, only: &
                 element_symbol_hello => test_hello
+        use element_test, only: &
+                element_element => test_element
         use isotope_from_string_test, only: &
                 isotope_from_string_isotope_from_string => test_isotope_from_string
         use isotope_json_test, only: &
@@ -18,13 +22,15 @@ contains
         use vegetables, only: test_item_t, test_that, run_tests
 
         type(test_item_t) :: tests
-        type(test_item_t) :: individual_tests(5)
+        type(test_item_t) :: individual_tests(7)
 
-        individual_tests(1) = element_symbol_hello()
-        individual_tests(2) = isotope_from_string_isotope_from_string()
-        individual_tests(3) = isotope_json_isotope_json()
-        individual_tests(4) = isotope_symbol_isotope_symbol()
-        individual_tests(5) = isotope_isotope()
+        individual_tests(1) = element_json_element_json()
+        individual_tests(2) = element_symbol_hello()
+        individual_tests(3) = element_element()
+        individual_tests(4) = isotope_from_string_isotope_from_string()
+        individual_tests(5) = isotope_json_isotope_json()
+        individual_tests(6) = isotope_symbol_isotope_symbol()
+        individual_tests(7) = isotope_isotope()
         tests = test_that(individual_tests)
 
         call run_tests(tests)

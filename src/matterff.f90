@@ -1,4 +1,23 @@
 module matterff
+    use element_m, only: &
+            element_t, &
+            combine_by_atom_factors_unsafe, &
+            combine_by_weight_factors_unsafe, &
+            find, &
+            from_atom_fractions_unsafe, &
+            from_weight_fractions_unsafe, &
+            natural_hydrogen, &
+            natural_helium, &
+            natural_lithium, &
+            natural_beryllium, &
+            natural_boron, &
+            natural_carbon, &
+            natural_nitrogen, &
+            natural_oxygen, &
+            natural_argon, &
+            natural_krypton, &
+            natural_xenon
+    use element_component_m, only: element_component_t, combine_duplicates
     use element_symbol_m, only: &
             element_symbol_t, &
             H, &
@@ -12,6 +31,14 @@ module matterff
             Ar, &
             Kr, &
             Xe
+    use fallible_element_m, only: &
+            fallible_element_t, &
+            combine_by_atom_factors, &
+            combine_by_weight_factors, &
+            from_atom_fractions, &
+            from_weight_fractions
+    use fallible_element_component_m, only: fallible_element_component_t
+    use fallible_element_components_m, only: fallible_element_components_t
     use fallible_isotope_m, only: fallible_isotope_t
     use isotope_m, only: &
             isotope_t, &
