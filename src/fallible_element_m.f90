@@ -18,8 +18,7 @@ module fallible_element_m
     use element_symbol_m, only: element_symbol_t
     use erloff, only: &
             error_list_t, fatal_t, message_list_t, module_t, procedure_t
-    use fallible_element_component_m, only: &
-            fallible_element_component_t, from_json_value
+    use fallible_element_component_m, only: fallible_element_component_t
     use fallible_element_components_m, only: fallible_element_components_t
     use iso_varying_string, only: varying_string, char
     use jsonff, only: &
@@ -258,7 +257,7 @@ contains
                                         procedure_t(PROCEDURE_NAME))
                             else
                                 allocate(maybe_components, source = &
-                                        [(from_json_value(maybe_isotopes(i)%value_()), i = 1, num_isotopes)])
+                                        [(fallible_element_component_t(maybe_isotopes(i)%value_()), i = 1, num_isotopes)])
                                 if (any(maybe_components%failed())) then
                                     fallible_element%errors_ = error_list_t( &
                                             pack(maybe_components%errors(), maybe_components%failed()), &
@@ -294,7 +293,7 @@ contains
                                     procedure_t(PROCEDURE_NAME))
                         else
                             allocate(maybe_components, source = &
-                                    [(from_json_value(maybe_isotopes(i)%value_()), i = 1, num_isotopes)])
+                                    [(fallible_element_component_t(maybe_isotopes(i)%value_()), i = 1, num_isotopes)])
                             if (any(maybe_components%failed())) then
                                 fallible_element%errors_ = error_list_t( &
                                         pack(maybe_components%errors(), maybe_components%failed()), &

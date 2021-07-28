@@ -9,7 +9,7 @@ module fallible_element_component_m
 
     implicit none
     private
-    public :: fallible_element_component_t, from_json_value
+    public :: fallible_element_component_t
 
     type :: fallible_element_component_t
         private
@@ -24,6 +24,7 @@ module fallible_element_component_m
 
     interface fallible_element_component_t
         module procedure from_fallible_element_component
+        module procedure from_json_value
     end interface
 
     character(len=*), parameter :: MODULE_NAME = "fallible_element_component_m"

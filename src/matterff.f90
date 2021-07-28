@@ -1,4 +1,30 @@
 module matterff
+    use chemical_m, only: &
+            chemical_t, &
+            chemical_unsafe, &
+            combine_by_atom_factors_unsafe, &
+            combine_by_weight_factors_unsafe, &
+            find, &
+            natural_argon_gas, &
+            natural_helium_gas, &
+            natural_hydrogen_gas, &
+            natural_krypton_gas, &
+            natural_nitrogen_gas, &
+            natural_oxygen_gas, &
+            natural_water, &
+            natural_xenon_gas
+    use chemical_component_m, only: chemical_component_t, combine_duplicates
+    use chemical_symbol_m, only: &
+            chemical_symbol_t, &
+            argon_gas_symbol, &
+            helium_gas_symbol, &
+            hydrogen_gas_symbol, &
+            krypton_gas_symbol, &
+            nitrogen_gas_symbol, &
+            oxygen_gas_symbol, &
+            water_symbol, &
+            xenon_gas_symbol
+    use chemical_symbol_component_m, only: chemical_symbol_component_t
     use element_m, only: &
             element_t, &
             combine_by_atom_factors_unsafe, &
@@ -31,6 +57,15 @@ module matterff
             Ar, &
             Kr, &
             Xe
+    use fallible_chemical_m, only: &
+            fallible_chemical_t, &
+            combine_by_atom_factors, &
+            combine_by_weight_factors
+    use fallible_chemical_component_m, only: fallible_chemical_component_t
+    use fallible_chemical_components_m, only: fallible_chemical_components_t
+    use fallible_chemical_symbol_m, only: fallible_chemical_symbol_t
+    use fallbile_chemical_symbol_component_m, only: &
+            fallible_chemical_symbol_component_t
     use fallible_element_m, only: &
             fallible_element_t, &
             combine_by_atom_factors, &

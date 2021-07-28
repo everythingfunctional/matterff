@@ -5,6 +5,14 @@ program main
     call run()
 contains
     subroutine run()
+        use chemical_json_test, only: &
+                chemical_json_chemical_json => test_chemical_json
+        use chemical_symbol_component_test, only: &
+                chemical_symbol_component_chemical_symbol_component => test_chemical_symbol_component
+        use chemical_symbol_json_test, only: &
+                chemical_symbol_json_chemical_symbol_json => test_chemical_symbol_json
+        use chemical_test, only: &
+                chemical_chemical => test_chemical
         use element_json_test, only: &
                 element_json_element_json => test_element_json
         use element_symbol_test, only: &
@@ -22,15 +30,19 @@ contains
         use vegetables, only: test_item_t, test_that, run_tests
 
         type(test_item_t) :: tests
-        type(test_item_t) :: individual_tests(7)
+        type(test_item_t) :: individual_tests(11)
 
-        individual_tests(1) = element_json_element_json()
-        individual_tests(2) = element_symbol_hello()
-        individual_tests(3) = element_element()
-        individual_tests(4) = isotope_from_string_isotope_from_string()
-        individual_tests(5) = isotope_json_isotope_json()
-        individual_tests(6) = isotope_symbol_isotope_symbol()
-        individual_tests(7) = isotope_isotope()
+        individual_tests(1) = chemical_json_chemical_json()
+        individual_tests(2) = chemical_symbol_component_chemical_symbol_component()
+        individual_tests(3) = chemical_symbol_json_chemical_symbol_json()
+        individual_tests(4) = chemical_chemical()
+        individual_tests(5) = element_json_element_json()
+        individual_tests(6) = element_symbol_hello()
+        individual_tests(7) = element_element()
+        individual_tests(8) = isotope_from_string_isotope_from_string()
+        individual_tests(9) = isotope_json_isotope_json()
+        individual_tests(10) = isotope_symbol_isotope_symbol()
+        individual_tests(11) = isotope_isotope()
         tests = test_that(individual_tests)
 
         call run_tests(tests)

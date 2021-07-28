@@ -308,7 +308,7 @@ contains
                 ])
     end function
 
-    pure function symbol(self)
+    elemental function symbol(self)
         class(element_t), intent(in) :: self
         type(element_symbol_t) :: symbol
 
@@ -353,7 +353,7 @@ contains
         end associate
     end function
 
-    function to_json_with_multiplier(self, multiplier) result(json)
+    impure elemental function to_json_with_multiplier(self, multiplier) result(json)
         class(element_t), intent(in) :: self
         double precision, intent(in) :: multiplier
         type(json_object_t) :: json
@@ -361,11 +361,12 @@ contains
         associate( &
                 isotopes => self%components_%isotope(), &
                 fractions => self%components_%fraction_())
-            json = json_object_t([ &
-                    json_member_unsafe("multiplier", json_number_t(multiplier)), &
-                    json_member_unsafe("element", json_string_unsafe(self%symbol_%to_string())), &
-                    json_member_unsafe("atom fractions", json_array_t(json_element_t( &
-                            [(isotopes%to_json_with_fraction(fractions))])))])
+            json = json_object_t( &
+                    [ json_member_unsafe("multiplier", json_number_t(multiplier)) &
+                    , json_member_unsafe("element", json_string_unsafe(self%symbol_%to_string())) &
+                    , json_member_unsafe("atom fractions", json_array_t(json_element_t( &
+                            isotopes%to_json_with_fraction(fractions)))) &
+                    ])
         end associate
     end function
 
