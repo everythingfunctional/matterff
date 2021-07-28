@@ -277,7 +277,7 @@ contains
                                     INVALID_ARGUMENT, &
                                     module_t(MODULE_NAME), &
                                     procedure_t(PROCEDURE_NAME), &
-                                    "atom fractions must be an array"))
+                                    "weight fractions must be an array"))
                         end select
                     end if
                 else

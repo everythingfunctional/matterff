@@ -207,7 +207,7 @@ contains
                 [chemical_component_t(natural_xenon(), 1.0d0)]
     end function
 
-    pure function symbol(self)
+    elemental function symbol(self)
         class(chemical_t), intent(in) :: self
         type(chemical_symbol_t) :: symbol
 
@@ -285,7 +285,7 @@ contains
         end associate
     end function
 
-    function to_json_with_fraction(self, fraction) result(json)
+    impure elemental function to_json_with_fraction(self, fraction) result(json)
         class(chemical_t), intent(in) :: self
         double precision, intent(in) :: fraction
         type(json_object_t) :: json
