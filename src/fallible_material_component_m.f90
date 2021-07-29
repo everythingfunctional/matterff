@@ -1,5 +1,6 @@
 module fallible_material_component_m
-    use erloff, only: error_list_t, fatal_t, module_t, procedure_t
+    use erloff, only: &
+            error_list_t, fatal_t, message_list_t, module_t, procedure_t
     use fallible_chemical_m, only: fallible_chemical_t
     use iso_varying_string, only: operator(//)
     use jsonff, only: &
@@ -14,11 +15,13 @@ module fallible_material_component_m
     type :: fallible_material_component_t
         private
         type(material_component_t) :: material_component_
+        type(message_list_t) :: messages_
         type(error_list_t) :: errors_
     contains
         private
         procedure, public :: failed
         procedure, public :: material_component
+        procedure, public :: messages
         procedure, public :: errors
     end type
 
@@ -39,6 +42,8 @@ contains
         type(procedure_t), intent(in) :: procedure_
         type(fallible_material_component_t) :: new_fallible_material_component
 
+        new_fallible_material_component%messages_ = message_list_t( &
+                fallible_material_component%messages_, module_, procedure_)
         if (fallible_material_component%failed()) then
             new_fallible_material_component%errors_ = error_list_t(&
                     fallible_material_component%errors_, module_, procedure_)
@@ -57,6 +62,10 @@ contains
         type(fallible_chemical_t) :: maybe_chemical
 
         maybe_chemical = fallible_chemical_t(json)
+        new_fallible_material_component%messages_ = message_list_t( &
+                maybe_chemical%messages(), &
+                module_t(MODULE_NAME), &
+                procedure_t(PROCEDURE_NAME))
         if (maybe_chemical%failed()) then
             new_fallible_material_component%errors_ = error_list_t( &
                     maybe_chemical%errors(), &
@@ -118,6 +127,13 @@ contains
         type(material_component_t) :: material_component
 
         material_component = self%material_component_
+    end function
+
+    impure elemental function messages(self)
+        class(fallible_material_component_t), intent(in) :: self
+        type(message_list_t) :: messages
+
+        messages = self%messages_
     end function
 
     impure elemental function errors(self)

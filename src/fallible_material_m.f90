@@ -211,10 +211,18 @@ contains
                                     pack(maybe_components%errors(), maybe_components%failed()), &
                                     module_t(MODULE_NAME), &
                                     procedure_t(PROCEDURE_NAME))
+                            fallible_material%messages_ = message_list_t( &
+                                    maybe_components%messages(), &
+                                    module_t(MODULE_NAME), &
+                                    procedure_t(PROCEDURE_NAME))
                         else
                             fallible_material = fallible_material_t( &
                                     from_weight_fractions( &
                                             maybe_components%material_component()), &
+                                    module_t(MODULE_NAME), &
+                                    procedure_t(PROCEDURE_NAME))
+                            fallible_material%messages_ = message_list_t( &
+                                    [maybe_components%messages(), fallible_material%messages_], &
                                     module_t(MODULE_NAME), &
                                     procedure_t(PROCEDURE_NAME))
                         end if
@@ -246,10 +254,18 @@ contains
                                 pack(maybe_components%errors(), maybe_components%failed()), &
                                 module_t(MODULE_NAME), &
                                 procedure_t(PROCEDURE_NAME))
+                        fallible_material%messages_ = message_list_t( &
+                                maybe_components%messages(), &
+                                module_t(MODULE_NAME), &
+                                procedure_t(PROCEDURE_NAME))
                     else
                         fallible_material = fallible_material_t( &
                                 from_atom_fractions( &
                                         maybe_components%material_component()), &
+                                module_t(MODULE_NAME), &
+                                procedure_t(PROCEDURE_NAME))
+                        fallible_material%messages_ = message_list_t( &
+                                [maybe_components%messages(), fallible_material%messages_], &
                                 module_t(MODULE_NAME), &
                                 procedure_t(PROCEDURE_NAME))
                     end if

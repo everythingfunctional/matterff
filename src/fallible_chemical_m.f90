@@ -14,7 +14,13 @@ module fallible_chemical_m
             natural_xenon_gas
     use chemical_component_m, only: chemical_component_t
     use chemical_symbol_m, only: chemical_symbol_t
-    use erloff, only: error_list_t, internal_t, fatal_t, module_t, procedure_t
+    use erloff, only: &
+            error_list_t, &
+            internal_t, &
+            fatal_t, &
+            message_list_t, &
+            module_t, &
+            procedure_t
     use fallible_chemical_component_m, only: &
             fallible_chemical_component_t, from_json_value
     use fallible_chemical_components_m, only: fallible_chemical_components_t
@@ -35,11 +41,13 @@ module fallible_chemical_m
     type :: fallible_chemical_t
         private
         type(chemical_t) :: chemical_
+        type(message_list_t) :: messages_
         type(error_list_t) :: errors_
     contains
         private
         procedure, public :: failed
         procedure, public :: chemical
+        procedure, public :: messages
         procedure, public :: errors
     end type
 
@@ -145,6 +153,8 @@ contains
         type(procedure_t), intent(in) :: procedure_
         type(fallible_chemical_t) :: new_fallible_chemical
 
+        new_fallible_chemical%messages_ = message_list_t( &
+                fallible_chemical%messages_, module_, procedure_)
         if (fallible_chemical%failed()) then
             new_fallible_chemical%errors_ = error_list_t( &
                     fallible_chemical%errors_, module_, procedure_)
@@ -226,11 +236,19 @@ contains
                                         pack(maybe_components%errors(), maybe_components%failed()), &
                                         module_t(MODULE_NAME), &
                                         procedure_t(PROCEDURE_NAME))
+                                fallible_chemical%messages_ = message_list_t( &
+                                        maybe_components%messages(), &
+                                        module_t(MODULE_NAME), &
+                                        procedure_t(PROCEDURE_NAME))
                             else
                                 fallible_chemical = fallible_chemical_t( &
                                         fallible_chemical_t( &
                                                 maybe_symbol%chemical_symbol(), &
                                                 maybe_components%chemical_component()), &
+                                        module_t(MODULE_NAME), &
+                                        procedure_t(PROCEDURE_NAME))
+                                fallible_chemical%messages_ = message_list_t( &
+                                        maybe_components%messages(), &
                                         module_t(MODULE_NAME), &
                                         procedure_t(PROCEDURE_NAME))
                             end if
@@ -299,6 +317,13 @@ contains
         type(chemical_t) :: chemical
 
         chemical = self%chemical_
+    end function
+
+    function messages(self)
+        class(fallible_chemical_t), intent(in) :: self
+        type(message_list_t) :: messages
+
+        messages = self%messages_
     end function
 
     function errors(self)

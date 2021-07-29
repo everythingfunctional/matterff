@@ -1,6 +1,7 @@
 module fallible_chemical_component_m
     use chemical_component_m, only: chemical_component_t
-    use erloff, only: error_list_t, fatal_t, module_t, procedure_t
+    use erloff, only: &
+            error_list_t, fatal_t, message_list_t, module_t, procedure_t
     use fallible_element_m, only: fallible_element_t
     use iso_varying_string, only: operator(//)
     use jsonff, only: &
@@ -14,11 +15,13 @@ module fallible_chemical_component_m
     type :: fallible_chemical_component_t
         private
         type(chemical_component_t) :: chemical_component_
+        type(message_list_t) :: messages_
         type(error_list_t) :: errors_
     contains
         private
         procedure, public :: failed
         procedure, public :: chemical_component
+        procedure, public :: messages
         procedure, public :: errors
     end type
 
@@ -39,6 +42,8 @@ contains
         type(procedure_t), intent(in) :: procedure_
         type(fallible_chemical_component_t) :: new_fallible_chemical_component
 
+        new_fallible_chemical_component%messages_ = message_list_t( &
+                fallible_chemical_component%messages_, module_, procedure_)
         if (fallible_chemical_component%failed()) then
             new_fallible_chemical_component%errors_ = error_list_t(&
                     fallible_chemical_component%errors_, module_, procedure_)
@@ -56,6 +61,10 @@ contains
         type(fallible_json_value_t) :: maybe_multiplier
 
         maybe_element = fallible_element_t(json)
+        new_fallible_chemical_component%messages_ = message_list_t( &
+                maybe_element%messages(), &
+                module_t(MODULE_NAME), &
+                procedure_t(PROCEDURE_NAME))
         if (maybe_element%failed()) then
             new_fallible_chemical_component%errors_ = error_list_t( &
                     maybe_element%errors(), &
@@ -117,6 +126,13 @@ contains
         type(chemical_component_t) :: chemical_component
 
         chemical_component = self%chemical_component_
+    end function
+
+    impure elemental function messages(self)
+        class(fallible_chemical_component_t), intent(in) :: self
+        type(message_list_t) :: messages
+
+        messages = self%messages_
     end function
 
     impure elemental function errors(self)
