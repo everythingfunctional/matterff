@@ -31,10 +31,14 @@ contains
                 material_json_material_json => test_material_json
         use material_test, only: &
                 material_material => test_material
+        use matter_json_test, only: &
+                matter_json_matter_json => test_matter_json
+        use matter_test, only: &
+                matter_matter => test_matter
         use vegetables, only: test_item_t, test_that, run_tests
 
         type(test_item_t) :: tests
-        type(test_item_t) :: individual_tests(13)
+        type(test_item_t) :: individual_tests(15)
 
         individual_tests(1) = chemical_json_chemical_json()
         individual_tests(2) = chemical_symbol_component_chemical_symbol_component()
@@ -49,6 +53,8 @@ contains
         individual_tests(11) = isotope_isotope()
         individual_tests(12) = material_json_material_json()
         individual_tests(13) = material_material()
+        individual_tests(14) = matter_json_matter_json()
+        individual_tests(15) = matter_matter()
         tests = test_that(individual_tests)
 
         call run_tests(tests)

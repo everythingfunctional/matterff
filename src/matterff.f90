@@ -74,6 +74,7 @@ module matterff
             from_weight_fractions
     use fallible_element_component_m, only: fallible_element_component_t
     use fallible_element_components_m, only: fallible_element_components_t
+    use fallible_isotope_m, only: fallible_isotope_t
     use fallible_material_m, only: &
             fallible_material_t, &
             combine_by_atom_factors, &
@@ -82,7 +83,7 @@ module matterff
             from_weight_fractions
     use fallible_material_component_m, only: fallible_material_component_t
     use fallible_material_components_m, only: fallible_material_components_t
-    use fallible_isotope_m, only: fallible_isotope_t
+    use fallible_matter_m, only: fallible_matter_t
     use isotope_m, only: &
             isotope_t, &
             find, &
@@ -175,4 +176,5 @@ module matterff
             pure_natural_water, &
             pure_natural_xenon_gas
     use material_component_m, only: material_component_t, combine_duplicates
+    use matter_m, only: matter_t, matter_unsafe
 end module
