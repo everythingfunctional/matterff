@@ -1,83 +1,87 @@
 module isotope_from_string_test
-    use erloff, only: ErrorList_t
-    use Isotope_m, only: Isotope_t, fromString, H_1, He_4
-    use matterff_Utilities_m, only: INVALID_ARGUMENT_TYPE
-    use Vegetables_m, only: &
-            Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
+    use erloff, only: error_list_t
+    use matterff, only: fallible_isotope_t, isotope_t, H_1, He_4
+    use matterff_utilities_m, only: INVALID_ARGUMENT
+    use vegetables, only: &
+            result_t, test_item_t, assert_equals, assert_that, describe, fail, it
 
     implicit none
     private
-
     public :: test_isotope_from_string
 contains
     function test_isotope_from_string() result(tests)
-        type(TestItem_t) :: tests
+        type(test_item_t) :: tests
 
-        type(TestItem_t) :: individual_tests(4)
+        tests = describe( &
+                "fallible_isotope_t.from_string", &
+                [ it("Works for known, valid isotopes", check_valid_string) &
+                , it("Fails if the string doesn't have the '-'", check_missing_dash) &
+                , it("Fails if it can't interpret the mass number", check_not_a_number) &
+                , it("Fails for an unknown isotope", check_unknown) &
+                ])
+    end function
 
-        individual_tests(1) = It( &
-                "Works for known, valid isotopes", checkValidString)
-        individual_tests(2) = It( &
-                "Fails if the string doesn't have the '-'", checkMissingDash)
-        individual_tests(3) = It( &
-                "Fails if it can't interpret the mass number", checkNotANumber)
-        individual_tests(4) = It( &
-                "Fails for an unknown isotope", checkUnknown)
-        tests = Describe("fromString to Isotope", individual_tests)
-    end function test_isotope_from_string
+    function check_valid_string() result(result_)
+        type(result_t) :: result_
 
-    pure function checkValidString() result(result_)
-        type(Result_t) :: result_
+        type(error_list_t) :: errors
+        type(isotope_t) :: helium
+        type(isotope_t) :: hydrogen
+        type(fallible_isotope_t) :: maybe_helium
+        type(fallible_isotope_t) :: maybe_hydrogen
 
-        type(ErrorList_t) :: errors
-        type(Isotope_t) :: helium
-        type(Isotope_t) :: hydrogen
-
-        call fromString("H-1", errors, hydrogen)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_hydrogen = fallible_isotope_t("H-1")
+        if (maybe_hydrogen%failed()) then
+            errors = maybe_hydrogen%errors()
+            result_ = fail(errors%to_string())
         else
-            call fromString("He-4", errors, helium)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
-            else
-                result_ = &
-                        assertEquals(H_1%toString(), hydrogen%toString()) &
-                        .and.assertEquals(He_4%toString(), helium%toString())
-            end if
+            hydrogen = maybe_hydrogen%isotope()
+            result_ = assert_equals(H_1%to_string(), hydrogen%to_string())
         end if
-    end function checkValidString
 
-    pure function checkMissingDash() result(result_)
-        type(Result_t) :: result_
+        maybe_helium = fallible_isotope_t("He-4")
+        if (maybe_helium%failed()) then
+            errors = maybe_helium%errors()
+            result_ = result_.and.fail(errors%to_string())
+        else
+            helium = maybe_helium%isotope()
+            result_ = result_.and.assert_equals(He_4%to_string(), helium%to_string())
+        end if
+    end function
 
-        type(ErrorList_t) :: errors
-        type(Isotope_t) :: isotope
+    function check_missing_dash() result(result_)
+        type(result_t) :: result_
 
-        call fromString("H1", errors, isotope)
-        result_ = assertThat( &
-                errors.hasType.INVALID_ARGUMENT_TYPE, errors%toString())
-    end function checkMissingDash
+        type(error_list_t) :: errors
+        type(fallible_isotope_t) :: maybe_isotope
 
-    pure function checkNotANumber() result(result_)
-        type(Result_t) :: result_
+        maybe_isotope = fallible_isotope_t("H1")
+        errors = maybe_isotope%errors()
+        result_ = assert_that( &
+                errors.hasType.INVALID_ARGUMENT, errors%to_string())
+    end function
 
-        type(ErrorList_t) :: errors
-        type(Isotope_t) :: isotope
+    function check_not_a_number() result(result_)
+        type(result_t) :: result_
 
-        call fromString("H-#", errors, isotope)
-        result_ = assertThat( &
-                errors.hasType.INVALID_ARGUMENT_TYPE, errors%toString())
-    end function checkNotANumber
+        type(error_list_t) :: errors
+        type(fallible_isotope_t) :: maybe_isotope
 
-    pure function checkUnknown() result(result_)
-        type(Result_t) :: result_
+        maybe_isotope = fallible_isotope_t("H-#")
+        errors = maybe_isotope%errors()
+        result_ = assert_that( &
+                errors.hasType.INVALID_ARGUMENT, errors%to_string())
+    end function
 
-        type(ErrorList_t) :: errors
-        type(Isotope_t) :: isotope
+    function check_unknown() result(result_)
+        type(result_t) :: result_
 
-        call fromString("H-123", errors, isotope)
-        result_ = assertThat( &
-                errors.hasType.INVALID_ARGUMENT_TYPE, errors%toString())
-    end function checkUnknown
-end module isotope_from_string_test
+        type(error_list_t) :: errors
+        type(fallible_isotope_t) :: maybe_isotope
+
+        maybe_isotope = fallible_isotope_t("H-123")
+        errors = maybe_isotope%errors()
+        result_ = assert_that( &
+                errors.hasType.INVALID_ARGUMENT, errors%to_string())
+    end function
+end module

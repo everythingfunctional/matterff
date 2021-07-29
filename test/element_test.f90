@@ -1,544 +1,520 @@
 module element_test
-    use Element_m, only: &
-            Element_t, &
-            combineByAtomFactors, &
-            combineByWeightFactors, &
+    use erloff, only: error_list_t, message_list_t
+    use matterff, only: &
+            element_t, &
+            element_component_t, &
+            fallible_element_t, &
+            isotope_t, &
+            combine_by_atom_factors, &
+            combine_by_weight_factors, &
             find, &
-            fromAtomFractions, &
-            fromWeightFractions, &
-            naturalHydrogen, &
-            naturalHelium, &
-            naturalLithium, &
-            naturalBeryllium, &
-            naturalBoron, &
-            naturalCarbon, &
-            naturalNitrogen, &
-            naturalOxygen, &
-            naturalArgon, &
-            naturalKrypton, &
-            naturalXenon
-    use Element_component_m, only: ElementComponent
-    use Element_symbol_m, only: H
-    use erloff, only: ErrorList_t, MessageList_t
-    use Isotope_m, only: Isotope_t, H_1, H_2, He_3
-    use matterff_Utilities_m, only: &
-            INVALID_ARGUMENT_TYPE, MISMATCH_TYPE, NORMALIZED_FRACTIONS_TYPE
+            from_atom_fractions, &
+            from_weight_fractions, &
+            natural_hydrogen, &
+            natural_helium, &
+            natural_lithium, &
+            natural_beryllium, &
+            natural_boron, &
+            natural_carbon, &
+            natural_nitrogen, &
+            natural_oxygen, &
+            natural_argon, &
+            natural_krypton, &
+            natural_xenon, &
+            H, &
+            H_1, &
+            H_2, &
+            He_3
+    use matterff_utilities_m, only: &
+            INVALID_ARGUMENT, MISMATCH, NORMALIZED_FRACTIONS
     use quaff, only: operator(.unit.), GRAMS_PER_MOL
-    use quaff_asserts_m, only: assertEqualsWithinAbsolute
-    use Vegetables_m, only: &
-            Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
+    use quaff_asserts_m, only: assert_equals_within_absolute
+    use vegetables, only: &
+            result_t, &
+            test_item_t, &
+            assert_equals, &
+            assert_that, &
+            describe, &
+            fail, &
+            it
 
     implicit none
     private
-
     public :: test_element
 contains
     function test_element() result(tests)
-        type(TestItem_t) :: tests
+        type(test_item_t) :: tests
 
-        type(TestItem_t) :: individual_tests(12)
+        tests = describe( &
+                "An element_t", &
+                [ it( &
+                        "creating an element with isotopes of a different element is an error", &
+                        check_diff_isotopes) &
+                , it( &
+                        "creating an element with negative fractions is an error", &
+                        check_negative_fractions) &
+                , it( &
+                        "a single isotope element is all that isotope", &
+                        check_single_isotope) &
+                , it("keeps track of its components", check_keeps_track) &
+                , it( &
+                        "has normalized fractions of its components", &
+                        check_normalized_fractions) &
+                , it( &
+                        "normalizing fractions of isotopes produces a message", &
+                        check_normalized_message) &
+                , it( &
+                        "created with duplicate isotopes has sum of duplicates", &
+                        check_duplicates) &
+                , it( &
+                        "combining elements of a different type is an error", &
+                        check_combine_different_elements_is_error) &
+                , it( &
+                        "combining elements results in correct fractions", &
+                        check_combine) &
+                , it( &
+                        "natural compositions have their atomic mass from the Periodic Table", &
+                        check_natural_elements) &
+                , it("has a position of 0 if it's not in a list", check_not_found) &
+                , it("can be found in a list", check_find) &
+                ])
+    end function
 
-        individual_tests(1) = It( &
-                "Creating an element with isotopes of a different element is an error", &
-                checkDiffIsotopes)
-        individual_tests(2) = It( &
-                "Creating an element with negative fractions is an error", &
-                checkNegativeFractions)
-        individual_tests(3) = It( &
-                "A single isotope element is all that isotope", &
-                checkSingleIsotope)
-        individual_tests(4) = It( &
-                "Keeps track of its components", checkKeepsTrack)
-        individual_tests(5) = It( &
-                "Has normalized fractions of its components", &
-                checkNormalizedFractions)
-        individual_tests(6) = It( &
-                "Normalizing fractions of isotopes produces a message", &
-                checkNormalizedMessage)
-        individual_tests(7) = It( &
-                "Created with duplicate isotopes has sum of duplicates", &
-                checkDuplicates)
-        individual_tests(8) = It( &
-                "Combining elements of a different type is an error", &
-                checkCombineDifferentElementsIsError)
-        individual_tests(9) = It( &
-                "Combining elements results in correct fractions", checkCombine)
-        individual_tests(10) = It( &
-                "Natural compositions have their atomic mass from the Periodic Table", &
-                checkNaturalElements)
-        individual_tests(11) = It( &
-                "Has a position of 0 if it's not in a list", checkNotFound)
-        individual_tests(12) = It("Can be found in a list", checkFind)
-        tests = Describe("Element_t", individual_tests)
-    end function test_element
+    function check_diff_isotopes() result(result_)
+        type(result_t) :: result_
 
-    pure function checkDiffIsotopes() result(result_)
-        type(Result_t) :: result_
+        type(fallible_element_t) :: maybe_element
 
-        type(Element_t) :: element
-        type(ErrorList_t) :: errors_from_atom_fractions
-        type(ErrorList_t) :: errors_from_weight_fractions
-        type(MessageList_t) :: messages
+        maybe_element = from_atom_fractions( &
+                H, [element_component_t(He_3, 1.0d0)])
+        associate(errors => maybe_element%errors())
+            result_ = assert_that(errors.hasType.MISMATCH, errors%to_string())
+        end associate
 
-        call fromAtomFractions( &
-                H, &
-                [ElementComponent(He_3, 1.0d0)], &
-                messages, &
-                errors_from_atom_fractions, &
-                element)
-        call fromWeightFractions( &
-                H, &
-                [ElementComponent(He_3, 1.0d0)], &
-                messages, &
-                errors_from_weight_fractions, &
-                element)
+        maybe_element = from_weight_fractions( &
+                H, [element_component_t(He_3, 1.0d0)])
+        associate(errors => maybe_element%errors())
+            result_ = &
+                    result_ &
+                    .and.assert_that(errors.hasType.MISMATCH, errors%to_string())
+        end associate
+    end function
 
-        result_ = &
-                assertThat( &
-                        errors_from_atom_fractions.hasType.MISMATCH_TYPE, &
-                        errors_from_atom_fractions%toString()) &
-                .and.assertThat( &
-                        errors_from_weight_fractions.hasType.MISMATCH_TYPE, &
-                        errors_from_weight_fractions%toString())
-    end function checkDiffIsotopes
+    function check_negative_fractions() result(result_)
+        type(result_t) :: result_
 
-    pure function checkNegativeFractions() result(result_)
-        type(Result_t) :: result_
+        type(fallible_element_t) :: maybe_element
 
-        type(Element_t) :: element
-        type(ErrorList_t) :: errors_from_atom_fractions
-        type(ErrorList_t) :: errors_from_weight_fractions
-        type(MessageList_t) :: messages
+        maybe_element = from_atom_fractions( &
+                H, [element_component_t(H_1, -1.0d0)])
+        associate(errors => maybe_element%errors())
+            result_ = assert_that(errors.hasType.INVALID_ARGUMENT, errors%to_string())
+        end associate
 
-        call fromAtomFractions( &
-                H, &
-                [ElementComponent(H_1, -1.0d0)], &
-                messages, &
-                errors_from_atom_fractions, &
-                element)
-        call fromWeightFractions( &
-                H, &
-                [ElementComponent(H_1, -1.0d0)], &
-                messages, &
-                errors_from_weight_fractions, &
-                element)
+        maybe_element = from_weight_fractions( &
+                H, [element_component_t(H_1, -1.0d0)])
+        associate(errors => maybe_element%errors())
+            result_ = &
+                    result_ &
+                    .and.assert_that(errors.hasType.INVALID_ARGUMENT, errors%to_string())
+        end associate
+    end function
 
-        result_ = &
-                assertThat( &
-                        errors_from_atom_fractions.hasType.INVALID_ARGUMENT_TYPE, &
-                        errors_from_atom_fractions%toString()) &
-                .and.assertThat( &
-                        errors_from_weight_fractions.hasType.INVALID_ARGUMENT_TYPE, &
-                        errors_from_weight_fractions%toString())
-    end function checkNegativeFractions
+    function check_single_isotope() result(result_)
+        type(result_t) :: result_
 
-    pure function checkSingleIsotope() result(result_)
-        type(Result_t) :: result_
+        type(fallible_element_t) :: maybe_element
 
-        type(ErrorList_t) :: errors
-        type(Element_t) :: from_atom_fractions
-        type(Element_t) :: from_weight_fractions
-        type(MessageList_t) :: messages
-
-        call fromAtomFractions( &
-                H, &
-                [ElementComponent(H_1, 1.0d0)], &
-                messages, &
-                errors, &
-                from_atom_fractions)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_element = from_atom_fractions( &
+                H, [element_component_t(H_1, 1.0d0)])
+        if (maybe_element%failed()) then
+            associate(errors => maybe_element%errors())
+                result_ = fail(errors%to_string())
+            end associate
         else
-            call fromWeightFractions( &
-                    H, &
-                    [ElementComponent(H_1, 1.0d0)], &
-                    messages, &
-                    errors, &
-                    from_weight_fractions)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
-            else
-                result_ =  &
-                        assertAllIsotope( &
-                                H_1, from_atom_fractions, "atom fractions") &
-                        .and.assertAllIsotope( &
-                                H_1, from_weight_fractions, "weight fractions")
-            end if
+            result_ = assert_all_isotope(H_1, maybe_element%element(), "atom fractions")
         end if
-    end function checkSingleIsotope
 
-    pure function checkKeepsTrack() result(result_)
-        type(Result_t) :: result_
-
-        type(Element_t) :: from_atom_fractions
-        type(Element_t) :: from_weight_fractions
-        type(ErrorList_t) :: errors
-        type(MessageList_t) :: messages
-
-        call fromAtomFractions( &
-                H, &
-                [ElementComponent(H_1, 0.6d0), ElementComponent(H_2, 0.4d0)], &
-                messages, &
-                errors, &
-                from_atom_fractions)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_element = from_weight_fractions( &
+                H, [element_component_t(H_1, 1.0d0)])
+        if (maybe_element%failed()) then
+            associate(errors => maybe_element%errors())
+                result_ = result_.and.fail(errors%to_string())
+            end associate
         else
-            call fromWeightFractions( &
-                    H, &
-                    [ElementComponent(H_1, 0.6d0), ElementComponent(H_2, 0.4d0)], &
-                    messages, &
-                    errors, &
-                    from_weight_fractions)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
-            else
+            result_ = result_.and.assert_all_isotope(H_1, maybe_element%element(), "atom fractions")
+        end if
+    end function
+
+    function check_keeps_track() result(result_)
+        type(result_t) :: result_
+
+        type(fallible_element_t) :: maybe_element
+
+        maybe_element = from_atom_fractions( &
+                H, [element_component_t(H_1, 0.6d0), element_component_t(H_2, 0.4d0)])
+        if (maybe_element%failed()) then
+            associate(errors => maybe_element%errors())
+                result_ = fail(errors%to_string())
+            end associate
+        else
+            associate(element => maybe_element%element())
                 result_ = &
-                        assertEquals( &
+                        assert_equals( &
                                 0.6d0, &
-                                from_atom_fractions%atomFraction(H_1), &
+                                element%atom_fraction(H_1), &
                                 "H-1 atom fraction") &
-                        .and.assertEquals( &
+                        .and.assert_equals( &
                                 0.4d0, &
-                                from_atom_fractions%atomFraction(H_2), &
-                                "H-2 atom fraction") &
-                        .and.assertEquals( &
-                                0.6d0, &
-                                from_weight_fractions%weightFraction(H_1), &
-                                "H-1 weight fraction") &
-                        .and.assertEquals( &
-                                0.4d0, &
-                                from_weight_fractions%weightFraction(H_2), &
-                                "H-2 weight fraction")
-            end if
+                                element%atom_fraction(H_2), &
+                                "H-2 atom fraction")
+            end associate
         end if
-    end function checkKeepsTrack
 
-    pure function checkNormalizedFractions() result(result_)
-        type(Result_t) :: result_
-
-        type(Element_t) :: from_atom_fractions
-        type(Element_t) :: from_weight_fractions
-        type(ErrorList_t) :: errors
-        type(MessageList_t) :: messages
-
-        call fromAtomFractions( &
-                H, &
-                [ElementComponent(H_1, 0.06d0), ElementComponent(H_2, 0.04d0)], &
-                messages, &
-                errors, &
-                from_atom_fractions)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_element = from_weight_fractions( &
+                H, [element_component_t(H_1, 0.6d0), element_component_t(H_2, 0.4d0)])
+        if (maybe_element%failed()) then
+            associate(errors => maybe_element%errors())
+                result_ = result_.and.fail(errors%to_string())
+            end associate
         else
-            call fromWeightFractions( &
-                    H, &
-                    [ElementComponent(H_1, 0.06d0), ElementComponent(H_2, 0.04d0)], &
-                    messages, &
-                    errors, &
-                    from_weight_fractions)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
-            else
+            associate(element => maybe_element%element())
                 result_ = &
-                        assertEquals( &
+                        result_ &
+                        .and.assert_equals( &
                                 0.6d0, &
-                                from_atom_fractions%atomFraction(H_1), &
+                                element%weight_fraction(H_1), &
+                                "H-1 weight fraction") &
+                        .and.assert_equals( &
+                                0.4d0, &
+                                element%weight_fraction(H_2), &
+                                "H-2 weight fraction")
+            end associate
+        end if
+    end function
+
+    function check_normalized_fractions() result(result_)
+        type(result_t) :: result_
+
+        type(fallible_element_t) :: maybe_element
+
+        maybe_element = from_atom_fractions( &
+                H, [element_component_t(H_1, 0.06d0), element_component_t(H_2, 0.04d0)])
+        if (maybe_element%failed()) then
+            associate(errors => maybe_element%errors())
+                result_ = fail(errors%to_string())
+            end associate
+        else
+            associate(element => maybe_element%element())
+                result_ = &
+                        assert_equals( &
+                                0.6d0, &
+                                element%atom_fraction(H_1), &
                                 "H-1 atom fraction") &
-                        .and.assertEquals( &
+                        .and.assert_equals( &
                                 0.4d0, &
-                                from_atom_fractions%atomFraction(H_2), &
-                                "H-2 atom fraction") &
-                        .and.assertEquals( &
-                                0.6d0, &
-                                from_weight_fractions%weightFraction(H_1), &
-                                "H-1 weight fraction") &
-                        .and.assertEquals( &
-                                0.4d0, &
-                                from_weight_fractions%weightFraction(H_2), &
-                                "H-2 weight fraction")
-            end if
+                                element%atom_fraction(H_2), &
+                                "H-2 atom fraction")
+            end associate
         end if
-    end function checkNormalizedFractions
 
-    pure function checkNormalizedMessage() result(result_)
-        type(Result_t) :: result_
-
-        type(Element_t) :: element
-        type(ErrorList_t) :: errors
-        type(MessageList_t) :: messages_from_atom_fractions
-        type(MessageList_t) :: messages_from_weight_fractions
-
-        call fromAtomFractions( &
-                H, &
-                [ElementComponent(H_1, 0.06d0), ElementComponent(H_2, 0.04d0)], &
-                messages_from_atom_fractions, &
-                errors, &
-                element)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_element = from_weight_fractions( &
+                H, [element_component_t(H_1, 0.06d0), element_component_t(H_2, 0.04d0)])
+        if (maybe_element%failed()) then
+            associate(errors => maybe_element%errors())
+                result_ = result_.and.fail(errors%to_string())
+            end associate
         else
-            call fromWeightFractions( &
-                    H, &
-                    [ElementComponent(H_1, 0.06d0), ElementComponent(H_2, 0.04d0)], &
-                    messages_from_weight_fractions, &
-                    errors, &
-                    element)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
-            else
+            associate(element => maybe_element%element())
                 result_ = &
-                        assertThat( &
-                                messages_from_atom_fractions.hasType.NORMALIZED_FRACTIONS_TYPE, &
-                                messages_from_atom_fractions%toString()) &
-                        .and.assertThat( &
-                                messages_from_weight_fractions.hasType.NORMALIZED_FRACTIONS_TYPE, &
-                                messages_from_weight_fractions%toString())
-            end if
+                        result_ &
+                        .and.assert_equals( &
+                                0.6d0, &
+                                element%weight_fraction(H_1), &
+                                "H-1 weight fraction") &
+                        .and.assert_equals( &
+                                0.4d0, &
+                                element%weight_fraction(H_2), &
+                                "H-2 weight fraction")
+            end associate
         end if
-    end function checkNormalizedMessage
+    end function
 
-    pure function checkDuplicates() result(result_)
-        type(Result_t) :: result_
+    function check_normalized_message() result(result_)
+        type(result_t) :: result_
 
-        type(Element_t) :: from_atom_fractions
-        type(Element_t) :: from_weight_fractions
-        type(ErrorList_t) :: errors
-        type(MessageList_t) :: messages
+        type(fallible_element_t) :: maybe_element
+        type(message_list_t) :: messages
 
-        call fromAtomFractions( &
-                H, &
-                [ElementComponent(H_1, 0.6d0), ElementComponent(H_1, 0.4d0)], &
-                messages, &
-                errors, &
-                from_atom_fractions)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_element = from_atom_fractions( &
+                H, [element_component_t(H_1, 0.06d0), element_component_t(H_2, 0.04d0)])
+        if (maybe_element%failed()) then
+            associate(errors => maybe_element%errors())
+                result_ = fail(errors%to_string())
+            end associate
         else
-            call fromWeightFractions( &
-                    H, &
-                    [ElementComponent(H_1, 0.6d0), ElementComponent(H_1, 0.4d0)], &
-                    messages, &
-                    errors, &
-                    from_weight_fractions)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
-            else
-                result_ =  &
-                        assertAllIsotope( &
-                                H_1, from_atom_fractions, "atom fractions") &
-                        .and.assertAllIsotope( &
-                                H_1, from_weight_fractions, "weight fractions")
-            end if
+            messages = maybe_element%messages()
+            result_ = &
+                    assert_that( &
+                            messages.hasType.NORMALIZED_FRACTIONS, &
+                            messages%to_string())
         end if
-    end function checkDuplicates
 
-    pure function checkCombineDifferentElementsIsError() result(result_)
-        type(Result_t) :: result_
-
-        type(Element_t) :: combined
-        type(ErrorList_t) :: errors_from_atom_fractions
-        type(ErrorList_t) :: errors_from_weight_fractions
-        type(MessageList_t) :: messages
-
-        call combineByAtomFactors( &
-                naturalHydrogen(), &
-                1.0d0, &
-                naturalHelium(), &
-                1.0d0, &
-                messages, &
-                errors_from_atom_fractions, &
-                combined)
-        call combineByWeightFactors( &
-                naturalHydrogen(), &
-                1.0d0, &
-                naturalHelium(), &
-                1.0d0, &
-                messages, &
-                errors_from_weight_fractions, &
-                combined)
-        result_ = &
-                assertThat( &
-                        errors_from_atom_fractions.hasType.MISMATCH_TYPE, &
-                        errors_from_atom_fractions%toString()) &
-                .and.assertThat( &
-                        errors_from_weight_fractions.hasType.MISMATCH_TYPE, &
-                        errors_from_weight_fractions%toString())
-    end function checkCombineDifferentElementsIsError
-
-    pure function checkCombine() result(result_)
-        type(Result_t) :: result_
-
-        type(ErrorList_t) :: errors
-        type(Element_t) :: from_atom_factors
-        type(Element_t) :: from_weight_factors
-        type(MessageList_t) :: messages
-        type(Element_t) :: pure_H_1
-        type(Element_t) :: pure_H_2
-
-        call fromAtomFractions(H, [ElementComponent(H_1, 1.0d0)], messages, errors, pure_H_1)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_element = from_weight_fractions( &
+                H, [element_component_t(H_1, 0.06d0), element_component_t(H_2, 0.04d0)])
+        if (maybe_element%failed()) then
+            associate(errors => maybe_element%errors())
+                result_ = result_.and.fail(errors%to_string())
+            end associate
         else
-            call fromAtomFractions(H, [ElementComponent(H_2, 1.0d0)], messages, errors, pure_H_2)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
+            messages = maybe_element%messages()
+            result_ = &
+                    result_ &
+                    .and.assert_that( &
+                            messages.hasType.NORMALIZED_FRACTIONS, &
+                            messages%to_string())
+        end if
+    end function
+
+    function check_duplicates() result(result_)
+        type(result_t) :: result_
+
+        type(fallible_element_t) :: maybe_element
+
+        maybe_element = from_atom_fractions( &
+                H, [element_component_t(H_1, 0.06d0), element_component_t(H_1, 0.04d0)])
+        if (maybe_element%failed()) then
+            associate(errors => maybe_element%errors())
+                result_ = fail(errors%to_string())
+            end associate
+        else
+            result_ = assert_all_isotope(H_1, maybe_element%element(), "atom fractions")
+        end if
+
+        maybe_element = from_weight_fractions( &
+                H, [element_component_t(H_1, 0.06d0), element_component_t(H_1, 0.04d0)])
+        if (maybe_element%failed()) then
+            associate(errors => maybe_element%errors())
+                result_ = result_.and.fail(errors%to_string())
+            end associate
+        else
+            result_ = result_.and.assert_all_isotope(H_1, maybe_element%element(), "weight fractions")
+        end if
+    end function
+
+    function check_combine_different_elements_is_error() result(result_)
+        type(result_t) :: result_
+
+        type(fallible_element_t) :: maybe_element
+        type(error_list_t) :: errors
+
+        maybe_element = combine_by_atom_factors( &
+                natural_hydrogen(), &
+                1.0d0, &
+                natural_helium(), &
+                1.0d0)
+        errors = maybe_element%errors()
+        result_ = assert_that( &
+                errors.hasType.MISMATCH, &
+                errors%to_string())
+
+        maybe_element = combine_by_weight_factors( &
+                natural_hydrogen(), &
+                1.0d0, &
+                natural_helium(), &
+                1.0d0)
+        errors = maybe_element%errors()
+        result_ = result_.and.assert_that( &
+                errors.hasType.MISMATCH, &
+                errors%to_string())
+    end function
+
+    function check_combine() result(result_)
+        type(result_t) :: result_
+
+        type(fallible_element_t) :: maybe_combined
+        type(fallible_element_t) :: maybe_H_1
+        type(fallible_element_t) :: maybe_H_2
+
+        maybe_H_1 = from_atom_fractions(H, [element_component_t(H_1, 1.0d0)])
+        if (maybe_H_1%failed()) then
+            associate(errors => maybe_H_1%errors())
+                result_ = fail(errors%to_string())
+            end associate
+        else
+            maybe_H_2 = from_atom_fractions(H, [element_component_t(H_2, 1.0d0)])
+            if (maybe_H_2%failed()) then
+                associate(errors => maybe_H_2%errors())
+                    result_ = fail(errors%to_string())
+                end associate
             else
-                call combineByAtomFactors(pure_H_1, 0.6d0, pure_H_2, 0.4d0, messages, errors, from_atom_factors)
-                if (errors%hasAny()) then
-                    result_ = fail(errors%toString())
+                maybe_combined = combine_by_atom_factors( &
+                        maybe_H_1%element(), 0.6d0, maybe_H_2%element(), 0.4d0)
+                if (maybe_combined%failed()) then
+                    associate(errors => maybe_combined%errors())
+                        result_ = fail(errors%to_string())
+                    end associate
                 else
-                    call combineByWeightFactors(pure_H_1, 0.6d0, pure_H_2, 0.4d0, messages, errors, from_weight_factors)
-                    if (errors%hasAny()) then
-                        result_ = fail(errors%toString())
-                    else
+                    associate(combined => maybe_combined%element())
                         result_ = &
-                                assertEquals( &
+                                assert_equals( &
                                         0.6d0, &
-                                        from_atom_factors%atomFraction(H_1), &
+                                        combined%atom_fraction(H_1), &
                                         "H-1 atom fraction") &
-                                .and.assertEquals( &
+                                .and.assert_equals( &
                                         0.4d0, &
-                                        from_atom_factors%atomFraction(H_2), &
-                                        "H-2 atom fraction") &
-                                .and.assertEquals( &
+                                        combined%atom_fraction(H_2), &
+                                        "H-2 atom fraction")
+                    end associate
+                end if
+                maybe_combined = combine_by_weight_factors( &
+                        maybe_H_1%element(), 0.6d0, maybe_H_2%element(), 0.4d0)
+                if (maybe_combined%failed()) then
+                    associate(errors => maybe_combined%errors())
+                        result_ = result_.and.fail(errors%to_string())
+                    end associate
+                else
+                    associate(combined => maybe_combined%element())
+                        result_ = &
+                                result_ &
+                                .and.assert_equals( &
                                         0.6d0, &
-                                        from_weight_factors%weightFraction(H_1), &
+                                        combined%weight_fraction(H_1), &
                                         "H-1 weight fraction") &
-                                .and.assertEquals( &
+                                .and.assert_equals( &
                                         0.4d0, &
-                                        from_weight_factors%weightFraction(H_2), &
+                                        combined%weight_fraction(H_2), &
                                         "H-2 weight fraction")
-                    end if
+                    end associate
                 end if
             end if
         end if
-    end function checkCombine
+    end function
 
-    pure function checkNaturalElements() result(result_)
-        type(Result_t) :: result_
+    pure function check_natural_elements() result(result_)
+        type(result_t) :: result_
 
-        type(Element_t) :: hydrogen
-        type(Element_t) :: helium
-        type(Element_t) :: lithium
-        type(Element_t) :: beryllium
-        type(Element_t) :: boron
-        type(Element_t) :: carbon
-        type(Element_t) :: nitrogen
-        type(Element_t) :: oxygen
-        type(Element_t) :: argon
-        type(Element_t) :: krypton
-        type(Element_t) :: xenon
+        type(element_t) :: hydrogen
+        type(element_t) :: helium
+        type(element_t) :: lithium
+        type(element_t) :: beryllium
+        type(element_t) :: boron
+        type(element_t) :: carbon
+        type(element_t) :: nitrogen
+        type(element_t) :: oxygen
+        type(element_t) :: argon
+        type(element_t) :: krypton
+        type(element_t) :: xenon
 
-        hydrogen = naturalHydrogen()
-        helium = naturalHelium()
-        lithium = naturalLithium()
-        beryllium = naturalBeryllium()
-        boron = naturalBoron()
-        carbon = naturalCarbon()
-        nitrogen = naturalNitrogen()
-        oxygen = naturalOxygen()
-        argon = naturalArgon()
-        krypton = naturalKrypton()
-        xenon = naturalXenon()
+        hydrogen = natural_hydrogen()
+        helium = natural_helium()
+        lithium = natural_lithium()
+        beryllium = natural_beryllium()
+        boron = natural_boron()
+        carbon = natural_carbon()
+        nitrogen = natural_nitrogen()
+        oxygen = natural_oxygen()
+        argon = natural_argon()
+        krypton = natural_krypton()
+        xenon = natural_xenon()
 
         ! Atomic masses and tolerances are taken from the 17th Edition of the Chart of Nuclides
         result_ = &
-                assertEqualsWithinAbsolute( &
+                assert_equals_within_absolute( &
                         1.00794d0.unit.GRAMS_PER_MOL, &
-                        hydrogen%atomicMass(), &
+                        hydrogen%atomic_mass(), &
                         0.00007d0.unit.GRAMS_PER_MOL, &
                         "H") &
-                .and.assertEqualsWithinAbsolute( &
+                .and.assert_equals_within_absolute( &
                         4.002602d0.unit.GRAMS_PER_MOL, &
-                        helium%atomicMass(), &
+                        helium%atomic_mass(), &
                         0.000002d0.unit.GRAMS_PER_MOL, &
                         "He") &
-                .and.assertEqualsWithinAbsolute( &
+                .and.assert_equals_within_absolute( &
                         6.941d0.unit.GRAMS_PER_MOL, &
-                        lithium%atomicMass(), &
+                        lithium%atomic_mass(), &
                         0.002d0.unit.GRAMS_PER_MOL, &
                         "Li") &
-                .and.assertEqualsWithinAbsolute( &
+                .and.assert_equals_within_absolute( &
                         9.012182d0.unit.GRAMS_PER_MOL, &
-                        beryllium%atomicMass(), &
+                        beryllium%atomic_mass(), &
                         0.000003d0.unit.GRAMS_PER_MOL, &
                         "Be") &
-                .and.assertEqualsWithinAbsolute( &
+                .and.assert_equals_within_absolute( &
                         10.811d0.unit.GRAMS_PER_MOL, &
-                        boron%atomicMass(), &
+                        boron%atomic_mass(), &
                         0.007d0.unit.GRAMS_PER_MOL, &
                         "B") &
-                .and.assertEqualsWithinAbsolute( &
+                .and.assert_equals_within_absolute( &
                         12.0107d0.unit.GRAMS_PER_MOL, &
-                        carbon%atomicMass(), &
+                        carbon%atomic_mass(), &
                         0.0008d0.unit.GRAMS_PER_MOL, &
                         "C") &
-                .and.assertEqualsWithinAbsolute( &
+                .and.assert_equals_within_absolute( &
                         14.0067d0.unit.GRAMS_PER_MOL, &
-                        nitrogen%atomicMass(), &
+                        nitrogen%atomic_mass(), &
                         0.0002d0.unit.GRAMS_PER_MOL, &
                         "N") &
-                .and.assertEqualsWithinAbsolute( &
+                .and.assert_equals_within_absolute( &
                         15.9994d0.unit.GRAMS_PER_MOL, &
-                        oxygen%atomicMass(), &
+                        oxygen%atomic_mass(), &
                         0.0003d0.unit.GRAMS_PER_MOL, &
                         "O") &
-                .and.assertEqualsWithinAbsolute( &
+                .and.assert_equals_within_absolute( &
                         39.948d0.unit.GRAMS_PER_MOL, &
-                        argon%atomicMass(), &
+                        argon%atomic_mass(), &
                         0.001d0.unit.GRAMS_PER_MOL, &
                         "Ar") &
-                .and.assertEqualsWithinAbsolute( &
+                .and.assert_equals_within_absolute( &
                         83.798d0.unit.GRAMS_PER_MOL, &
-                        krypton%atomicMass(), &
+                        krypton%atomic_mass(), &
                         0.002d0.unit.GRAMS_PER_MOL, &
                         "Kr") &
-                .and.assertEqualsWithinAbsolute( &
+                .and.assert_equals_within_absolute( &
                         131.293d0.unit.GRAMS_PER_MOL, &
-                        xenon%atomicMass(), &
+                        xenon%atomic_mass(), &
                         0.006d0.unit.GRAMS_PER_MOL, &
                         "Xe")
-    end function checkNaturalElements
+    end function
 
-    pure function checkNotFound() result(result_)
-        type(Result_t) :: result_
+    pure function check_not_found() result(result_)
+        type(result_t) :: result_
 
-        type(Element_t) :: elements(3)
+        type(element_t) :: elements(3)
 
-        elements(1) = naturalHelium()
-        elements(2) = naturalLithium()
-        elements(3) = naturalBeryllium()
+        elements(1) = natural_helium()
+        elements(2) = natural_lithium()
+        elements(3) = natural_beryllium()
 
-        result_ = assertEquals(0, find(H, elements))
-    end function checkNotFound
+        result_ = assert_equals(0, find(H, elements))
+    end function
 
-    pure function checkFind() result(result_)
-        type(Result_t) :: result_
+    pure function check_find() result(result_)
+        type(result_t) :: result_
 
-        type(Element_t) :: elements(3)
+        type(element_t) :: elements(3)
 
-        elements(1) = naturalHydrogen()
-        elements(2) = naturalHelium()
-        elements(3) = naturalLithium()
+        elements(1) = natural_hydrogen()
+        elements(2) = natural_helium()
+        elements(3) = natural_lithium()
 
-        result_ = assertEquals(1, find(H, elements))
-    end function checkFind
+        result_ = assert_equals(1, find(H, elements))
+    end function
 
-    pure function assertAllIsotope(isotope, element, from) result(result_)
-        type(Isotope_t), intent(in) :: isotope
-        type(Element_t), intent(in) :: element
+    pure function assert_all_isotope(isotope, element, from) result(result_)
+        type(isotope_t), intent(in) :: isotope
+        type(element_t), intent(in) :: element
         character(len=*), intent(in) :: from
-        type(Result_t) :: result_
+        type(result_t) :: result_
 
         result_ = &
-                assertEquals( &
+                assert_equals( &
                         1.0d0, &
-                        element%atomFraction(isotope), &
+                        element%atom_fraction(isotope), &
                         "atom fraction from " // from) &
-                .and.assertEquals( &
+                .and.assert_equals( &
                         1.0d0, &
-                        element%weightFraction(isotope), &
+                        element%weight_fraction(isotope), &
                         "weight fraction from " // from)
-    end function assertAllIsotope
-end module element_test
+    end function
+end module

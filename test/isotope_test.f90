@@ -1,63 +1,59 @@
 module isotope_test
-    use Element_symbol_m, only: H, He
     use iso_varying_string, only: operator(//)
-    use Isotope_m, only: Isotope_t, find, H_1, H_2, He_3, He_4
-    use Isotope_symbol_m, only: H_1_SYM, H_2_SYM
-    use Vegetables_m, only: &
-            Result_t, &
-            TestItem_t, &
-            assertEquals, &
-            assertNot, &
-            assertThat, &
-            Describe, &
-            It
+    use matterff, only: &
+            isotope_t, find, H, H_1, H_1_SYM, H_2, H_2_SYM, He, He_3, He_4
+    use vegetables, only: &
+            result_t, &
+            test_item_t, &
+            assert_equals, &
+            assert_not, &
+            assert_that, &
+            describe, &
+            it
 
     implicit none
     private
-
     public :: test_isotope
 contains
     function test_isotope() result(tests)
-        type(TestItem_t) :: tests
+        type(test_item_t) :: tests
 
-        type(TestItem_t) :: individual_tests(4)
+        tests = describe(&
+                "An isotope_t", &
+                [ it("Is it's element", check_is_element) &
+                , it("Is not a different element", check_not_different_element) &
+                , it("Has a position of 0 if it's not in a list", check_not_found) &
+                , it("Can be found in a list", check_find) &
+                ])
+    end function
 
-        individual_tests(1) = It("Is it's element", checkIsElement)
-        individual_tests(2) = It( &
-                "Is not a different element", checkNotDifferentElement)
-        individual_tests(3) = It( &
-                "Has a position of 0 if it's not in a list", checkNotFound)
-        individual_tests(4) = It("Can be found in a list", checkFind)
-        tests = Describe("Isotope_t", individual_tests)
-    end function test_isotope
+    pure function check_is_element() result(result_)
+        type(result_t) :: result_
 
-    pure function checkIsElement() result(result_)
-        type(Result_t) :: result_
+        result_ = assert_that( &
+                H_1%is(H), H_1%to_string() // "%is(" // H%to_string() // ")")
+    end function
 
-        result_ = assertThat( &
-                H_1%is(H), H_1%toString() // "%is(" // H%toString() // ")")
-    end function checkIsElement
+    pure function check_not_different_element() result(result_)
+        type(result_t) :: result_
 
-    pure function checkNotDifferentElement() result(result_)
-        type(Result_t) :: result_
+        result_ = assert_not( &
+                H_1%is(He), H_1%to_string() // "%is(" // He%to_string() // ")")
+    end function
 
-        result_ = assertNot( &
-                H_1%is(He), H_1%toString() // "%is(" // He%toString() // ")")
-    end function checkNotDifferentElement
+    pure function check_not_found() result(result_)
+        type(result_t) :: result_
 
-    pure function checkNotFound() result(result_)
-        type(Result_t) :: result_
+        type(isotope_t), parameter :: isotopes(*) = [H_2, He_3, He_4]
 
-        type(Isotope_t), parameter :: isotopes(*) = [H_2, He_3, He_4]
+        result_ = assert_equals(0, find(H_1_SYM, isotopes))
+    end function
 
-        result_ = assertEquals(0, find(H_1_SYM, isotopes))
-    end function checkNotFound
+    pure function check_find() result(result_)
+        type(result_t) :: result_
 
-    pure function checkFind() result(result_)
-        type(Result_t) :: result_
+        type(isotope_t), parameter :: isotopes(*) = [H_1, H_2, He_3, He_4]
 
-        type(Isotope_t), parameter :: isotopes(*) = [H_1, H_2, He_3, He_4]
-
-        result_ = assertEquals(2, find(H_2_SYM, isotopes))
-    end function checkFind
-end module isotope_test
+        result_ = assert_equals(2, find(H_2_SYM, isotopes))
+    end function
+end module

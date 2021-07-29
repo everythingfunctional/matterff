@@ -1,70 +1,67 @@
 module isotope_symbol_test
-    use Element_symbol_m, only: H, He
     use iso_varying_string, only: operator(//)
-    use Isotope_symbol_m, only: H_1_SYM, H_2_SYM, H_3_SYM, He_3_SYM
-    use Vegetables_m, only: &
-            Result_t, TestItem_t, assertNot, assertThat, Describe, It
+    use matterff, only: H, H_1_SYM, H_2_SYM, H_3_SYM, He, He_3_SYM
+    use vegetables, only: &
+            result_t, test_item_t, assert_not, assert_that, describe, it
 
     implicit none
     private
-
     public :: test_isotope_symbol
 contains
     function test_isotope_symbol() result(tests)
-        type(TestItem_t) :: tests
+        type(test_item_t) :: tests
 
-        type(TestItem_t) :: individual_tests(5)
+        tests = describe( &
+                "An isotope_symbol_t", &
+                [ it("Equals itself", check_equals_itself) &
+                , it( &
+                        "Doesn't equal a different element with the same mass number", &
+                        check_not_equal_different_element) &
+                , it( &
+                        "Doesn't equal a different isotope of the same element", &
+                        check_not_equal_different_isotope) &
+                , it("Is its element", check_is_its_element) &
+                , it("Is not a different element", check_is_not_different_element) &
+                ])
+    end function
 
-        individual_tests(1) = It("Equals itself", checkEqualsItself)
-        individual_tests(2) = It( &
-                "Doesn't equal a different element with the same mass number", &
-                checkNotEqualDifferentElement)
-        individual_tests(3) = It( &
-                "Doesn't equal a different isotope of the same element", &
-                checkNotEqualDifferentIsotope)
-        individual_tests(4) = It("Is its element", checkIsItsElement)
-        individual_tests(5) = It( &
-                "Is not a different element", checkIsNotDifferentElement)
-        tests = Describe("IsotopeSymbol_t", individual_tests)
-    end function test_isotope_symbol
+    pure function check_equals_itself() result(result_)
+        type(result_t) :: result_
 
-    pure function checkEqualsItself() result(result_)
-        type(Result_t) :: result_
-
-        result_ = assertThat( &
+        result_ = assert_that( &
                 H_1_SYM == H_1_SYM, &
-                H_1_SYM%toString() // " == " // H_1_SYM%toString())
-    end function checkEqualsItself
+                H_1_SYM%to_string() // " == " // H_1_SYM%to_string())
+    end function
 
-    pure function checkNotEqualDifferentElement() result(result_)
-        type(Result_t) :: result_
+    pure function check_not_equal_different_element() result(result_)
+        type(result_t) :: result_
 
-        result_ = assertNot( &
+        result_ = assert_not( &
                 H_3_SYM == He_3_SYM, &
-                H_3_SYM%toString() // " == " // He_3_SYM%toString())
-    end function checkNotEqualDifferentElement
+                H_3_SYM%to_string() // " == " // He_3_SYM%to_string())
+    end function
 
-    pure function checkNotEqualDifferentIsotope() result(result_)
-        type(Result_t) :: result_
+    pure function check_not_equal_different_isotope() result(result_)
+        type(result_t) :: result_
 
-        result_ = assertNot( &
+        result_ = assert_not( &
                 H_1_SYM == H_2_SYM, &
-                H_1_SYM%toString() // " == " // H_2_SYM%toString())
-    end function checkNotEqualDifferentIsotope
+                H_1_SYM%to_string() // " == " // H_2_SYM%to_string())
+    end function 
 
-    pure function checkIsItsElement() result(result_)
-        type(Result_t) :: result_
+    pure function check_is_its_element() result(result_)
+        type(result_t) :: result_
 
-        result_ = assertThat( &
+        result_ = assert_that( &
                 H_1_SYM%is(H), &
-                H_1_SYM%toString() // "%is(" // H%toString() // ")")
-    end function checkIsItsElement
+                H_1_SYM%to_string() // "%is(" // H%to_string() // ")")
+    end function
 
-    pure function checkIsNotDifferentElement() result(result_)
-        type(Result_t) :: result_
+    pure function check_is_not_different_element() result(result_)
+        type(result_t) :: result_
 
-        result_ = assertNot( &
+        result_ = assert_not( &
                 H_1_SYM%is(He), &
-                H_1_SYM%toString() // "%is(" // He%toString() // ")")
-    end function checkIsNotDifferentElement
-end module isotope_symbol_test
+                H_1_SYM%to_string() // "%is(" // He%to_string() // ")")
+    end function
+end module

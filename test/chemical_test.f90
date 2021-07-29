@@ -1,340 +1,311 @@
 module chemical_test
-    use Chemical_m, only: &
-            Chemical_t, &
-            combineByAtomFactors, &
-            combineByWeightFactors, &
+    use erloff, only: error_list_t, module_t, procedure_t
+    use matterff, only: &
+            chemical_t, &
+            chemical_component_t, &
+            element_t, &
+            element_component_t, &
+            fallible_chemical_t, &
+            fallible_element_t, &
+            combine_by_atom_factors, &
+            combine_by_weight_factors, &
             find, &
-            makeChemical, &
-            naturalHydrogenGas, &
-            naturalHeliumGas, &
-            naturalWater
-    use Chemical_component_m, only: ChemicalComponent_t, ChemicalComponent
-    use Chemical_symbol_m, only: hydrogenGasSymbol, heliumGasSymbol, waterSymbol
-    use Element_m, only: &
-            Element_t, fromAtomFractions, naturalHydrogen, naturalHelium
-    use Element_component_m, only: ElementComponent
-    use Element_symbol_m, only: H, O
-    use erloff, only: ErrorList_t, MessageList_t
-    use Isotope_m, only: H_1, H_2
-    use matterff_Utilities_m, only: INVALID_ARGUMENT_TYPE, MISMATCH_TYPE
-    use Vegetables_m, only: &
-            Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
+            from_atom_fractions, &
+            helium_gas_symbol, &
+            hydrogen_gas_symbol, &
+            natural_helium, &
+            natural_helium_gas, &
+            natural_hydrogen, &
+            natural_hydrogen_gas, &
+            natural_water, &
+            water_symbol, &
+            H, &
+            H_1, &
+            H_2, &
+            O
+    use matterff_utilities_m, only: INVALID_ARGUMENT, MISMATCH
+    use vegetables, only: &
+            result_t, &
+            test_item_t, &
+            assert_equals, &
+            assert_that, &
+            describe, &
+            fail, &
+            it
 
     implicit none
     private
-
     public :: test_chemical
+
+    character(len=*), parameter :: MODULE_NAME = "chemical_test"
 contains
     function test_chemical() result(tests)
-        type(TestItem_t) :: tests
+        type(test_item_t) :: tests
 
-        type(TestItem_t) :: individual_tests(10)
+        tests = describe( &
+                "chemical_t", &
+                [ it( &
+                        "Creating a chemical with elements not included in the symbol is an error", &
+                        check_not_in_symbol) &
+                , it( &
+                        "Creating a chemical with negative multipliers is an error", &
+                        check_negative_multipliers) &
+                , it( &
+                        "A single element chemical is all that element", &
+                        check_single_element) &
+                , it( &
+                        "A single isotope chemical is all that isotope", &
+                        check_single_isotope) &
+                , it( &
+                        "Created with duplicate elements has sum of duplicates", &
+                        check_duplicate) &
+                , it( &
+                        "Combining chemicals of different types is an error", &
+                        check_combine_error) &
+                , it("Combining chemicals results in correct fractions", check_combine) &
+                , it( &
+                        "Water is 2/3 hydrogen and 1/3 oxygen by atom", &
+                        check_water_fractions) &
+                , it( &
+                        "Has a position of 0 if it's not in a list", &
+                        check_not_found) &
+                , it("Can be found in a list", check_find) &
+                ])
+    end function
 
-        individual_tests(1) = It( &
-                "Creating a chemical with elements not included in the symbol is an error", &
-                checkNotInSymbol)
-        individual_tests(2) = It( &
-                "Creating a chemical with negative multipliers is an error", &
-                checkNegativeMultipliers)
-        individual_tests(3) = It( &
-                "A single element chemical is all that element", &
-                checkSingleElement)
-        individual_tests(4) = It( &
-                "A single isotope chemical is all that isotope", &
-                checkSingleIsotope)
-        individual_tests(5) = It( &
-                "Created with duplicate elements has sum of duplicates", &
-                checkDuplicate)
-        individual_tests(6) = It( &
-                "Combining chemicals of different types is an error", &
-                checkCombineError)
-        individual_tests(7) = It( &
-                "Combining chemicals results in correct fractios", checkCombine)
-        individual_tests(8) = It( &
-                "Water is 2/3 hydrogen and 1/3 oxygen by atom", &
-                checkWaterFractions)
-        individual_tests(9) = It( &
-                "Has a position of 0 if it's not in a list", checkNotFound)
-        individual_tests(10) = It("Can be found in a list", checkFind)
-        tests = Describe("Chemical_t", individual_tests)
-    end function test_chemical
+    function check_not_in_symbol() result(result_)
+        type(result_t) :: result_
 
-    pure function checkNotInSymbol() result(result_)
-        type(Result_t) :: result_
+        type(error_list_t) :: errors
+        type(fallible_chemical_t) :: maybe_chemical
 
-        type(Chemical_t) :: chemical
-        type(ChemicalComponent_t) :: components(1)
-        type(ErrorList_t) :: errors
+        maybe_chemical = fallible_chemical_t( &
+                hydrogen_gas_symbol(), &
+                [chemical_component_t(natural_helium(), 1.0d0)])
+        errors = maybe_chemical%errors()
+        result_ = assert_that(errors.hasType.MISMATCH, errors%to_string())
+    end function
 
-        components(1) = ChemicalComponent(naturalHelium(), 1.0d0)
-        call makeChemical( &
-                hydrogenGasSymbol(), &
-                components, &
-                errors, &
-                chemical)
-        result_ = assertThat(errors.hasType.MISMATCH_TYPE, errors%toString())
-    end function checkNotInSymbol
+    function check_negative_multipliers() result(result_)
+        type(result_t) :: result_
 
-    pure function checkNegativeMultipliers() result(result_)
-        type(Result_t) :: result_
+        type(error_list_t) :: errors
+        type(fallible_chemical_t) :: maybe_chemical
 
-        type(ChemicalComponent_t) :: components(1)
-        type(Chemical_t) :: chemical
-        type(ErrorList_t) :: errors
+        maybe_chemical = fallible_chemical_t( &
+                hydrogen_gas_symbol(), &
+                [chemical_component_t(natural_hydrogen(), -2.0d0)])
+        errors = maybe_chemical%errors()
+        result_ = assert_that(errors.hasType.INVALID_ARGUMENT, errors%to_string())
+    end function
 
-        components(1) = ChemicalComponent(naturalHydrogen(), -2.0d0)
-        call makeChemical(hydrogenGasSymbol(), components, errors, chemical)
+    function check_single_element() result(result_)
+        type(result_t) :: result_
 
-        result_ = assertThat( &
-                errors.hasType.INVALID_ARGUMENT_TYPE, &
-                errors%toString())
-    end function checkNegativeMultipliers
+        type(chemical_t) :: chemical
+        type(error_list_t) :: errors
+        type(fallible_chemical_t) :: maybe_chemical
 
-    pure function checkSingleElement() result(result_)
-        type(Result_t) :: result_
-
-        type(Chemical_t) :: chemical
-        type(ChemicalComponent_t) :: components(1)
-        type(ErrorList_t) :: errors
-
-        components(1) = ChemicalComponent(naturalHydrogen(), 2.0d0)
-        call makeChemical( &
-                hydrogenGasSymbol(), &
-                components, &
-                errors, &
-                chemical)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_chemical = fallible_chemical_t( &
+                hydrogen_gas_symbol(), &
+                [chemical_component_t(natural_hydrogen(), 2.0d0)])
+        if (maybe_chemical%failed()) then
+            errors = maybe_chemical%errors()
         else
+            chemical = maybe_chemical%chemical()
             result_ = &
-                    assertEquals( &
-                            1.0d0, &
-                            chemical%atomFraction(H), &
-                            "atom fraction") &
-                    .and.assertEquals( &
-                            1.0d0, &
-                            chemical%weightFraction(H), &
-                            "weight fraction")
+                    assert_equals(1.0d0, chemical%atom_fraction(H), "atom fraction") &
+                    .and.assert_equals(1.0d0, chemical%weight_fraction(H), "weight fraction")
         end if
-    end function checkSingleElement
+    end function
 
-    pure function checkSingleIsotope() result(result_)
-        type(Result_t) :: result_
+    function check_single_isotope() result(result_)
+        type(result_t) :: result_
 
-        type(Chemical_t) :: chemical
-        type(ChemicalComponent_t) :: components(1)
-        type(ErrorList_t) :: errors
-        type(Element_t) :: hydrogen
-        type(MessageList_t) :: messages
+        type(chemical_t) :: chemical
+        type(error_list_t) :: errors
+        type(fallible_chemical_t) :: maybe_chemical
+        type(fallible_element_t) :: maybe_element
 
-        call fromAtomFractions( &
-                H, [ElementComponent(H_1, 1.0d0)], messages, errors, hydrogen)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_element = from_atom_fractions(H, [element_component_t(H_1, 1.0d0)])
+        if (maybe_element%failed()) then
+            errors = maybe_element%errors()
+            result_ = fail(errors%to_string())
         else
-            components(1) = ChemicalComponent(hydrogen, 2.0d0)
-            call makeChemical( &
-                    hydrogenGasSymbol(), &
-                    components, &
-                    errors, &
-                    chemical)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
+            maybe_chemical = fallible_chemical_t( &
+                    hydrogen_gas_symbol(), &
+                    [chemical_component_t(maybe_element%element(), 2.0d0)])
+            if (maybe_chemical%failed()) then
+                errors = maybe_chemical%errors()
+                result_ = fail(errors%to_string())
             else
+                chemical = maybe_chemical%chemical()
                 result_ = &
-                        assertEquals( &
-                                1.0d0, &
-                                chemical%atomFraction(H_1), &
-                                "atom fraction") &
-                        .and.assertEquals( &
-                                1.0d0, &
-                                chemical%weightFraction(H_1), &
-                                "weight fraction")
+                        assert_equals(1.0d0, chemical%atom_fraction(H_1), "atom fraction") &
+                        .and.assert_equals(1.0d0, chemical%weight_fraction(H_1), "weight fraction")
             end if
         end if
-    end function  checkSingleIsotope
+    end function
 
-    pure function checkDuplicate() result(result_)
-        type(Result_t) :: result_
+    function check_duplicate() result(result_)
+        type(result_t) :: result_
 
-        type(Chemical_t) :: chemical
-        type(ChemicalComponent_t) :: components(2)
-        type(ErrorList_t) :: errors
+        type(chemical_t) :: chemical
+        type(error_list_t) :: errors
+        type(fallible_chemical_t) :: maybe_chemical
 
-        components(1) = ChemicalComponent(naturalHydrogen(), 1.0d0)
-        components(2) = ChemicalComponent(naturalHydrogen(), 1.0d0)
-        call makeChemical( &
-                hydrogenGasSymbol(), &
-                components, &
-                errors, &
-                chemical)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_chemical = fallible_chemical_t( &
+                hydrogen_gas_symbol(), &
+                [ chemical_component_t(natural_hydrogen(), 1.0d0) &
+                , chemical_component_t(natural_hydrogen(), 1.0d0) &
+                ])
+        if (maybe_chemical%failed()) then
+            errors = maybe_chemical%errors()
         else
+            chemical = maybe_chemical%chemical()
             result_ = &
-                    assertEquals( &
-                            1.0d0, &
-                            chemical%atomFraction(H), &
-                            "atom fraction") &
-                    .and.assertEquals( &
-                            1.0d0, &
-                            chemical%weightFraction(H), &
-                            "weight fraction")
+                    assert_equals(1.0d0, chemical%atom_fraction(H), "atom fraction") &
+                    .and.assert_equals(1.0d0, chemical%weight_fraction(H), "weight fraction")
         end if
-    end function checkDuplicate
+    end function
 
-    pure function checkCombineError() result(result_)
-        type(Result_t) :: result_
+    function check_combine_error() result(result_)
+        type(result_t) :: result_
 
-        type(Chemical_t) :: chemical
-        type(ErrorList_t) :: errors_from_atom_factors
-        type(ErrorList_t) :: errors_from_weight_factors
+        type(error_list_t) :: errors
+        type(fallible_chemical_t) :: maybe_chemical
 
-        call combineByAtomFactors( &
-                naturalHydrogenGas(), &
+        maybe_chemical = combine_by_atom_factors( &
+                natural_hydrogen_gas(), &
                 1.0d0, &
-                naturalHeliumGas(), &
-                1.0d0, &
-                errors_from_atom_factors, &
-                chemical)
-        call combineByWeightFactors( &
-                naturalHydrogenGas(), &
-                1.0d0, &
-                naturalHeliumGas(), &
-                1.0d0, &
-                errors_from_weight_factors, &
-                chemical)
-        result_ = &
-                assertThat( &
-                        errors_from_atom_factors.hasType.MISMATCH_TYPE, &
-                        errors_from_atom_factors%toString()) &
-                .and.assertThat( &
-                        errors_from_weight_factors.hasType.MISMATCH_TYPE, &
-                        errors_from_weight_factors%toString())
-    end function checkCombineError
+                natural_helium_gas(), &
+                1.0d0)
+        errors = maybe_chemical%errors()
+        result_ = assert_that(errors.hasType.MISMATCH, errors%to_string())
 
-    pure function checkCombine() result(result_)
-        type(Result_t) :: result_
+        maybe_chemical = combine_by_weight_factors( &
+                natural_hydrogen_gas(), &
+                1.0d0, &
+                natural_helium_gas(), &
+                1.0d0)
+        errors = maybe_chemical%errors()
+        result_ = result_.and.assert_that(errors.hasType.MISMATCH, errors%to_string())
+    end function
 
-        type(Chemical_t) :: combined_by_atom_factors
-        type(Chemical_t) :: combined_by_weight_factors
-        type(ErrorList_t) :: errors
-        type(MessageList_t) :: messages
-        type(Element_t) :: pure_H_1
-        type(Chemical_t) :: pure_H_1_gas
-        type(ChemicalComponent_t) :: pure_H_1_gas_components(1)
-        type(Element_t) :: pure_H_2
-        type(Chemical_t) :: pure_H_2_gas
-        type(ChemicalComponent_t) :: pure_H_2_gas_components(1)
+    function check_combine() result(result_)
+        type(result_t) :: result_
 
-        call fromAtomFractions( &
-                H, [ElementComponent(H_1, 1.0d0)], messages, errors, pure_H_1)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        character(len=*), parameter :: PROCEDURE_NAME = "check_combine"
+        type(chemical_t) :: combined
+        type(error_list_t) :: errors
+        type(fallible_chemical_t) :: maybe_combined
+        type(fallible_element_t) :: maybe_H_1
+        type(fallible_chemical_t) :: maybe_H_1_gas
+        type(fallible_element_t) :: maybe_H_2
+        type(fallible_chemical_t) :: maybe_H_2_gas
+        type(element_t) :: pure_H_1
+        type(chemical_t) :: pure_H_1_gas
+        type(element_t) :: pure_H_2
+        type(chemical_t) :: pure_H_2_gas
+
+        maybe_H_1 = from_atom_fractions(H, [element_component_t(H_1, 1.0d0)])
+        maybe_H_2 = from_atom_fractions(H, [element_component_t(H_2, 1.0d0)])
+        if (any([maybe_H_1%failed(), maybe_H_2%failed()])) then
+            errors = error_list_t( &
+                    pack([maybe_H_1%errors(), maybe_H_2%errors()], [maybe_H_1%failed(), maybe_H_2%failed()]), &
+                    module_t(MODULE_NAME), &
+                    procedure_t(PROCEDURE_NAME))
+            result_ = fail(errors%to_string())
         else
-            call fromAtomFractions( &
-                    H, [ElementComponent(H_2, 1.0d0)], messages, errors, pure_H_2)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
+            pure_H_1 = maybe_H_1%element()
+            pure_H_2 = maybe_H_2%element()
+            maybe_H_1_gas = fallible_chemical_t( &
+                    hydrogen_gas_symbol(), &
+                    [chemical_component_t(pure_H_1, 2.0d0)])
+            maybe_H_2_gas = fallible_chemical_t( &
+                    hydrogen_gas_symbol(), &
+                    [chemical_component_t(pure_H_2, 2.0d0)])
+            if (any([maybe_H_1_gas%failed(), maybe_H_2_gas%failed()])) then
+                errors = error_list_t( &
+                        pack([maybe_H_1_gas%errors(), maybe_H_2_gas%errors()], [maybe_H_1_gas%failed(), maybe_H_2_gas%failed()]), &
+                        module_t(MODULE_NAME), &
+                        procedure_t(PROCEDURE_NAME))
+                result_ = fail(errors%to_string())
             else
-                pure_H_1_gas_components(1) = ChemicalComponent(pure_H_1, 2.0d0)
-                pure_H_2_gas_components(1) = ChemicalComponent(pure_H_2, 2.0d0)
-                call makeChemical( &
-                        hydrogenGasSymbol(), &
-                        pure_H_1_gas_components, &
-                        errors, &
-                        pure_H_1_gas)
-                if (errors%hasAny()) then
-                    result_ = fail(errors%toString())
+                pure_H_1_gas = maybe_H_1_gas%chemical()
+                pure_H_2_gas = maybe_H_2_gas%chemical()
+                maybe_combined = combine_by_atom_factors( &
+                        pure_H_1_gas, 0.6d0, pure_H_2_gas, 0.4d0)
+                if (maybe_combined%failed()) then
+                    errors = maybe_combined%errors()
+                    result_ = fail(errors%to_string())
                 else
-                    call makeChemical( &
-                            hydrogenGasSymbol(), &
-                            pure_H_2_gas_components, &
-                            errors, &
-                            pure_H_2_gas)
-                    if (errors%hasAny()) then
-                        result_ = fail(errors%toString())
-                    else
-                        call combineByAtomFactors( &
-                                pure_H_1_gas, &
-                                0.6d0, &
-                                pure_H_2_gas, &
-                                0.4d0, &
-                                errors, &
-                                combined_by_atom_factors)
-                        if (errors%hasAny()) then
-                            result_ = fail(errors%toString())
-                        else
-                            call combineByWeightFactors( &
-                                    pure_H_1_gas, &
+                    combined = maybe_combined%chemical()
+                    result_ = &
+                            assert_equals( &
                                     0.6d0, &
-                                    pure_H_2_gas, &
+                                    combined%atom_fraction(H_1), &
+                                    "H-1 atom fraction") &
+                            .and.assert_equals( &
                                     0.4d0, &
-                                    errors, &
-                                    combined_by_weight_factors)
-                            if (errors%hasAny()) then
-                                result_ = fail(errors%toString())
-                            else
-                                result_ = &
-                                        assertEquals( &
-                                                0.6d0, &
-                                                combined_by_atom_factors%atomFraction(H_1), &
-                                                "H-1 atom fraction") &
-                                        .and.assertEquals( &
-                                                0.4d0, &
-                                                combined_by_atom_factors%atomFraction(H_2), &
-                                                "H-2 atom fraction") &
-                                        .and.assertEquals( &
-                                                0.6d0, &
-                                                combined_by_weight_factors%weightFraction(H_1), &
-                                                "H-1 weight fraction") &
-                                        .and.assertEquals( &
-                                                0.4d0, &
-                                                combined_by_weight_factors%weightFraction(H_2), &
-                                                "H-2 weight fraction")
-                            end if
-                        end if
-                    end if
+                                    combined%atom_fraction(H_2), &
+                                    "H-2 atom fraction")
+                end if
+                maybe_combined = combine_by_weight_factors( &
+                        pure_H_1_gas, 0.6d0, pure_H_2_gas, 0.4d0)
+                if (maybe_combined%failed()) then
+                    errors = maybe_combined%errors()
+                    result_ = result_.and.fail(errors%to_string())
+                else
+                    combined = maybe_combined%chemical()
+                    result_ = &
+                            result_ &
+                            .and.assert_equals( &
+                                    0.6d0, &
+                                    combined%weight_fraction(H_1), &
+                                    "H-1 weight fraction") &
+                            .and.assert_equals( &
+                                    0.4d0, &
+                                    combined%weight_fraction(H_2), &
+                                    "H-2 weight fraction")
                 end if
             end if
         end if
-    end function checkCombine
+    end function
 
-    pure function checkWaterFractions() result(result_)
-        type(Result_t) :: result_
+    function check_water_fractions() result(result_)
+        type(result_t) :: result_
 
-        type(Chemical_t) :: water
+        type(chemical_t) :: water
 
-        water = naturalWater()
+        water = natural_water()
         result_ = &
-                assertEquals( &
-                        2.0d0 / 3.0d0, &
-                        water%atomFraction(H)) &
-                .and.assertEquals( &
-                        1.0d0 / 3.0d0, &
-                        water%atomFraction(O))
-    end function checkWaterFractions
+                assert_equals(2.0d0 / 3.0d0, water%atom_fraction(H)) &
+                .and.assert_equals(1.0d0 / 3.0d0, water%atom_fraction(O))
+    end function
 
-    pure function checkNotFound() result(result_)
-        type(Result_t) :: result_
+    function check_not_found() result(result_)
+        type(result_t) :: result_
 
-        type(Chemical_t) :: chemicals(2)
+        result_ = assert_equals( &
+                0, &
+                find( &
+                        water_symbol(), &
+                        [ natural_hydrogen_gas() &
+                        , natural_helium_gas() &
+                        ]))
+    end function
 
-        chemicals(1) = naturalHydrogenGas()
-        chemicals(2) = naturalHeliumGas()
+    function check_find() result(result_)
+        type(result_t) :: result_
 
-        result_ = assertEquals(0, find(waterSymbol(), chemicals))
-    end function checkNotFound
-
-    pure function checkFind() result(result_)
-        type(Result_t) :: result_
-
-        type(Chemical_t) :: chemicals(3)
-
-        chemicals(1) = naturalHydrogenGas()
-        chemicals(2) = naturalHeliumGas()
-        chemicals(3) = naturalWater()
-
-        result_ = assertEquals(2, find(heliumGasSymbol(), chemicals))
-    end function checkFind
-end module chemical_test
+        result_ = assert_equals( &
+                2, &
+                find( &
+                        helium_gas_symbol(), &
+                        [ natural_hydrogen_gas() &
+                        , natural_helium_gas() &
+                        , natural_water() &
+                        ]))
+    end function
+end module

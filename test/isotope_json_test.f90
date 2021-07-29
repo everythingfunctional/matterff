@@ -1,72 +1,73 @@
 module isotope_json_test
-    use erloff, only: ErrorList_t
+    use erloff, only: error_list_t
     use iso_varying_string, only: operator(//)
-    use Isotope_m, only: Isotope_t, fromJson, H_1
-    use jsonff, only: JsonElement_t, JsonObject_t, parseJson
+    use jsonff, only: fallible_json_value_t, json_object_t, parse_json
+    use matterff, only: fallible_isotope_t, isotope_t, H_1
     use strff, only: NEWLINE
-    use Vegetables_m, only: &
-            Result_t, TestItem_t, assertEquals, Describe, fail, It
+    use vegetables, only: &
+            result_t, test_item_t, assert_equals, describe, fail, it
 
     implicit none
     private
-
     public :: test_isotope_json
 contains
     function test_isotope_json() result(tests)
-        type(TestItem_t) :: tests
+        type(test_item_t) :: tests
 
-        type(TestItem_t) :: individual_tests(2)
-
-        individual_tests(1) = It( &
-                "can be converted to JSON", checkConvertToJson)
-        individual_tests(2) = It( &
-                "can be extracted from JSON", checkExtractFromJson)
-        tests = Describe("an isotope", individual_tests)
+        tests = describe( &
+                "an isotope", &
+                [ it("can be converted to JSON", check_convert_to_json) &
+                , it("can be extracted from JSON", check_extract_from_json) &
+                ])
     end function
 
-    pure function checkConvertToJson() result(result_)
-        type(Result_t) :: result_
+    function check_convert_to_json() result(result_)
+        type(result_t) :: result_
 
         character(len=*), parameter :: EXPECTED = &
    '{' // NEWLINE &
 // '    "fraction" : 1.0,' // NEWLINE &
 // '    "isotope" : "H-1",' // NEWLINE &
-// '    "atomicMass" : "1.0078250321e-3 kg/mol"' // NEWLINE &
+// '    "atomic mass" : "1.0078250321e-3 kg/mol"' // NEWLINE &
 // '}'
-        type(JsonObject_t) :: json
+        type(json_object_t) :: json
 
-        json = H_1%toJsonWithFraction(1.0d0)
-        result_ = assertEquals(EXPECTED, json%toExpandedString())
-    end function checkConvertToJson
+        json = H_1%to_json_with_fraction(1.0d0)
+        result_ = assert_equals(EXPECTED, json%to_expanded_string())
+    end function
 
-    pure function checkExtractFromJson() result(result_)
-        type(Result_t) :: result_
+    function check_extract_from_json() result(result_)
+        type(result_t) :: result_
 
         character(len=*), parameter :: JSON_STRING = &
    '{' // NEWLINE &
 // '    "fraction" : 1.0,' // NEWLINE &
 // '    "isotope" : "H-1",' // NEWLINE &
-// '    "atomicMass" : "1.0078250321e-3 kg/mol"' // NEWLINE &
+// '    "atomic mass" : "1.0078250321e-3 kg/mol"' // NEWLINE &
 // '}'
-        type(ErrorList_t) :: errors
-        type(Isotope_t) :: isotope
-        type(JsonElement_t) :: json
+        type(error_list_t) :: errors
+        type(isotope_t) :: isotope
+        type(fallible_isotope_t) :: maybe_isotope
+        type(fallible_json_value_t) :: maybe_json
 
-        call parseJson(JSON_STRING, errors, json)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_json = parse_json(JSON_STRING)
+        if (maybe_json%failed()) then
+            errors = maybe_json%errors()
+            result_ = fail(errors%to_string())
         else
-            select type (object => json%element)
-            type is (JsonObject_t)
-                call fromJson(object, errors, isotope)
-                if (errors%hasAny()) then
-                    result_ = fail(errors%toString())
+            select type (object => maybe_json%value_())
+            type is (json_object_t)
+                maybe_isotope = fallible_isotope_t(object)
+                if (maybe_isotope%failed()) then
+                    errors = maybe_isotope%errors()
+                    result_ = fail(errors%to_string())
                 else
-                    result_ = assertEquals(H_1%toString(), isotope%toString())
+                    isotope = maybe_isotope%isotope()
+                    result_ = assert_equals(H_1%to_string(), isotope%to_string())
                 end if
             class default
-                result_ = fail("Didn't get an object: " // object%toCompactString())
+                result_ = fail("Didn't get an object: " // object%to_compact_string())
             end select
         end if
-    end function checkExtractFromJson
-end module isotope_json_test
+    end function
+end module

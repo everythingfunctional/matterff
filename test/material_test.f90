@@ -1,511 +1,484 @@
 module material_test
-    use Chemical_m, only: &
-            Chemical_t, &
-            makeChemical, &
-            naturalHeliumGas, &
-            naturalHydrogenGas, &
-            naturalWater
-    use Chemical_component_m, only: ChemicalComponent_t, ChemicalComponent
-    use Chemical_symbol_m, only: &
-            ChemicalSymbol_t, heliumGasSymbol, hydrogenGasSymbol, waterSymbol
-    use Element_m, only: Element_t, fromAtomFractions, naturalHydrogen
-    use Element_component_m, only: ElementComponent
-    use Element_symbol_m, only: ElementSymbol_t, H
-    use erloff, only: ErrorList_t, MessageList_t
-    use Isotope_m, only: Isotope_t, H_1
-    use Material_m, only: &
-            Material_t, &
-            combineByAtomFactors, &
-            combineByWeightFactors, &
-            fromAtomFractions, &
-            fromWeightFractions
-    use Material_component_m, only: MaterialComponent_t, MaterialComponent
-    use matterff_Utilities_m, only: INVALID_ARGUMENT_TYPE, NORMALIZED_FRACTIONS_TYPE
-    use quaff_asserts_m, only: assertEquals
-    use Vegetables_m, only: &
-            Result_t, TestItem_t, assertEquals, assertThat, Describe, fail, It
+    use erloff, only: error_list_t, message_list_t
+    use matterff, only: &
+            fallible_chemical_t, &
+            fallible_element_t, &
+            fallible_material_t, &
+            chemical_t, &
+            chemical_component_t, &
+            chemical_symbol_t, &
+            element_component_t, &
+            element_symbol_t, &
+            isotope_t, &
+            material_t, &
+            material_component_t, &
+            combine_by_atom_factors, &
+            combine_by_weight_factors, &
+            from_atom_fractions, &
+            from_weight_fractions, &
+            helium_gas_symbol, &
+            hydrogen_gas_symbol, &
+            natural_helium_gas, &
+            natural_hydrogen, &
+            natural_hydrogen_gas, &
+            natural_water, &
+            water_symbol, &
+            H, &
+            H_1
+    use matterff_utilities_m, only: INVALID_ARGUMENT, NORMALIZED_FRACTIONS
+    use quaff_asserts_m, only: assert_equals
+    use vegetables, only: &
+            result_t, test_item_t, assert_equals, assert_that, describe, fail, it
 
     implicit none
     private
-
     public :: test_material
 contains
     function test_material() result(tests)
-        type(TestItem_t) :: tests
+        type(test_item_t) :: tests
 
-        type(TestItem_t) :: individual_tests(10)
+        tests = describe ( &
+                "material_t", &
+                [ it( &
+                        "Creating a material with negative fractions is an error", &
+                        check_negative_fractions) &
+                , it( &
+                        "A single isotope material is all that isotope", &
+                        check_single_isotope) &
+                , it( &
+                        "A single element material is all that element", &
+                        check_single_element) &
+                , it( &
+                        "A single chemical material is all that chemical", &
+                        check_single_chemical) &
+                , it( &
+                        "A single chemical material has the same molar mass", &
+                        check_single_chemical_molar_mass) &
+                , it("Keeps track of its components", check_keeps_track) &
+                , it( &
+                        "Has normalized fractions of its components", &
+                        check_normalized_fractions) &
+                , it( &
+                        "Normalizing fractions of chemicals produces a message", &
+                        check_normalized_messages) &
+                , it( &
+                        "Created with duplicate chemicals has sum of duplicates", &
+                        check_duplicates) &
+                , it("Combining materials results in correct fractions", check_combine) &
+                ])
+    end function
 
-        individual_tests(1) = It( &
-                "Creating a material with negative fractions is an error", &
-                checkNegativeFractions)
-        individual_tests(2) = It( &
-                "A single isotope material is all that isotope", &
-                checkSingleIsotope)
-        individual_tests(3) = It( &
-                "A single element material is all that element", &
-                checkSingleElement)
-        individual_tests(4) = It( &
-                "A single chemical material is all that chemical", &
-                checkSingleChemical)
-        individual_tests(5) = It( &
-                "A single chemical material has the same molar mass", &
-                checkSingleChemicalMolarMass)
-        individual_tests(6) = It( &
-                "Keeps track of its components", checkKeepsTrack)
-        individual_tests(7) = It( &
-                "Has normalized fractions of its components", &
-                checkNormalizedFractions)
-        individual_tests(8) = It( &
-                "Normalizing fractions of chemicals produces a message", &
-                checkNormalizedMessages)
-        individual_tests(9) = It( &
-                "Created with duplicate chemicals has sum of duplicates", &
-                checkDuplicates)
-        individual_tests(10) = It( &
-                "Combining materials results in correct fractions", checkCombine)
-        tests = Describe("Material_t", individual_tests)
-    end function test_material
+    function check_negative_fractions() result(result_)
+        type(result_t) :: result_
 
-    pure function checkNegativeFractions() result(result_)
-        type(Result_t) :: result_
+        type(error_list_t) :: errors
+        type(fallible_material_t) :: maybe_material
 
-        type(MaterialComponent_t) :: components(1)
-        type(Material_t) :: material
-        type(ErrorList_t) :: errors_from_atom_fractions
-        type(ErrorList_t) :: errors_from_weight_fractions
-        type(MessageList_t) :: messages
+        maybe_material = from_atom_fractions( &
+                [material_component_t(natural_hydrogen_gas(), -1.0d0)])
+        errors = maybe_material%errors()
+        result_ = assert_that(errors.hasType.INVALID_ARGUMENT, errors%to_string())
 
-        components(1) = MaterialComponent(naturalHydrogenGas(), -1.0d0)
-        call fromAtomFractions( &
-                components, &
-                messages, &
-                errors_from_atom_fractions, &
-                material)
-        call fromWeightFractions( &
-                components, &
-                messages, &
-                errors_from_weight_fractions, &
-                material)
+        maybe_material = from_weight_fractions( &
+                [material_component_t(natural_hydrogen_gas(), -1.0d0)])
+        errors = maybe_material%errors()
+        result_ = result_.and.assert_that(errors.hasType.INVALID_ARGUMENT, errors%to_string())
+    end function
 
-        result_ = &
-                assertThat( &
-                        errors_from_atom_fractions.hasType.INVALID_ARGUMENT_TYPE, &
-                        errors_from_atom_fractions%toString()) &
-                .and.assertThat( &
-                        errors_from_weight_fractions.hasType.INVALID_ARGUMENT_TYPE, &
-                        errors_from_weight_fractions%toString())
-    end function checkNegativeFractions
+    function check_single_isotope() result(result_)
+        type(result_t) :: result_
 
-    pure function checkSingleIsotope() result(result_)
-        type(Result_t) :: result_
+        type(error_list_t) :: errors
+        type(fallible_chemical_t) :: maybe_chemical
+        type(fallible_element_t) :: maybe_element
+        type(fallible_material_t) :: maybe_material
 
-        type(Chemical_t) :: chemical
-        type(ChemicalComponent_t) :: chemical_components(1)
-        type(Element_t) :: element
-        type(ErrorList_t) :: errors
-        type(Material_t) :: from_atom_fractions
-        type(Material_t) :: from_weight_fractions
-        type(MaterialComponent_t) :: material_components(1)
-        type(MessageList_t) :: messages
-
-        call fromAtomFractions( &
-                H, [ElementComponent(H_1, 1.0d0)], messages, errors, element)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_element = from_atom_fractions(H, [element_component_t(H_1, 1.0d0)])
+        if (maybe_element%failed()) then
+            errors = maybe_element%errors()
+            result_ = fail(errors%to_string())
         else
-            chemical_components(1) = ChemicalComponent(element, 2.0d0)
-            call makeChemical( &
-                    hydrogenGasSymbol(), chemical_components, errors, chemical)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
+            maybe_chemical = fallible_chemical_t( &
+                    hydrogen_gas_symbol(), &
+                    [chemical_component_t(maybe_element%element(), 2.0d0)])
+            if (maybe_chemical%failed()) then
+                errors = maybe_chemical%errors()
+                result_ = fail(errors%to_string())
             else
-                material_components(1) = MaterialComponent(chemical, 1.0d0)
-                call fromWeightFractions( &
-                        material_components, &
-                        messages, &
-                        errors, &
-                        from_atom_fractions)
-                if (errors%hasAny()) then
-                    result_ = fail(errors%toString())
+                maybe_material = from_atom_fractions( &
+                        [material_component_t(maybe_chemical%chemical(), 1.0d0)])
+                if (maybe_material%failed()) then
+                    errors = maybe_material%errors()
+                    result_ = fail(errors%to_string())
                 else
-                    call fromAtomFractions( &
-                            material_components, &
-                            messages, &
-                            errors, &
-                            from_weight_fractions)
-                    if (errors%hasAny()) then
-                        result_ = fail(errors%toString())
-                    else
-                        result_ =  &
-                                assertAllIsotope( &
-                                        H_1, from_atom_fractions, "atom fractions") &
-                                .and.assertAllIsotope( &
-                                        H_1, from_weight_fractions, "weight fractions")
-                    end if
+                    result_ = assert_all_isotope( &
+                            H_1, maybe_material%material(), "atom fractions")
+                end if
+                maybe_material = from_weight_fractions( &
+                        [material_component_t(maybe_chemical%chemical(), 1.0d0)])
+                if (maybe_material%failed()) then
+                    errors = maybe_material%errors()
+                    result_ = result_.and.fail(errors%to_string())
+                else
+                    result_ = result_.and.assert_all_isotope( &
+                            H_1, maybe_material%material(), "weight fractions")
                 end if
             end if
         end if
-    end function checkSingleIsotope
+    end function
 
-    pure function checkSingleElement() result(result_)
-        type(Result_t) :: result_
+    function check_single_element() result(result_)
+        type(result_t) :: result_
 
-        type(Chemical_t) :: chemical
-        type(ChemicalComponent_t) :: chemical_components(1)
-        type(ErrorList_t) :: errors
-        type(Material_t) :: from_atom_fractions
-        type(Material_t) :: from_weight_fractions
-        type(MaterialComponent_t) :: material_components(1)
-        type(MessageList_t) :: messages
+        type(error_list_t) :: errors
+        type(fallible_chemical_t) :: maybe_chemical
+        type(fallible_material_t) :: maybe_material
 
-        chemical_components(1) = ChemicalComponent(naturalHydrogen(), 2.0d0)
-        call makeChemical( &
-                hydrogenGasSymbol(), chemical_components, errors, chemical)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_chemical = fallible_chemical_t( &
+                hydrogen_gas_symbol(), &
+                [chemical_component_t(natural_hydrogen(), 2.0d0)])
+        if (maybe_chemical%failed()) then
+            errors = maybe_chemical%errors()
+            result_ = fail(errors%to_string())
         else
-            material_components(1) = MaterialComponent(chemical, 1.0d0)
-            call fromAtomFractions( &
-                    material_components, &
-                    messages, &
-                    errors, &
-                    from_atom_fractions)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
+            maybe_material = from_atom_fractions( &
+                    [material_component_t(maybe_chemical%chemical(), 1.0d0)])
+            if (maybe_material%failed()) then
+                errors = maybe_material%errors()
+                result_ = fail(errors%to_string())
             else
-                call fromWeightFractions( &
-                        material_components, &
-                        messages, &
-                        errors, &
-                        from_weight_fractions)
-                if (errors%hasAny()) then
-                    result_ = fail(errors%toString())
-                else
-                    result_ =  &
-                            assertAllElement( &
-                                    H, from_atom_fractions, "atom fractions") &
-                            .and.assertAllElement( &
-                                    H, from_weight_fractions, "weight fractions")
-                end if
+                result_ = assert_all_element( &
+                        H, maybe_material%material(), "atom fractions")
+            end if
+            maybe_material = from_weight_fractions( &
+                    [material_component_t(maybe_chemical%chemical(), 1.0d0)])
+            if (maybe_material%failed()) then
+                errors = maybe_material%errors()
+                result_ = result_.and.fail(errors%to_string())
+            else
+                result_ = result_.and.assert_all_element( &
+                        H, maybe_material%material(), "weight fractions")
             end if
         end if
-    end function checkSingleElement
+    end function
 
-    pure function checkSingleChemical() result(result_)
-        type(Result_t) :: result_
+    function check_single_chemical() result(result_)
+        type(result_t) :: result_
 
-        type(ErrorList_t) :: errors
-        type(Material_t) :: from_atom_fractions
-        type(Material_t) :: from_weight_fractions
-        type(MaterialComponent_t) :: material_components(1)
-        type(MessageList_t) :: messages
+        type(error_list_t) :: errors
+        type(fallible_material_t) :: maybe_material
 
-        material_components(1) = MaterialComponent(naturalHydrogenGas(), 1.0d0)
-        call fromAtomFractions( &
-                material_components, &
-                messages, &
-                errors, &
-                from_atom_fractions)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_material = from_atom_fractions( &
+                [material_component_t(natural_hydrogen_gas(), 1.0d0)])
+        if (maybe_material%failed()) then
+            errors = maybe_material%errors()
+            result_ = fail(errors%to_string())
         else
-            call fromWeightFractions( &
-                    material_components, &
-                    messages, &
-                    errors, &
-                    from_weight_fractions)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
-            else
-                result_ =  &
-                        assertAllChemical( &
-                                hydrogenGasSymbol(), from_atom_fractions, "atom fractions") &
-                        .and.assertAllChemical( &
-                                hydrogenGasSymbol(), from_weight_fractions, "weight fractions")
-            end if
+            result_ = assert_all_chemical( &
+                    hydrogen_gas_symbol(), maybe_material%material(), "atom fractions")
         end if
-    end function checkSingleChemical
-
-    pure function checkSingleChemicalMolarMass() result(result_)
-        type(Result_t) :: result_
-
-        type(Chemical_t) :: chemical
-        type(MaterialComponent_t) :: components(1)
-        type(ErrorList_t) :: errors
-        type(Material_t) :: material
-        type(MessageList_t) :: messages
-
-        chemical = naturalWater()
-        components(1) = MaterialComponent(chemical, 1.0d0)
-        call fromAtomFractions(components, messages, errors, material)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_material = from_weight_fractions( &
+                [material_component_t(natural_hydrogen_gas(), 1.0d0)])
+        if (maybe_material%failed()) then
+            errors = maybe_material%errors()
+            result_ = result_.and.fail(errors%to_string())
         else
-            result_ = assertEquals(chemical%molarMass(), material%molarMass())
+            result_ = result_.and.assert_all_chemical( &
+                    hydrogen_gas_symbol(), maybe_material%material(), "weight fractions")
         end if
-    end function checkSingleChemicalMolarMass
+    end function
 
-    pure function checkKeepsTrack() result(result_)
-        type(Result_t) :: result_
+    function check_single_chemical_molar_mass() result(result_)
+        type(result_t) :: result_
 
-        type(MaterialComponent_t) :: components(2)
-        type(ErrorList_t) :: errors
-        type(Material_t) :: from_atom_fractions
-        type(Material_t) :: from_weight_fractions
-        type(MessageList_t) :: messages
+        type(chemical_t) :: chemical
+        type(error_list_t) :: errors
+        type(material_t) :: material
+        type(fallible_material_t) :: maybe_material
 
-        components(1) = MaterialComponent(naturalHydrogenGas(), 0.6d0)
-        components(2) = MaterialComponent(naturalWater(), 0.4d0)
-        call fromAtomFractions( &
-                components, messages, errors, from_atom_fractions)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        chemical = natural_water()
+        maybe_material = from_atom_fractions( &
+                [material_component_t(chemical, 1.0d0)])
+        if (maybe_material%failed()) then
+            errors = maybe_material%errors()
+            result_ = fail(errors%to_string())
         else
-            call fromWeightFractions( &
-                    components, messages, errors, from_weight_fractions)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
-            else
-                result_ = &
-                        assertEquals( &
-                                0.6d0, &
-                                from_atom_fractions%atomFraction(hydrogenGasSymbol()), &
-                                "H2 atom fraction") &
-                        .and.assertEquals( &
-                                0.4d0, &
-                                from_atom_fractions%atomFraction(waterSymbol()), &
-                                "H2O atom fraction") &
-                        .and.assertEquals( &
-                                0.6d0, &
-                                from_weight_fractions%weightFraction(hydrogenGasSymbol()), &
-                                "H2 weight fraction") &
-                        .and.assertEquals( &
-                                0.4d0, &
-                                from_weight_fractions%weightFraction(waterSymbol()), &
-                                "H2O weight fraction")
-            end if
+            material = maybe_material%material()
+            result_ = assert_equals(chemical%molar_mass(), material%molar_mass())
         end if
-    end function checkKeepsTrack
+    end function
 
-    pure function checkNormalizedFractions() result(result_)
-        type(Result_t) :: result_
+    function check_keeps_track() result(result_)
+        type(result_t) :: result_
 
-        type(MaterialComponent_t) :: components(2)
-        type(ErrorList_t) :: errors
-        type(Material_t) :: from_atom_fractions
-        type(Material_t) :: from_weight_fractions
-        type(MessageList_t) :: messages
+        type(error_list_t) :: errors
+        type(material_t) :: material
+        type(fallible_material_t) :: maybe_material
 
-        components(1) = MaterialComponent(naturalHydrogenGas(), 0.06d0)
-        components(2) = MaterialComponent(naturalWater(), 0.04d0)
-        call fromAtomFractions( &
-                components, messages, errors, from_atom_fractions)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_material = from_atom_fractions( &
+                [ material_component_t(natural_hydrogen_gas(), 0.6d0) &
+                , material_component_t(natural_water(), 0.4d0) &
+                ])
+        if (maybe_material%failed()) then
+            errors = maybe_material%errors()
+            result_ = fail(errors%to_string())
         else
-            call fromWeightFractions( &
-                    components, messages, errors, from_weight_fractions)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
-            else
-                result_ = &
-                        assertEquals( &
-                                0.6d0, &
-                                from_atom_fractions%atomFraction(hydrogenGasSymbol()), &
-                                "H2 atom fraction") &
-                        .and.assertEquals( &
-                                0.4d0, &
-                                from_atom_fractions%atomFraction(waterSymbol()), &
-                                "H2O atom fraction") &
-                        .and.assertEquals( &
-                                0.6d0, &
-                                from_weight_fractions%weightFraction(hydrogenGasSymbol()), &
-                                "H2 weight fraction") &
-                        .and.assertEquals( &
-                                0.4d0, &
-                                from_weight_fractions%weightFraction(waterSymbol()), &
-                                "H2O weight fraction")
-            end if
-        end if
-    end function checkNormalizedFractions
-
-    pure function checkNormalizedMessages() result(result_)
-        type(Result_t) :: result_
-
-        type(MaterialComponent_t) :: components(2)
-        type(ErrorList_t) :: errors
-        type(Material_t) :: material
-        type(MessageList_t) :: messages_from_atom_fractions
-        type(MessageList_t) :: messages_from_weight_fractions
-
-        components(1) = MaterialComponent(naturalHydrogenGas(), 0.06d0)
-        components(2) = MaterialComponent(naturalWater(), 0.04d0)
-        call fromAtomFractions( &
-                components, messages_from_atom_fractions, errors, material)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
-        else
-            call fromWeightFractions( &
-                    components, messages_from_weight_fractions, errors, material)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
-            else
-                result_ = &
-                        assertThat( &
-                                messages_from_atom_fractions.hasType.NORMALIZED_FRACTIONS_TYPE, &
-                                messages_from_atom_fractions%toString()) &
-                        .and.assertThat( &
-                                messages_from_weight_fractions.hasType.NORMALIZED_FRACTIONS_TYPE, &
-                                messages_from_weight_fractions%toString())
-            end if
-        end if
-    end function checkNormalizedMessages
-
-    pure function checkDuplicates() result(result_)
-        type(Result_t) :: result_
-
-        type(MaterialComponent_t) :: components(2)
-        type(ErrorList_t) :: errors
-        type(Material_t) :: from_atom_fractions
-        type(Material_t) :: from_weight_fractions
-        type(MessageList_t) :: messages
-
-        components(1) = MaterialComponent(naturalHydrogenGas(), 0.6d0)
-        components(2) = MaterialComponent(naturalHydrogenGas(), 0.4d0)
-        call fromAtomFractions( &
-                components, messages, errors, from_atom_fractions)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
-        else
-            call fromWeightFractions( &
-                    components, messages, errors, from_weight_fractions)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
-            else
-                result_ = &
-                        assertAllChemical( &
-                                hydrogenGasSymbol(), from_atom_fractions, "atom fractions") &
-                        .and.assertAllChemical( &
-                                hydrogenGasSymbol(), from_weight_fractions, "weight fractions")
-            end if
-        end if
-    end function checkDuplicates
-
-    pure function checkCombine() result(result_)
-        type(Result_t) :: result_
-
-        type(ErrorList_t) :: errors
-        type(Material_t) :: from_atom_factors
-        type(Material_t) :: from_weight_factors
-        type(Material_t) :: helium
-        type(MaterialComponent_t) :: helium_components(1)
-        type(Material_t) :: hydrogen
-        type(MaterialComponent_t) :: hydrogen_components(1)
-        type(MessageList_t) :: messages
-
-        hydrogen_components(1) = MaterialComponent(naturalHydrogenGas(), 1.0d0)
-        call fromAtomFractions(hydrogen_components, messages, errors, hydrogen)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
-        else
-            helium_components(1) = MaterialComponent(naturalHeliumGas(), 1.0d0)
-            call fromAtomFractions(helium_components, messages, errors, helium)
-            if (errors%hasAny()) then
-                result_ = fail(errors%toString())
-            else
-                call combineByAtomFactors( &
-                        hydrogen, &
-                        0.6d0, &
-                        helium, &
-                        0.4d0, &
-                        messages, &
-                        errors, &
-                        from_atom_factors)
-                if (errors%hasAny()) then
-                    result_ = fail(errors%toString())
-                else
-                    call combineByWeightFactors( &
-                            hydrogen, &
+            material = maybe_material%material()
+            result_ = &
+                    assert_equals( &
                             0.6d0, &
-                            helium, &
+                            material%atom_fraction(hydrogen_gas_symbol()), &
+                            "H2 atom fraction") &
+                    .and. assert_equals( &
                             0.4d0, &
-                            messages, &
-                            errors, &
-                            from_weight_factors)
-                    if (errors%hasAny()) then
-                        result_ = fail(errors%toString())
-                    else
-                        result_ = &
-                                assertEquals( &
-                                        0.6d0, &
-                                        from_atom_factors%atomFraction(hydrogenGasSymbol()), &
-                                        "H2 atom fraction") &
-                                .and.assertEquals( &
-                                        0.4d0, &
-                                        from_atom_factors%atomFraction(heliumGasSymbol()), &
-                                        "He atom fraction") &
-                                .and.assertEquals( &
-                                        0.6d0, &
-                                        from_weight_factors%weightFraction(hydrogenGasSymbol()), &
-                                        "H2 weight fraction") &
-                                .and.assertEquals( &
-                                        0.4d0, &
-                                        from_weight_factors%weightFraction(heliumGasSymbol()), &
-                                        "He weight fraction")
-                    end if
+                            material%atom_fraction(water_symbol()), &
+                            "H2O atom fraction")
+        end if
+        maybe_material = from_weight_fractions( &
+                [ material_component_t(natural_hydrogen_gas(), 0.6d0) &
+                , material_component_t(natural_water(), 0.4d0) &
+                ])
+        if (maybe_material%failed()) then
+            errors = maybe_material%errors()
+            result_ = result_.and.fail(errors%to_string())
+        else
+            material = maybe_material%material()
+            result_ = &
+                    result_ &
+                    .and.assert_equals( &
+                            0.6d0, &
+                            material%weight_fraction(hydrogen_gas_symbol()), &
+                            "H2 weight fraction") &
+                    .and. assert_equals( &
+                            0.4d0, &
+                            material%weight_fraction(water_symbol()), &
+                            "H2O weight fraction")
+        end if
+    end function
+
+    function check_normalized_fractions() result(result_)
+        type(result_t) :: result_
+
+        type(error_list_t) :: errors
+        type(material_t) :: material
+        type(fallible_material_t) :: maybe_material
+
+        maybe_material = from_atom_fractions( &
+                [ material_component_t(natural_hydrogen_gas(), 0.06d0) &
+                , material_component_t(natural_water(), 0.04d0) &
+                ])
+        if (maybe_material%failed()) then
+            errors = maybe_material%errors()
+            result_ = fail(errors%to_string())
+        else
+            material = maybe_material%material()
+            result_ = &
+                    assert_equals( &
+                            0.6d0, &
+                            material%atom_fraction(hydrogen_gas_symbol()), &
+                            "H2 atom fraction") &
+                    .and. assert_equals( &
+                            0.4d0, &
+                            material%atom_fraction(water_symbol()), &
+                            "H2O atom fraction")
+        end if
+        maybe_material = from_weight_fractions( &
+                [ material_component_t(natural_hydrogen_gas(), 0.06d0) &
+                , material_component_t(natural_water(), 0.04d0) &
+                ])
+        if (maybe_material%failed()) then
+            errors = maybe_material%errors()
+            result_ = result_.and.fail(errors%to_string())
+        else
+            material = maybe_material%material()
+            result_ = &
+                    result_ &
+                    .and.assert_equals( &
+                            0.6d0, &
+                            material%weight_fraction(hydrogen_gas_symbol()), &
+                            "H2 weight fraction") &
+                    .and. assert_equals( &
+                            0.4d0, &
+                            material%weight_fraction(water_symbol()), &
+                            "H2O weight fraction")
+        end if
+    end function
+
+    function check_normalized_messages() result(result_)
+        type(result_t) :: result_
+
+        type(error_list_t) :: errors
+        type(fallible_material_t) :: maybe_material
+        type(message_list_t) :: messages
+
+        maybe_material = from_atom_fractions( &
+                [ material_component_t(natural_hydrogen_gas(), 0.06d0) &
+                , material_component_t(natural_water(), 0.04d0) &
+                ])
+        if (maybe_material%failed()) then
+            errors = maybe_material%errors()
+            result_ = fail(errors%to_string())
+        else
+            messages = maybe_material%messages()
+            result_ = assert_that( &
+                    messages.hasType.NORMALIZED_FRACTIONS, messages%to_string())
+        end if
+        maybe_material = from_weight_fractions( &
+                [ material_component_t(natural_hydrogen_gas(), 0.06d0) &
+                , material_component_t(natural_water(), 0.04d0) &
+                ])
+        if (maybe_material%failed()) then
+            errors = maybe_material%errors()
+            result_ = result_.and.fail(errors%to_string())
+        else
+            messages = maybe_material%messages()
+            result_ = result_.and.assert_that( &
+                    messages.hasType.NORMALIZED_FRACTIONS, messages%to_string())
+        end if
+    end function
+
+    function check_duplicates() result(result_)
+        type(result_t) :: result_
+
+        type(error_list_t) :: errors
+        type(fallible_material_t) :: maybe_material
+
+        maybe_material = from_atom_fractions( &
+                [ material_component_t(natural_hydrogen_gas(), 0.6d0) &
+                , material_component_t(natural_hydrogen_gas(), 0.4d0) &
+                ])
+        if (maybe_material%failed()) then
+            errors = maybe_material%errors()
+            result_ = fail(errors%to_string())
+        else
+            result_ = assert_all_chemical( &
+                    hydrogen_gas_symbol(), maybe_material%material(), "atom fractions")
+        end if
+        maybe_material = from_weight_fractions( &
+                [ material_component_t(natural_hydrogen_gas(), 0.6d0) &
+                , material_component_t(natural_hydrogen_gas(), 0.4d0) &
+                ])
+        if (maybe_material%failed()) then
+            errors = maybe_material%errors()
+            result_ = result_.and.fail(errors%to_string())
+        else
+            result_ = result_.and.assert_all_chemical( &
+                    hydrogen_gas_symbol(), maybe_material%material(), "weight fractions")
+        end if
+    end function
+
+    function check_combine() result(result_)
+        type(result_t) :: result_
+
+        type(error_list_t) :: errors
+        type(material_t) :: combined
+        type(material_t) :: helium
+        type(material_t) :: hydrogen
+        type(fallible_material_t) :: maybe_combined
+        type(fallible_material_t) :: maybe_helium
+        type(fallible_material_t) :: maybe_hydrogen
+
+        maybe_hydrogen = from_atom_fractions( &
+                [material_component_t(natural_hydrogen_gas(), 1.0d0)])
+        if (maybe_hydrogen%failed()) then
+            errors = maybe_hydrogen%errors()
+            result_ = fail(errors%to_string())
+        else
+            hydrogen = maybe_hydrogen%material()
+            maybe_helium = from_atom_fractions( &
+                    [material_component_t(natural_helium_gas(), 1.0d0)])
+            if (maybe_helium%failed()) then
+                errors = maybe_helium%errors()
+                result_ = fail(errors%to_string())
+            else
+                helium = maybe_helium%material()
+                maybe_combined = combine_by_atom_factors( &
+                        hydrogen, 0.6d0, helium, 0.4d0)
+                if (maybe_combined%failed()) then
+                    errors = maybe_combined%errors()
+                    result_ = fail(errors%to_string())
+                else
+                    combined = maybe_combined%material()
+                    result_ = &
+                            assert_equals( &
+                                    0.6d0, &
+                                    combined%atom_fraction(hydrogen_gas_symbol()), &
+                                    "H2 atom fraction") &
+                            .and.assert_equals( &
+                                    0.4d0, &
+                                    combined%atom_fraction(helium_gas_symbol()), &
+                                    "He atom fraction")
+                end if
+                maybe_combined = combine_by_weight_factors( &
+                        hydrogen, 0.6d0, helium, 0.4d0)
+                if (maybe_combined%failed()) then
+                    errors = maybe_combined%errors()
+                    result_ = result_.and.fail(errors%to_string())
+                else
+                    combined = maybe_combined%material()
+                    result_ = &
+                            result_ &
+                            .and.assert_equals( &
+                                    0.6d0, &
+                                    combined%weight_fraction(hydrogen_gas_symbol()), &
+                                    "H2 weight fraction") &
+                            .and.assert_equals( &
+                                    0.4d0, &
+                                    combined%weight_fraction(helium_gas_symbol()), &
+                                    "He weight fraction")
                 end if
             end if
         end if
-    end function checkCombine
+    end function
 
-    pure function assertAllIsotope(isotope, material, from) result(result_)
-        type(Isotope_t), intent(in) :: isotope
-        type(Material_t), intent(in) :: material
+    function assert_all_isotope(isotope, material, from) result(result_)
+        type(isotope_t), intent(in) :: isotope
+        type(material_t), intent(in) :: material
         character(len=*), intent(in) :: from
-        type(Result_t) :: result_
+        type(result_t) :: result_
 
         result_ = &
-                assertEquals( &
+                assert_equals( &
                         1.0d0, &
-                        material%atomFraction(isotope), &
+                        material%atom_fraction(isotope), &
                         "atom fraction from " // from) &
-                .and.assertEquals( &
+                .and.assert_equals( &
                         1.0d0, &
-                        material%weightFraction(isotope), &
+                        material%weight_fraction(isotope), &
                         "weight fraction from " // from)
-    end function assertAllIsotope
+    end function
 
-    pure function assertAllElement(element, material, from) result(result_)
-        type(ElementSymbol_t), intent(in) :: element
-        type(Material_t), intent(in) :: material
+    function assert_all_element(element, material, from) result(result_)
+        type(element_symbol_t), intent(in) :: element
+        type(material_t), intent(in) :: material
         character(len=*), intent(in) :: from
-        type(Result_t) :: result_
+        type(result_t) :: result_
 
         result_ = &
-                assertEquals( &
+                assert_equals( &
                         1.0d0, &
-                        material%atomFraction(element), &
+                        material%atom_fraction(element), &
                         "atom fraction from " // from) &
-                .and.assertEquals( &
+                .and.assert_equals( &
                         1.0d0, &
-                        material%weightFraction(element), &
+                        material%weight_fraction(element), &
                         "weight fraction from " // from)
-    end function assertAllElement
+    end function
 
-    pure function assertAllChemical(chemical, material, from) result(result_)
-        type(ChemicalSymbol_t), intent(in) :: chemical
-        type(Material_t), intent(in) :: material
+    function assert_all_chemical(chemical, material, from) result(result_)
+        type(chemical_symbol_t), intent(in) :: chemical
+        type(material_t), intent(in) :: material
         character(len=*), intent(in) :: from
-        type(Result_t) :: result_
+        type(result_t) :: result_
 
         result_ = &
-                assertEquals( &
+                assert_equals( &
                         1.0d0, &
-                        material%atomFraction(chemical), &
+                        material%atom_fraction(chemical), &
                         "atom fraction from " // from) &
-                .and.assertEquals( &
+                .and.assert_equals( &
                         1.0d0, &
-                        material%weightFraction(chemical), &
+                        material%weight_fraction(chemical), &
                         "weight fraction from " // from)
-    end function assertAllChemical
-end module material_test
+    end function
+end module

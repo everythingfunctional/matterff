@@ -1,39 +1,35 @@
 module matter_json_test
-    use erloff, only: ErrorList_t, MessageList_t
+    use erloff, only: error_list_t
     use iso_varying_string, only: operator(//)
-    use jsonff, only: JsonElement_t, JsonObject_t, parseJson
-    use Material_m, only: pureNaturalHydrogenGas
-    use Matter_m, only: Matter_t, createMatter, fromJson
+    use jsonff, only: fallible_json_value_t, json_object_t, parse_json
+    use matterff, only: fallible_matter_t, matter_t, pure_natural_hydrogen_gas
     use quaff, only: operator(.unit.), MOLS
     use strff, only: NEWLINE
-    use Vegetables_m, only: &
-            Result_t, TestItem_t, assertEquals, Describe, fail, It
+    use vegetables, only: &
+            result_t, test_item_t, assert_equals, describe, fail, it
 
     implicit none
     private
-
     public :: test_matter_json
 contains
     function test_matter_json() result(tests)
-        type(TestItem_t) :: tests
+        type(test_item_t) :: tests
 
-        type(TestItem_t) :: individual_tests(2)
-
-        individual_tests(1) = It( &
-                "can be converted to JSON", checkConvertToJson)
-        individual_tests(2) = It( &
-                "can be extracted from JSON", checkExtractFromJson)
-        tests = Describe("some matter", individual_tests)
+        tests = describe( &
+                "some matter", &
+                [ it("can be converted to JSON", check_convert_to_json) &
+                , it("can be extracted from JSON", check_extract_from_json) &
+                ])
     end function test_matter_json
 
-    pure function checkConvertToJson() result(result_)
-        type(Result_t) :: result_
+    function check_convert_to_json() result(result_)
+        type(result_t) :: result_
 
         character(len=*), parameter :: EXPECTED = &
    '{' // NEWLINE &
 // '    "amount" : "1.0 mol",' // NEWLINE &
 // '    "material" : {' // NEWLINE &
-// '        "atomFractions" : [' // NEWLINE &
+// '        "atom fractions" : [' // NEWLINE &
 // '            {' // NEWLINE &
 // '                "fraction" : 1.0,' // NEWLINE &
 // '                "chemical" : [' // NEWLINE &
@@ -46,16 +42,16 @@ contains
 // '                    {' // NEWLINE &
 // '                        "multiplier" : 2.0,' // NEWLINE &
 // '                        "element" : "H",' // NEWLINE &
-// '                        "atomFractions" : [' // NEWLINE &
+// '                        "atom fractions" : [' // NEWLINE &
 // '                            {' // NEWLINE &
 // '                                "fraction" : 0.99988500000000002,' // NEWLINE &
 // '                                "isotope" : "H-1",' // NEWLINE &
-// '                                "atomicMass" : "1.0078250321e-3 kg/mol"' // NEWLINE &
+// '                                "atomic mass" : "1.0078250321e-3 kg/mol"' // NEWLINE &
 // '                            },' // NEWLINE &
 // '                            {' // NEWLINE &
 // '                                "fraction" : 1.1500000000000001e-4,' // NEWLINE &
 // '                                "isotope" : "H-2",' // NEWLINE &
-// '                                "atomicMass" : "2.0141017779000001e-3 kg/mol"' // NEWLINE &
+// '                                "atomic mass" : "2.0141017779000001e-3 kg/mol"' // NEWLINE &
 // '                            }' // NEWLINE &
 // '                        ]' // NEWLINE &
 // '                    }' // NEWLINE &
@@ -64,27 +60,30 @@ contains
 // '        ]' // NEWLINE &
 // '    }' // NEWLINE &
 // '}'
-        type(ErrorList_t) :: errors
-        type(JsonObject_t) :: json
-        type(Matter_t) :: matter
+        type(error_list_t) :: errors
+        type(json_object_t) :: json
+        type(matter_t) :: matter
+        type(fallible_matter_t) :: maybe_matter
 
-        call createMatter(1.0d0.unit.MOLS, pureNaturalHydrogenGas(), errors, matter)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_matter = fallible_matter_t(1.0d0.unit.MOLS, pure_natural_hydrogen_gas())
+        if (maybe_matter%failed()) then
+            errors = maybe_matter%errors()
+            result_ = fail(errors%to_string())
         else
-            json = matter%toJson()
-            result_ = assertEquals(EXPECTED, json%toExpandedString())
+            matter = maybe_matter%matter()
+            json = matter%to_json()
+            result_ = assert_equals(EXPECTED, json%to_expanded_string())
         end if
-    end function checkConvertToJson
+    end function
 
-    pure function checkExtractFromJson() result(result_)
-        type(Result_t) :: result_
+    function check_extract_from_json() result(result_)
+        type(result_t) :: result_
 
         character(len=*), parameter :: JSON_STRING = &
    '{' // NEWLINE &
 // '    "amount" : "1.0 mol",' // NEWLINE &
 // '    "material" : {' // NEWLINE &
-// '        "atomFractions" : [' // NEWLINE &
+// '        "atom fractions" : [' // NEWLINE &
 // '            {' // NEWLINE &
 // '                "fraction" : 1.0,' // NEWLINE &
 // '                "chemical" : [' // NEWLINE &
@@ -97,16 +96,16 @@ contains
 // '                    {' // NEWLINE &
 // '                        "multiplier" : 2.0,' // NEWLINE &
 // '                        "element" : "H",' // NEWLINE &
-// '                        "atomFractions" : [' // NEWLINE &
+// '                        "atom fractions" : [' // NEWLINE &
 // '                            {' // NEWLINE &
 // '                                "fraction" : 0.99988500000000002,' // NEWLINE &
 // '                                "isotope" : "H-1",' // NEWLINE &
-// '                                "atomicMass" : "1.0078250321e-3 kg/mol"' // NEWLINE &
+// '                                "atomic mass" : "1.0078250321e-3 kg/mol"' // NEWLINE &
 // '                            },' // NEWLINE &
 // '                            {' // NEWLINE &
 // '                                "fraction" : 1.1500000000000001e-4,' // NEWLINE &
 // '                                "isotope" : "H-2",' // NEWLINE &
-// '                                "atomicMass" : "2.0141017779000001e-3 kg/mol"' // NEWLINE &
+// '                                "atomic mass" : "2.0141017779000001e-3 kg/mol"' // NEWLINE &
 // '                            }' // NEWLINE &
 // '                        ]' // NEWLINE &
 // '                    }' // NEWLINE &
@@ -115,28 +114,31 @@ contains
 // '        ]' // NEWLINE &
 // '    }' // NEWLINE &
 // '}'
-        type(ErrorList_t) :: errors
-        type(JsonElement_t) :: json
-        type(Matter_t) :: matter
-        type(MessageList_t) :: messages
-        type(JsonObject_t) :: new_json
+        type(error_list_t) :: errors
+        type(fallible_json_value_t) :: maybe_json
+        type(fallible_matter_t) :: maybe_matter
+        type(matter_t) :: matter
+        type(json_object_t) :: new_json
 
-        call parseJson(JSON_STRING, errors, json)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_json = parse_json(JSON_STRING)
+        if (maybe_json%failed()) then
+            errors = maybe_json%errors()
+            result_ = fail(errors%to_string())
         else
-            select type (object => json%element)
-            type is (JsonObject_t)
-                call fromJson(object, messages, errors, matter)
-                if (errors%hasAny()) then
-                    result_ = fail(errors%toString())
+            select type (json => maybe_json%value_())
+            type is (json_object_t)
+                maybe_matter = fallible_matter_t(json)
+                if (maybe_matter%failed()) then
+                    errors = maybe_matter%errors()
+                    result_ = fail(errors%to_string())
                 else
-                    new_json = matter%toJson()
-                    result_ = assertEquals(JSON_STRING, new_json%toExpandedString())
+                    matter = maybe_matter%matter()
+                    new_json = matter%to_json()
+                    result_ = assert_equals(JSON_STRING, new_json%to_expanded_string())
                 end if
             class default
-                result_ = fail("Didn't get an object: " // object%toCompactString())
+                result_ = fail("Didn't get an object: " // json%to_compact_string())
             end select
         end if
-    end function checkExtractFromJson
-end module matter_json_test
+    end function
+end module

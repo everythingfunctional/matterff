@@ -1,50 +1,49 @@
 module chemical_symbol_component_test
-    use Chemical_symbol_component_m, only: ChemicalSymbolComponent
-    use Element_symbol_m, only: H, He
-    use Vegetables_m, only: &
-            Result_t, TestItem_t, assertNot, assertThat, Describe, It
+    use matterff, only: &
+            chemical_symbol_component_t, H, He
+    use vegetables, only: &
+            result_t, test_item_t, assert_not, assert_that, describe, it
 
     implicit none
     private
-
     public :: test_chemical_symbol_component
 contains
     function test_chemical_symbol_component() result(tests)
-        type(TestItem_t) :: tests
+        type(test_item_t) :: tests
 
-        type(TestItem_t) :: individual_tests(3)
+        tests = describe( &
+                "chemical_symbol_component_t", &
+                [ it("Identical components are equal", check_equal) &
+                , it( &
+                        "Components with different elements aren't equal", &
+                        check_diff_elements) &
+                , it( &
+                        "Components with different multiples aren't equal", &
+                        check_diff_multiples) &
+                ])
+    end function
 
-        individual_tests(1) = It("Identical components are equal", checkEqual)
-        individual_tests(2) = It( &
-                "Components with different elements aren't equal", &
-                checkDiffElements)
-        individual_tests(3) = It( &
-                "Components with different multiples aren't equal", &
-                checkDiffMultiples)
-        tests = Describe("ChemicalSymbolComponent_t", individual_tests)
-    end function test_chemical_symbol_component
+    pure function check_equal() result(result_)
+        type(result_t) :: result_
 
-    pure function checkEqual() result(result_)
-        type(Result_t) :: result_
-
-        result_ = assertThat( &
-                ChemicalSymbolComponent(H, 1) == ChemicalSymbolComponent(H, 1), &
+        result_ = assert_that( &
+                chemical_symbol_component_t(H, 1) == chemical_symbol_component_t(H, 1), &
                 "H_1 == H_1")
-    end function checkEqual
+    end function
 
-    pure function checkDiffElements() result(result_)
-        type(Result_t) :: result_
+    pure function check_diff_elements() result(result_)
+        type(result_t) :: result_
 
-        result_ = assertNot( &
-                ChemicalSymbolComponent(H, 1) == ChemicalSymbolComponent(He, 1), &
+        result_ = assert_not( &
+                chemical_symbol_component_t(H, 1) == chemical_symbol_component_t(He, 1), &
                 "H_1 == He_1")
-    end function checkDiffElements
+    end function
 
-    pure function checkDiffMultiples() result(result_)
-        type(Result_t) :: result_
+    pure function check_diff_multiples() result(result_)
+        type(result_t) :: result_
 
-        result_ = assertNot( &
-                ChemicalSymbolComponent(H, 1) == ChemicalSymbolComponent(H, 2), &
+        result_ = assert_not( &
+                chemical_symbol_component_t(H, 1) == chemical_symbol_component_t(H, 2), &
                 "H_1 == H_2")
-    end function checkDiffMultiples
-end module chemical_symbol_component_test
+    end function
+end module

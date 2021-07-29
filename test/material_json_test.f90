@@ -1,35 +1,33 @@
 module material_json_test
-    use erloff, only: ErrorList_t, MessageList_t
+    use erloff, only: error_list_t
     use iso_varying_string, only: operator(//)
-    use jsonff, only: JsonElement_t, JsonObject_t, parseJson
-    use Material_m, only: Material_t, fromJson, pureNaturalHydrogenGas
+    use jsonff, only: fallible_json_value_t, json_object_t, parse_json
+    use matterff, only: &
+            fallible_material_t, material_t, pure_natural_hydrogen_gas
     use strff, only: NEWLINE
-    use Vegetables_m, only: &
-            Result_t, TestItem_t, assertEquals, Describe, fail, It
+    use vegetables, only: &
+            result_t, test_item_t, assert_equals, describe, fail, it
 
     implicit none
     private
-
     public :: test_material_json
 contains
     function test_material_json() result(tests)
-        type(TestItem_t) :: tests
+        type(test_item_t) :: tests
 
-        type(TestItem_t) :: individual_tests(2)
+        tests = describe( &
+                "a material", &
+                [ it("can be converted to JSON", check_convert_to_json) &
+                , it("can be extracted from JSON", check_extract_from_json) &
+                ])
+    end function
 
-        individual_tests(1) = It( &
-                "can be converted to JSON", checkConvertToJson)
-        individual_tests(2) = It( &
-                "can be extracted from JSON", checkExtractFromJson)
-        tests = Describe("a material", individual_tests)
-    end function test_material_json
-
-    pure function checkConvertToJson() result(result_)
-        type(Result_t) :: result_
+    function check_convert_to_json() result(result_)
+        type(result_t) :: result_
 
         character(len=*), parameter :: EXPECTED = &
    '{' // NEWLINE &
-// '    "atomFractions" : [' // NEWLINE &
+// '    "atom fractions" : [' // NEWLINE &
 // '        {' // NEWLINE &
 // '            "fraction" : 1.0,' // NEWLINE &
 // '            "chemical" : [' // NEWLINE &
@@ -42,16 +40,16 @@ contains
 // '                {' // NEWLINE &
 // '                    "multiplier" : 2.0,' // NEWLINE &
 // '                    "element" : "H",' // NEWLINE &
-// '                    "atomFractions" : [' // NEWLINE &
+// '                    "atom fractions" : [' // NEWLINE &
 // '                        {' // NEWLINE &
 // '                            "fraction" : 0.99988500000000002,' // NEWLINE &
 // '                            "isotope" : "H-1",' // NEWLINE &
-// '                            "atomicMass" : "1.0078250321e-3 kg/mol"' // NEWLINE &
+// '                            "atomic mass" : "1.0078250321e-3 kg/mol"' // NEWLINE &
 // '                        },' // NEWLINE &
 // '                        {' // NEWLINE &
 // '                            "fraction" : 1.1500000000000001e-4,' // NEWLINE &
 // '                            "isotope" : "H-2",' // NEWLINE &
-// '                            "atomicMass" : "2.0141017779000001e-3 kg/mol"' // NEWLINE &
+// '                            "atomic mass" : "2.0141017779000001e-3 kg/mol"' // NEWLINE &
 // '                        }' // NEWLINE &
 // '                    ]' // NEWLINE &
 // '                }' // NEWLINE &
@@ -59,20 +57,20 @@ contains
 // '        }' // NEWLINE &
 // '    ]' // NEWLINE &
 // '}'
-        type(Material_t) :: hydrogen
-        type(JsonObject_t) :: json
+        type(material_t) :: hydrogen
+        type(json_object_t) :: json
 
-        hydrogen = pureNaturalHydrogenGas()
-        json = hydrogen%toJson()
-        result_ = assertEquals(EXPECTED, json%toExpandedString())
-    end function checkConvertToJson
+        hydrogen = pure_natural_hydrogen_gas()
+        json = hydrogen%to_json()
+        result_ = assert_equals(EXPECTED, json%to_expanded_string())
+    end function
 
-    pure function checkExtractFromJson() result(result_)
-        type(Result_t) :: result_
+    function check_extract_from_json() result(result_)
+        type(result_t) :: result_
 
         character(len=*), parameter :: JSON_STRING = &
    '{' // NEWLINE &
-// '    "atomFractions" : [' // NEWLINE &
+// '    "atom fractions" : [' // NEWLINE &
 // '        {' // NEWLINE &
 // '            "fraction" : 1.0,' // NEWLINE &
 // '            "chemical" : [' // NEWLINE &
@@ -85,16 +83,16 @@ contains
 // '                {' // NEWLINE &
 // '                    "multiplier" : 2.0,' // NEWLINE &
 // '                    "element" : "H",' // NEWLINE &
-// '                    "atomFractions" : [' // NEWLINE &
+// '                    "atom fractions" : [' // NEWLINE &
 // '                        {' // NEWLINE &
 // '                            "fraction" : 0.99988500000000002,' // NEWLINE &
 // '                            "isotope" : "H-1",' // NEWLINE &
-// '                            "atomicMass" : "1.0078250321e-3 kg/mol"' // NEWLINE &
+// '                            "atomic mass" : "1.0078250321e-3 kg/mol"' // NEWLINE &
 // '                        },' // NEWLINE &
 // '                        {' // NEWLINE &
 // '                            "fraction" : 1.1500000000000001e-4,' // NEWLINE &
 // '                            "isotope" : "H-2",' // NEWLINE &
-// '                            "atomicMass" : "2.0141017779000001e-3 kg/mol"' // NEWLINE &
+// '                            "atomic mass" : "2.0141017779000001e-3 kg/mol"' // NEWLINE &
 // '                        }' // NEWLINE &
 // '                    ]' // NEWLINE &
 // '                }' // NEWLINE &
@@ -102,28 +100,31 @@ contains
 // '        }' // NEWLINE &
 // '    ]' // NEWLINE &
 // '}'
-        type(ErrorList_t) :: errors
-        type(JsonElement_t) :: json
-        type(Material_t) :: material
-        type(MessageList_t) :: messages
-        type(JsonObject_t) :: new_json
+        type(error_list_t) :: errors
+        type(material_t) :: material
+        type(fallible_json_value_t) :: maybe_json
+        type(fallible_material_t) :: maybe_material
+        type(json_object_t) :: new_json
 
-        call parseJson(JSON_STRING, errors, json)
-        if (errors%hasAny()) then
-            result_ = fail(errors%toString())
+        maybe_json = parse_json(JSON_STRING)
+        if (maybe_json%failed()) then
+            errors = maybe_json%errors()
+            result_ = fail(errors%to_string())
         else
-            select type (object => json%element)
-            type is (JsonObject_t)
-                call fromJson(object, messages, errors, material)
-                if (errors%hasAny()) then
-                    result_ = fail(errors%toString())
+            select type (json => maybe_json%value_())
+            type is (json_object_t)
+                maybe_material = fallible_material_t(json)
+                if (maybe_material%failed()) then
+                    errors = maybe_material%errors()
+                    result_ = fail(errors%to_string())
                 else
-                    new_json = material%toJson()
-                    result_ = assertEquals(JSON_STRING, new_json%toExpandedString())
+                    material = maybe_material%material()
+                    new_json = material%to_json()
+                    result_ = assert_equals(JSON_STRING, new_json%to_expanded_string())
                 end if
             class default
-                result_ = fail("Didn't get an object: " // object%toCompactString())
+                result_ = fail("Didn't get an object: " // json%to_compact_string())
             end select
         end if
-    end function checkExtractFromJson
-end module material_json_test
+    end function
+end module
