@@ -5,7 +5,7 @@ module fallbile_chemical_symbol_component_m
     use iso_varying_string, only: operator(//)
     use jsonff, only: &
             fallible_json_value_t, &
-            json_number_t, &
+            json_integer_t, &
             json_object_t, &
             json_string_t, &
             json_value_t
@@ -81,9 +81,9 @@ contains
                             procedure_t(PROCEDURE_NAME))
                 else
                     select type (multiple => maybe_multiple%value_())
-                    type is (json_number_t)
+                    type is (json_integer_t)
                         fallible_chemical_symbol_component%chemical_symbol_component_ = &
-                                chemical_symbol_component_t(element_symbol, int(multiple%get_value()))
+                                chemical_symbol_component_t(element_symbol, multiple%get_value())
                     class default
                         fallible_chemical_symbol_component%errors_ = error_list_t(fatal_t( &
                                 INVALID_ARGUMENT, &

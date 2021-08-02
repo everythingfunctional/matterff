@@ -29,7 +29,7 @@ contains
    '[' // NEWLINE &
 // '    {' // NEWLINE &
 // '        "element" : "H",' // NEWLINE &
-// '        "multiple" : 2.0' // NEWLINE &
+// '        "multiple" : 2' // NEWLINE &
 // '    }' // NEWLINE &
 // ']'
         type(json_array_t) :: json
@@ -47,11 +47,11 @@ contains
    '[' // NEWLINE &
 // '    {' // NEWLINE &
 // '        "element" : "H",' // NEWLINE &
-// '        "multiple" : 2.0' // NEWLINE &
+// '        "multiple" : 2' // NEWLINE &
 // '    },' // NEWLINE &
 // '    {' // NEWLINE &
 // '        "element" : "O",' // NEWLINE &
-// '        "multiple" : 1.0' // NEWLINE &
+// '        "multiple" : 1' // NEWLINE &
 // '    }' // NEWLINE &
 // ']'
         type(error_list_t) :: errors

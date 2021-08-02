@@ -2,7 +2,7 @@ module chemical_symbol_component_m
     use element_symbol_m, only: element_symbol_t
     use iso_varying_string, only: varying_string, operator(//)
     use jsonff, only: &
-            json_object_t, json_number_t, json_member_unsafe, json_string_unsafe
+            json_object_t, json_integer_t, json_member_unsafe, json_string_unsafe
     use strff, only: to_string
 
     implicit none
@@ -59,7 +59,7 @@ contains
 
         json = json_object_t([ &
                 json_member_unsafe("element", json_string_unsafe(self%element_%to_string())), &
-                json_member_unsafe("multiple", json_number_t(dble(self%multiple_)))])
+                json_member_unsafe("multiple", json_integer_t(self%multiple_))])
     end function
 
     elemental function symbol_to_string(self) result(string)
