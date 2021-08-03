@@ -1,5 +1,9 @@
-module fallible_chemical_symbol_m
-    use chemical_symbol_m, only: &
+module matterff_fallible_chemical_symbol_m
+    use erloff, only: error_list_t, fatal_t, module_t, procedure_t
+    use iso_varying_string, only: varying_string, operator(//), char
+    use jsonff, only: &
+            fallible_json_value_t, json_array_t, json_string_t, json_value_t
+    use matterff_chemical_symbol_m, only: &
             chemical_symbol_t, &
             argon_gas_symbol, &
             helium_gas_symbol, &
@@ -9,12 +13,8 @@ module fallible_chemical_symbol_m
             oxygen_gas_symbol, &
             water_symbol, &
             xenon_gas_symbol
-    use fallbile_chemical_symbol_component_m, only: &
+    use matterff_fallbile_chemical_symbol_component_m, only: &
             fallible_chemical_symbol_component_t
-    use erloff, only: error_list_t, fatal_t, module_t, procedure_t
-    use iso_varying_string, only: varying_string, operator(//), char
-    use jsonff, only: &
-            fallible_json_value_t, json_array_t, json_string_t, json_value_t
     use matterff_utilities_m, only: INVALID_ARGUMENT
 
     implicit none

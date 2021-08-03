@@ -1,5 +1,12 @@
-module material_m
-    use chemical_m, only: &
+module matterff_material_m
+    use jsonff, only: &
+            json_array_t, &
+            json_element_t, &
+            json_number_t, &
+            json_object_t, &
+            json_member_unsafe, &
+            json_string_unsafe
+    use matterff_chemical_m, only: &
             find, &
             natural_argon_gas, &
             natural_helium_gas, &
@@ -9,18 +16,12 @@ module material_m
             natural_oxygen_gas, &
             natural_water, &
             natural_xenon_gas
-    use chemical_symbol_m, only: chemical_symbol_t
-    use element_symbol_m, only: element_symbol_t
-    use isotope_m, only: isotope_t
-    use isotope_symbol_m, only: isotope_symbol_t
-    use jsonff, only: &
-            json_array_t, &
-            json_element_t, &
-            json_number_t, &
-            json_object_t, &
-            json_member_unsafe, &
-            json_string_unsafe
-    use material_component_m, only: material_component_t, combine_duplicates
+    use matterff_chemical_symbol_m, only: chemical_symbol_t
+    use matterff_element_symbol_m, only: element_symbol_t
+    use matterff_isotope_m, only: isotope_t
+    use matterff_isotope_symbol_m, only: isotope_symbol_t
+    use matterff_material_component_m, only: &
+            material_component_t, combine_duplicates
     use quaff, only: amount_t, mass_t, molar_mass_t, operator(/), sum
 
     implicit none

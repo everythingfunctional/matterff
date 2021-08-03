@@ -1,4 +1,4 @@
-module fallible_material_components_m
+module matterff_fallible_material_components_m
     use erloff, only: &
             error_list_t, &
             info_t, &
@@ -6,7 +6,7 @@ module fallible_material_components_m
             message_list_t, &
             module_t, &
             procedure_t
-    use material_component_m, only: material_component_t
+    use matterff_material_component_m, only: material_component_t
     use matterff_utilities_m, only: &
             operator(.sumsTo.), INVALID_ARGUMENT, NORMALIZED_FRACTIONS
 

@@ -1,7 +1,7 @@
-module isotope_symbol_m
-    use element_symbol_m, only: &
-            element_symbol_t, H, He, Li, Be, B, C, N, O, Ar, Kr, Xe
+module matterff_isotope_symbol_m
     use iso_varying_string, only: varying_string, operator(//)
+    use matterff_element_symbol_m, only: &
+            element_symbol_t, H, He, Li, Be, B, C, N, O, Ar, Kr, Xe
     use strff, only: to_string
 
     implicit none

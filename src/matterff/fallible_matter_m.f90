@@ -1,4 +1,4 @@
-module fallible_matter_m
+module matterff_fallible_matter_m
     use erloff, only: &
             error_list_t, &
             fatal_t, &
@@ -6,10 +6,10 @@ module fallible_matter_m
             message_list_t, &
             module_t, &
             procedure_t
-    use fallible_material_m, only: fallible_material_t
     use jsonff, only: fallible_json_value_t, json_object_t, json_string_t
-    use material_m, only: material_t
-    use matter_m, only: matter_t, matter_unsafe
+    use matterff_fallible_material_m, only: fallible_material_t
+    use matterff_material_m, only: material_t
+    use matterff_matter_m, only: matter_t, matter_unsafe
     use matterff_utilities_m, only: INVALID_ARGUMENT
     use quaff, only: &
             amount_t, &

@@ -1,4 +1,4 @@
-module element_symbol_m
+module matterff_element_symbol_m
     use iso_varying_string, only: varying_string, assignment(=), char
 
     implicit none
@@ -30,7 +30,7 @@ module element_symbol_m
     interface element_symbol_t
         module procedure constructor_c
         module procedure constructor_s
-    end interface 
+    end interface
 
     type(element_symbol_t), parameter :: H = element_symbol_t("H ")
     type(element_symbol_t), parameter :: He = element_symbol_t("He")

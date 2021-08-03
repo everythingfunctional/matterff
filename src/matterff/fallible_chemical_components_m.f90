@@ -1,8 +1,8 @@
-module fallible_chemical_components_m
-    use chemical_component_m, only: chemical_component_t
-    use chemical_symbol_m, only: chemical_symbol_t
+module matterff_fallible_chemical_components_m
     use erloff, only: error_list_t, internal_t, module_t, procedure_t
     use iso_varying_string, only: operator(//)
+    use matterff_chemical_component_m, only: chemical_component_t
+    use matterff_chemical_symbol_m, only: chemical_symbol_t
     use matterff_utilities_m, only: INVALID_ARGUMENT, MISMATCH
     use strff, only: join
 

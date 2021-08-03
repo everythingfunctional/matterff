@@ -1,5 +1,15 @@
-module fallible_chemical_m
-    use chemical_m, only: &
+module matterff_fallible_chemical_m
+    use erloff, only: &
+            error_list_t, &
+            internal_t, &
+            fatal_t, &
+            message_list_t, &
+            module_t, &
+            procedure_t
+    use iso_varying_string, only: varying_string, char, operator(//)
+    use jsonff, only: &
+            fallible_json_value_t, json_array_t, json_object_t, json_string_t
+    use matterff_chemical_m, only: &
             chemical_t, &
             chemical_unsafe, &
             combine_by_atom_factors_unsafe, &
@@ -12,22 +22,13 @@ module fallible_chemical_m
             natural_oxygen_gas, &
             natural_water, &
             natural_xenon_gas
-    use chemical_component_m, only: chemical_component_t
-    use chemical_symbol_m, only: chemical_symbol_t
-    use erloff, only: &
-            error_list_t, &
-            internal_t, &
-            fatal_t, &
-            message_list_t, &
-            module_t, &
-            procedure_t
-    use fallible_chemical_component_m, only: &
+    use matterff_chemical_component_m, only: chemical_component_t
+    use matterff_chemical_symbol_m, only: chemical_symbol_t
+    use matterff_fallible_chemical_component_m, only: &
             fallible_chemical_component_t, from_json_value
-    use fallible_chemical_components_m, only: fallible_chemical_components_t
-    use fallible_chemical_symbol_m, only: fallible_chemical_symbol_t
-    use iso_varying_string, only: varying_string, char, operator(//)
-    use jsonff, only: &
-            fallible_json_value_t, json_array_t, json_object_t, json_string_t
+    use matterff_fallible_chemical_components_m, only: &
+            fallible_chemical_components_t
+    use matterff_fallible_chemical_symbol_m, only: fallible_chemical_symbol_t
     use matterff_utilities_m, only: INVALID_ARGUMENT, MISMATCH
 
     implicit none

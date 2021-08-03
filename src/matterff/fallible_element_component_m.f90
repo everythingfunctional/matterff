@@ -1,10 +1,10 @@
-module fallible_element_component_m
-    use element_component_m, only: element_component_t
+module matterff_fallible_element_component_m
     use erloff, only: error_list_t, fatal_t, module_t, procedure_t
-    use fallible_isotope_m, only: fallible_isotope_t
     use iso_varying_string, only: operator(//)
     use jsonff, only: &
             fallible_json_value_t, json_number_t, json_object_t, json_value_t
+    use matterff_element_component_m, only: element_component_t
+    use matterff_fallible_isotope_m, only: fallible_isotope_t
     use matterff_utilities_m, only: INVALID_ARGUMENT
 
     implicit none

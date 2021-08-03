@@ -1,11 +1,11 @@
-module fallible_chemical_component_m
-    use chemical_component_m, only: chemical_component_t
+module matterff_fallible_chemical_component_m
     use erloff, only: &
             error_list_t, fatal_t, message_list_t, module_t, procedure_t
-    use fallible_element_m, only: fallible_element_t
     use iso_varying_string, only: operator(//)
     use jsonff, only: &
             fallible_json_value_t, json_number_t, json_object_t, json_value_t
+    use matterff_chemical_component_m, only: chemical_component_t
+    use matterff_fallible_element_m, only: fallible_element_t
     use matterff_utilities_m, only: INVALID_ARGUMENT
 
     implicit none

@@ -1,5 +1,10 @@
-module fallible_element_m
-    use element_m, only: &
+module matterff_fallible_element_m
+    use erloff, only: &
+            error_list_t, fatal_t, message_list_t, module_t, procedure_t
+    use iso_varying_string, only: varying_string, char
+    use jsonff, only: &
+            fallible_json_value_t, json_array_t, json_object_t, json_string_t
+    use matterff_element_m, only: &
             element_t, &
             from_atom_fractions_unsafe, &
             from_weight_fractions_unsafe, &
@@ -14,15 +19,12 @@ module fallible_element_m
             natural_argon, &
             natural_krypton, &
             natural_xenon
-    use element_component_m, only: element_component_t
-    use element_symbol_m, only: element_symbol_t
-    use erloff, only: &
-            error_list_t, fatal_t, message_list_t, module_t, procedure_t
-    use fallible_element_component_m, only: fallible_element_component_t
-    use fallible_element_components_m, only: fallible_element_components_t
-    use iso_varying_string, only: varying_string, char
-    use jsonff, only: &
-            fallible_json_value_t, json_array_t, json_object_t, json_string_t
+    use matterff_element_component_m, only: element_component_t
+    use matterff_element_symbol_m, only: element_symbol_t
+    use matterff_fallible_element_component_m, only: &
+            fallible_element_component_t
+    use matterff_fallible_element_components_m, only: &
+            fallible_element_components_t
     use matterff_utilities_m, only: INVALID_ARGUMENT
 
     implicit none

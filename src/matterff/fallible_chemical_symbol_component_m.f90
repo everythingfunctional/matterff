@@ -1,6 +1,4 @@
-module fallbile_chemical_symbol_component_m
-    use chemical_symbol_component_m, only: chemical_symbol_component_t
-    use element_symbol_m, only: element_symbol_t
+module matterff_fallbile_chemical_symbol_component_m
     use erloff, only: error_list_t, fatal_t, module_t, procedure_t
     use iso_varying_string, only: operator(//)
     use jsonff, only: &
@@ -9,6 +7,8 @@ module fallbile_chemical_symbol_component_m
             json_object_t, &
             json_string_t, &
             json_value_t
+    use matterff_chemical_symbol_component_m, only: chemical_symbol_component_t
+    use matterff_element_symbol_m, only: element_symbol_t
     use matterff_utilities_m, only: INVALID_ARGUMENT
 
     implicit none

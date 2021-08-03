@@ -1,8 +1,8 @@
-module chemical_symbol_component_m
-    use element_symbol_m, only: element_symbol_t
+module matterff_chemical_symbol_component_m
     use iso_varying_string, only: varying_string, operator(//)
     use jsonff, only: &
             json_object_t, json_integer_t, json_member_unsafe, json_string_unsafe
+    use matterff_element_symbol_m, only: element_symbol_t
     use strff, only: to_string
 
     implicit none

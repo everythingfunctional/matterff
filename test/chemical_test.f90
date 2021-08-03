@@ -22,8 +22,9 @@ module chemical_test
             H, &
             H_1, &
             H_2, &
-            O
-    use matterff_utilities_m, only: INVALID_ARGUMENT, MISMATCH
+            O, &
+            INVALID_ARGUMENT, &
+            MISMATCH
     use vegetables, only: &
             result_t, &
             test_item_t, &

@@ -1,16 +1,18 @@
-module fallible_material_m
+module matterff_fallible_material_m
     use erloff, only: &
             error_list_t, fatal_t, message_list_t, module_t, procedure_t
-    use fallible_material_component_m, only: fallible_material_component_t
-    use fallible_material_components_m, only: fallible_material_components_t
     use iso_varying_string, only: varying_string, char
     use jsonff, only: &
             fallible_json_value_t, json_array_t, json_object_t, json_string_t
-    use material_m, only: &
+    use matterff_fallible_material_component_m, only: &
+            fallible_material_component_t
+    use matterff_fallible_material_components_m, only: &
+            fallible_material_components_t
+    use matterff_material_m, only: &
             material_t, &
             from_atom_fractions_unsafe, &
             from_weight_fractions_unsafe
-    use material_component_m, only: material_component_t
+    use matterff_material_component_m, only: material_component_t
     use matterff_utilities_m, only: INVALID_ARGUMENT
 
     implicit none

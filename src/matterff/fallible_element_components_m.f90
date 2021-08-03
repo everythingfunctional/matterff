@@ -1,6 +1,4 @@
-module fallible_element_components_m
-    use element_component_m, only: element_component_t
-    use element_symbol_m, only: element_symbol_t
+module matterff_fallible_element_components_m
     use erloff, only: &
             error_list_t, &
             info_t, &
@@ -9,6 +7,8 @@ module fallible_element_components_m
             module_t, &
             procedure_t
     use iso_varying_string, only: operator(//)
+    use matterff_element_component_m, only: element_component_t
+    use matterff_element_symbol_m, only: element_symbol_t
     use matterff_utilities_m, only: &
             operator(.sumsTo.), INVALID_ARGUMENT, MISMATCH, NORMALIZED_FRACTIONS
     use strff, only: join

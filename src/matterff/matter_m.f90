@@ -1,9 +1,9 @@
-module matter_m
-    use chemical_symbol_m, only: chemical_symbol_t
-    use element_symbol_m, only: element_symbol_t
-    use isotope_m, only: isotope_t
+module matterff_matter_m
     use jsonff, only: json_object_t, json_member_unsafe, json_string_unsafe
-    use material_m, only: material_t, combine_by_atom_factors_unsafe
+    use matterff_chemical_symbol_m, only: chemical_symbol_t
+    use matterff_element_symbol_m, only: element_symbol_t
+    use matterff_isotope_m, only: isotope_t
+    use matterff_material_m, only: material_t, combine_by_atom_factors_unsafe
     use quaff, only: amount_t, mass_t, operator(*), operator(/)
 
     implicit none
