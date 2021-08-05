@@ -4,6 +4,7 @@ module matterff_fallible_element_component_m
     use jsonff, only: &
             fallible_json_value_t, json_number_t, json_object_t, json_value_t
     use matterff_element_component_m, only: element_component_t
+    use matterff_fallible_double_precision_m, only: fallible_double_precision_t
     use matterff_fallible_isotope_m, only: fallible_isotope_t
     use matterff_utilities_m, only: INVALID_ARGUMENT
 
@@ -24,6 +25,7 @@ module matterff_fallible_element_component_m
 
     interface fallible_element_component_t
         module procedure from_fallible_element_component
+        module procedure from_fallible_parts
         module procedure from_json_value
     end interface
 
@@ -47,41 +49,40 @@ contains
         end if
     end function
 
+    function from_fallible_parts( &
+            maybe_isotope, &
+            maybe_fraction, &
+            module_, &
+            procedure_) &
+            result(fallible_element_component)
+        type(fallible_isotope_t), intent(in) :: maybe_isotope
+        type(fallible_double_precision_t), intent(in) :: maybe_fraction
+        type(module_t), intent(in) :: module_
+        type(procedure_t), intent(in) :: procedure_
+        type(fallible_element_component_t) :: fallible_element_component
+
+        associate(failures => [maybe_isotope%failed(), maybe_fraction%failed()])
+            if (any(failures)) then
+                associate(errors => (pack([maybe_isotope%errors(), maybe_fraction%errors()], failures)))
+                    fallible_element_component%errors_ = error_list_t( &
+                            errors, module_, procedure_)
+                end associate
+            else
+                fallible_element_component%element_component_ = element_component_t( &
+                        maybe_isotope%isotope(), maybe_fraction%value_())
+            end if
+        end associate
+    end function
+
     function from_json_object(json) result(new_fallible_element_component)
         type(json_object_t), intent(in) :: json
         type(fallible_element_component_t) :: new_fallible_element_component
 
-        character(len=*), parameter :: PROCEDURE_NAME = "from_json_object"
-        type(fallible_json_value_t) :: maybe_fraction
-        type(fallible_isotope_t) :: maybe_isotope
-
-        maybe_isotope = fallible_isotope_t(json)
-        if (maybe_isotope%failed()) then
-            new_fallible_element_component%errors_ = error_list_t( &
-                    maybe_isotope%errors(), &
-                    module_t(MODULE_NAME), &
-                    procedure_t(PROCEDURE_NAME))
-        else
-            maybe_fraction = json%get_element("fraction")
-            if (maybe_fraction%failed()) then
-                new_fallible_element_component%errors_ = error_list_t( &
-                        maybe_fraction%errors(), &
-                        module_t(MODULE_NAME), &
-                        procedure_t(PROCEDURE_NAME))
-            else
-                select type (fraction => maybe_fraction%value_())
-                type is (json_number_t)
-                    new_fallible_element_component%element_component_= &
-                            element_component_t(maybe_isotope%isotope(), fraction%get_value())
-                class default
-                    new_fallible_element_component%errors_ = error_list_t(fatal_t( &
-                            INVALID_ARGUMENT, &
-                            module_t(MODULE_NAME), &
-                            procedure_t(PROCEDURE_NAME), &
-                            "fraction must be a number"))
-                end select
-            end if
-        end if
+        new_fallible_element_component = fallible_element_component_t( &
+                fallible_isotope_t(json), &
+                extract_fraction(json), &
+                module_t(MODULE_NAME), &
+                procedure_t("from_json_object"))
     end function
 
     function from_json_value(json) result(new_fallible_element_component)
@@ -124,5 +125,32 @@ contains
         type(error_list_t) :: errors
 
         errors = self%errors_
+    end function
+
+    function extract_fraction(json) result(maybe_fraction)
+        type(json_object_t), intent(in) :: json
+        type(fallible_double_precision_t) :: maybe_fraction
+
+        character(len=*), parameter :: PROCEDURE_NAME = "extract_fraction"
+        type(fallible_json_value_t) :: maybe_number
+
+        maybe_number = json%get_element("fraction")
+        if (maybe_number%failed()) then
+            maybe_fraction = fallible_double_precision_t(error_list_t( &
+                    maybe_number%errors(), &
+                    module_t(MODULE_NAME), &
+                    procedure_t(PROCEDURE_NAME)))
+        else
+            select type (fraction => maybe_number%value_())
+            type is (json_number_t)
+                maybe_fraction = fallible_double_precision_t(fraction%get_value())
+            class default
+                maybe_fraction = fallible_double_precision_t(error_list_t(fatal_t( &
+                        INVALID_ARGUMENT, &
+                        module_t(MODULE_NAME), &
+                        procedure_t(PROCEDURE_NAME), &
+                        "fraction must be a number, but was: " //  fraction%to_compact_string())))
+            end select
+        end if
     end function
 end module
