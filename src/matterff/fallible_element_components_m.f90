@@ -94,7 +94,8 @@ contains
                             module_t(MODULE_NAME), &
                             procedure_t("from_json"))
                 else
-                    fallible_element_components%components_ = maybe_components%element_component()
+                    allocate(fallible_element_components%components_, source = &
+                            maybe_components%element_component())
                 end if
             end associate
         end associate
