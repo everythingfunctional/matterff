@@ -37,7 +37,7 @@ module matterff_fallible_element_components_m
         module procedure from_json
     end interface
 
-    character(len=*), parameter :: MODULE_NAME = "fallible_element_components_m"
+    character(len=*), parameter :: MODULE_NAME = "matterff_fallible_element_components_m"
 contains
     function check_consistency(symbol, components) result(fallible_components)
         type(element_symbol_t), intent(in) :: symbol

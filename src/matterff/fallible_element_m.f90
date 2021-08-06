@@ -78,7 +78,7 @@ module matterff_fallible_element_m
         module procedure get_natural_s
     end interface
 
-    character(len=*), parameter :: MODULE_NAME = "fallible_element_m"
+    character(len=*), parameter :: MODULE_NAME = "matterff_fallible_element_m"
 contains
     function combine_elements_by_atom_factors( &
             element1, factor1, element2, factor2) result(combined)

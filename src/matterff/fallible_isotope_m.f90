@@ -66,7 +66,7 @@ module matterff_fallible_isotope_m
         module procedure from_fallible_isotope
     end interface
 
-    character(len=*), parameter :: MODULE_NAME = "fallible_isotope_m"
+    character(len=*), parameter :: MODULE_NAME = "matterff_fallible_isotope_m"
 contains
     function from_json(json) result(new_fallible_isotope)
         type(json_object_t), intent(in) :: json

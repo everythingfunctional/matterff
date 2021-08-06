@@ -30,7 +30,7 @@ module matterff_fallible_material_component_m
         module procedure from_json_value
     end interface
 
-    character(len=*), parameter :: MODULE_NAME = "fallible_material_component_m"
+    character(len=*), parameter :: MODULE_NAME = "matterff_fallible_material_component_m"
 contains
     function from_fallible_material_component( &
             fallible_material_component, &

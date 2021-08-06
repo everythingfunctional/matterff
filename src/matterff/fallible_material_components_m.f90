@@ -31,7 +31,7 @@ module matterff_fallible_material_components_m
         module procedure constructor
     end interface
 
-    character(len=*), parameter :: MODULE_NAME = "fallible_material_components_m"
+    character(len=*), parameter :: MODULE_NAME = "matterff_fallible_material_components_m"
 contains
     function constructor(components) result(fallible_components)
         type(material_component_t), intent(in) :: components(:)

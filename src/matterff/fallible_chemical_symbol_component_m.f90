@@ -31,7 +31,7 @@ module matterff_fallbile_chemical_symbol_component_m
         module procedure from_json_value
     end interface
 
-    character(len=*), parameter :: MODULE_NAME = "fallbile_chemical_symbol_component_m"
+    character(len=*), parameter :: MODULE_NAME = "matterff_fallbile_chemical_symbol_component_m"
 contains
     function from_fallible_chemical_symbol_component( &
             fallible_chemical_symbol_component, &

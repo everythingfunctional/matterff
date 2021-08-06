@@ -71,7 +71,7 @@ module matterff_fallible_chemical_m
         module procedure get_natural_s
     end interface
 
-    character(len=*), parameter :: MODULE_NAME = "fallible_chemical_m"
+    character(len=*), parameter :: MODULE_NAME = "matterff_fallible_chemical_m"
 contains
     function combine_chemicals_by_atom_factors( &
             chemical1, factor1, chemical2, factor2) result(combined)

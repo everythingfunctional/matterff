@@ -46,7 +46,7 @@ module matterff_fallible_matter_m
         module procedure from_json
     end interface
 
-    character(len=*), parameter :: MODULE_NAME = "fallible_matter_m"
+    character(len=*), parameter :: MODULE_NAME = "matterff_fallible_matter_m"
 contains
     function with_amount(amount, material)
         type(amount_t), intent(in) :: amount

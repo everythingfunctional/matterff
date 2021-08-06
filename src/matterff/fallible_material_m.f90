@@ -58,7 +58,7 @@ module matterff_fallible_material_m
         module procedure material_from_weight_fractions
     end interface
 
-    character(len=*), parameter :: MODULE_NAME = "fallible_material_m"
+    character(len=*), parameter :: MODULE_NAME = "matterff_fallible_material_m"
 contains
     function combine_materials_by_atom_factors( &
             material1, factor1, material2, factor2) result(combined)

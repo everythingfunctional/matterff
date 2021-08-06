@@ -34,7 +34,7 @@ module matterff_fallible_element_component_m
         module procedure from_json_element
     end interface
 
-    character(len=*), parameter :: MODULE_NAME = "fallible_element_component_m"
+    character(len=*), parameter :: MODULE_NAME = "matterff_fallible_element_component_m"
 contains
     function from_fallible_element_component( &
             fallible_element_component, &

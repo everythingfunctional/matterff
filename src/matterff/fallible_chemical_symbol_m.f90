@@ -39,7 +39,7 @@ module matterff_fallible_chemical_symbol_m
         module procedure from_string
     end interface
 
-    character(len=*), parameter :: MODULE_NAME = "fallible_chemical_symbol_m"
+    character(len=*), parameter :: MODULE_NAME = "matterff_fallible_chemical_symbol_m"
 contains
     function from_json_array(json) result(fallible_chemical_symbol)
         type(json_array_t), intent(in) :: json

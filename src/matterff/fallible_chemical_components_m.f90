@@ -25,7 +25,7 @@ module matterff_fallible_chemical_components_m
         module procedure constructor
     end interface
 
-    character(len=*), parameter :: MODULE_NAME = "fallible_chemical_components_m"
+    character(len=*), parameter :: MODULE_NAME = "matterff_fallible_chemical_components_m"
 contains
     function constructor(symbol, components) result(fallible_components)
         type(chemical_symbol_t), intent(in) :: symbol
