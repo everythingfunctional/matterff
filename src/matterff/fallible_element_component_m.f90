@@ -4,6 +4,7 @@ module matterff_fallible_element_component_m
     use jsonff, only: &
             fallible_json_value_t, &
             json_element_t, &
+            json_integer_t, &
             json_number_t, &
             json_object_t, &
             json_value_t
@@ -159,6 +160,8 @@ contains
             select type (fraction => maybe_number%value_())
             type is (json_number_t)
                 maybe_fraction = fallible_double_precision_t(fraction%get_value())
+            type is (json_integer_t)
+                maybe_fraction = fallible_double_precision_t(dble(fraction%get_value()))
             class default
                 maybe_fraction = fallible_double_precision_t(error_list_t(fatal_t( &
                         INVALID_ARGUMENT, &
