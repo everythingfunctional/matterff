@@ -2,7 +2,11 @@ module matterff_fallible_element_component_m
     use erloff, only: error_list_t, fatal_t, module_t, procedure_t
     use iso_varying_string, only: operator(//)
     use jsonff, only: &
-            fallible_json_value_t, json_number_t, json_object_t, json_value_t
+            fallible_json_value_t, &
+            json_element_t, &
+            json_number_t, &
+            json_object_t, &
+            json_value_t
     use matterff_element_component_m, only: element_component_t
     use matterff_fallible_double_precision_m, only: fallible_double_precision_t
     use matterff_fallible_isotope_m, only: fallible_isotope_t
@@ -27,6 +31,7 @@ module matterff_fallible_element_component_m
         module procedure from_fallible_element_component
         module procedure from_fallible_parts
         module procedure from_json_value
+        module procedure from_json_element
     end interface
 
     character(len=*), parameter :: MODULE_NAME = "fallible_element_component_m"
@@ -104,6 +109,16 @@ contains
                     procedure_t(PROCEDURE_NAME), &
                     "element component must be an object, but was" // json%to_compact_string()))
         end select
+    end function
+
+    impure elemental function from_json_element(json) result(fallible_element_component)
+        type(json_element_t), intent(in) :: json
+        type(fallible_element_component_t) :: fallible_element_component
+
+        fallible_element_component = fallible_element_component_t( &
+                fallible_element_component_t(json%value_()), &
+                module_t(MODULE_NAME), &
+                procedure_t("from_json_element"))
     end function
 
     elemental function failed(self)

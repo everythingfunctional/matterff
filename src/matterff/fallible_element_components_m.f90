@@ -7,8 +7,10 @@ module matterff_fallible_element_components_m
             module_t, &
             procedure_t
     use iso_varying_string, only: operator(//)
+    use jsonff, only: json_array_t
     use matterff_element_component_m, only: element_component_t
     use matterff_element_symbol_m, only: element_symbol_t
+    use matterff_fallible_element_component_m, only: fallible_element_component_t
     use matterff_utilities_m, only: &
             operator(.sumsTo.), INVALID_ARGUMENT, MISMATCH, NORMALIZED_FRACTIONS
     use strff, only: join
@@ -31,17 +33,18 @@ module matterff_fallible_element_components_m
     end type
 
     interface fallible_element_components_t
-        module procedure constructor
+        module procedure check_consistency
+        module procedure from_json
     end interface
 
     character(len=*), parameter :: MODULE_NAME = "fallible_element_components_m"
 contains
-    function constructor(symbol, components) result(fallible_components)
+    function check_consistency(symbol, components) result(fallible_components)
         type(element_symbol_t), intent(in) :: symbol
         type(element_component_t), intent(in) :: components(:)
         type(fallible_element_components_t) :: fallible_components
 
-        character(len=*), parameter :: PROCEDURE_NAME = "constructor"
+        character(len=*), parameter :: PROCEDURE_NAME = "check_consistency"
 
         associate( &
                 isotopes => components%isotope(), &
@@ -76,6 +79,24 @@ contains
                         // " Element: " // symbol%to_string() // ", Isotopes: [" &
                         // join(isotopes%to_string(), ", ") // "]"))
             end if
+        end associate
+    end function
+
+    function from_json(json) result(fallible_element_components)
+        type(json_array_t), intent(in) :: json
+        type(fallible_element_components_t) :: fallible_element_components
+
+        associate(maybe_components => fallible_element_component_t(json%get_elements()))
+            associate(failures => maybe_components%failed())
+                if (any(failures)) then
+                    fallible_element_components%errors_ = error_list_t( &
+                            pack(maybe_components%errors(), failures), &
+                            module_t(MODULE_NAME), &
+                            procedure_t("from_json"))
+                else
+                    fallible_element_components%components_ = maybe_components%element_component()
+                end if
+            end associate
         end associate
     end function
 

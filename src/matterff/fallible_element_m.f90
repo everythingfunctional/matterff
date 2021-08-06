@@ -1,7 +1,7 @@
 module matterff_fallible_element_m
     use erloff, only: &
             error_list_t, fatal_t, message_list_t, module_t, procedure_t
-    use iso_varying_string, only: varying_string, char
+    use iso_varying_string, only: varying_string, operator(//), char
     use jsonff, only: &
             fallible_json_value_t, json_array_t, json_object_t, json_string_t
     use matterff_element_m, only: &
@@ -65,10 +65,12 @@ module matterff_fallible_element_m
 
     interface from_atom_fractions
         module procedure element_from_atom_fractions
+        module procedure element_from_fallible_atom_fractions
     end interface
 
     interface from_weight_fractions
         module procedure element_from_weight_fractions
+        module procedure element_from_fallible_weight_fractions
     end interface
 
     interface get_natural
@@ -174,6 +176,44 @@ contains
         end if
     end function
 
+    function element_from_fallible_atom_fractions( &
+            symbol, maybe_components, module_, procedure_) result(fallible_element)
+        type(element_symbol_t), intent(in) :: symbol
+        type(fallible_element_components_t), intent(in) :: maybe_components
+        type(module_t), intent(in) :: module_
+        type(procedure_t), intent(in) :: procedure_
+        type(fallible_element_t) :: fallible_element
+
+        if (maybe_components%failed()) then
+            fallible_element%errors_ = error_list_t( &
+                    maybe_components%errors(), module_, procedure_)
+        else
+            fallible_element = fallible_element_t( &
+                    from_atom_fractions(symbol, maybe_components%components()), &
+                    module_, &
+                    procedure_)
+        end if
+    end function
+
+    function element_from_fallible_weight_fractions( &
+            symbol, maybe_components, module_, procedure_) result(fallible_element)
+        type(element_symbol_t), intent(in) :: symbol
+        type(fallible_element_components_t), intent(in) :: maybe_components
+        type(module_t), intent(in) :: module_
+        type(procedure_t), intent(in) :: procedure_
+        type(fallible_element_t) :: fallible_element
+
+        if (maybe_components%failed()) then
+            fallible_element%errors_ = error_list_t( &
+                    maybe_components%errors(), module_, procedure_)
+        else
+            fallible_element = fallible_element_t( &
+                    from_weight_fractions(symbol, maybe_components%components()), &
+                    module_, &
+                    procedure_)
+        end if
+    end function
+
     function from_fallible_element( &
             fallible_element, module_, procedure_) result(new_fallible_element)
         type(fallible_element_t), intent(in) :: fallible_element
@@ -197,41 +237,16 @@ contains
 
         character(len=*), parameter :: PROCEDURE_NAME = "from_json"
         type(element_symbol_t) :: element_symbol
-        type(fallible_json_value_t), allocatable :: failed_isotopes(:)
-        integer :: i
         type(fallible_json_value_t) :: maybe_atom_fractions
-        type(fallible_element_component_t), allocatable :: maybe_components(:)
         type(fallible_json_value_t) :: maybe_element
-        type(fallible_json_value_t), allocatable :: maybe_isotopes(:)
-        type(fallible_json_value_t) :: maybe_natural
         type(fallible_json_value_t) :: maybe_weight_fractions
-        integer :: num_isotopes
 
         maybe_element = json%get_element("element")
         if (maybe_element%failed()) then
-            maybe_natural = json%get_element("natural")
-            if (maybe_natural%failed()) then
-                fallible_element%errors_ = error_list_t(fatal_t( &
-                        INVALID_ARGUMENT, &
-                        module_t(MODULE_NAME), &
-                        procedure_t(PROCEDURE_NAME), &
-                        "element composition must either have element and" &
-                        // " atom fractions or weight fractions, or be natural"))
-            else
-                select type (element_string => maybe_natural%value_())
-                type is (json_string_t)
-                    fallible_element = fallible_element_t( &
-                            get_natural(element_string%get_value()), &
-                            module_t(MODULE_NAME), &
-                            procedure_t(PROCEDURE_NAME))
-                class default
-                    fallible_element%errors_ = error_list_t(fatal_t( &
-                            INVALID_ARGUMENT, &
-                            module_t(MODULE_NAME), &
-                            procedure_t(PROCEDURE_NAME), &
-                            "natural must be a string"))
-                end select
-            end if
+            fallible_element = fallible_element_t( &
+                    extract_natural(json), &
+                    module_t(MODULE_NAME), &
+                    procedure_t(PROCEDURE_NAME))
         else
             select type (element_string => maybe_element%value_())
             type is (json_string_t)
@@ -249,73 +264,33 @@ contains
                     else
                         select type (fractions_array => maybe_weight_fractions%value_())
                         type is (json_array_t)
-                            num_isotopes = fractions_array%length()
-                            maybe_isotopes = [(fractions_array%get_element(i), i = 1, num_isotopes)]
-                            if (any([(maybe_isotopes(i)%failed(), i = 1, num_isotopes)])) then
-                                failed_isotopes = pack(maybe_isotopes, [(maybe_isotopes(i)%failed(), i = 1, num_isotopes)])
-                                fallible_element%errors_ = error_list_t( &
-                                        [(failed_isotopes(i)%errors(), i = 1, size(failed_isotopes))], &
-                                        module_t(MODULE_NAME),&
-                                        procedure_t(PROCEDURE_NAME))
-                            else
-                                allocate(maybe_components, source = &
-                                        [(fallible_element_component_t(maybe_isotopes(i)%value_()), i = 1, num_isotopes)])
-                                if (any(maybe_components%failed())) then
-                                    fallible_element%errors_ = error_list_t( &
-                                            pack(maybe_components%errors(), maybe_components%failed()), &
-                                            module_t(MODULE_NAME), &
-                                            procedure_t(PROCEDURE_NAME))
-                                else
-                                    fallible_element = fallible_element_t( &
-                                            from_weight_fractions( &
-                                                    element_symbol, &
-                                                    maybe_components%element_component()), &
-                                            module_t(MODULE_NAME), &
-                                            procedure_t(PROCEDURE_NAME))
-                                end if
-                            end if
+                            fallible_element = from_weight_fractions(&
+                                    element_symbol, &
+                                    fallible_element_components_t(fractions_array), &
+                                    module_t(MODULE_NAME), &
+                                    procedure_t(PROCEDURE_NAME))
                         class default
                             fallible_element%errors_ = error_list_t(fatal_t( &
                                     INVALID_ARGUMENT, &
                                     module_t(MODULE_NAME), &
                                     procedure_t(PROCEDURE_NAME), &
-                                    "weight fractions must be an array"))
+                                    "weight fractions must be an array, but was: " // fractions_array%to_compact_string()))
                         end select
                     end if
                 else
                     select type (fractions_array => maybe_atom_fractions%value_())
                     type is (json_array_t)
-                        num_isotopes = fractions_array%length()
-                        maybe_isotopes = [(fractions_array%get_element(i), i = 1, num_isotopes)]
-                        if (any([(maybe_isotopes(i)%failed(), i = 1, num_isotopes)])) then
-                            failed_isotopes = pack(maybe_isotopes, [(maybe_isotopes(i)%failed(), i = 1, num_isotopes)])
-                            fallible_element%errors_ = error_list_t( &
-                                    [(failed_isotopes(i)%errors(), i = 1, size(failed_isotopes))], &
-                                    module_t(MODULE_NAME),&
-                                    procedure_t(PROCEDURE_NAME))
-                        else
-                            allocate(maybe_components, source = &
-                                    [(fallible_element_component_t(maybe_isotopes(i)%value_()), i = 1, num_isotopes)])
-                            if (any(maybe_components%failed())) then
-                                fallible_element%errors_ = error_list_t( &
-                                        pack(maybe_components%errors(), maybe_components%failed()), &
-                                        module_t(MODULE_NAME), &
-                                        procedure_t(PROCEDURE_NAME))
-                            else
-                                fallible_element = fallible_element_t( &
-                                        from_atom_fractions( &
-                                                element_symbol, &
-                                                maybe_components%element_component()), &
-                                        module_t(MODULE_NAME), &
-                                        procedure_t(PROCEDURE_NAME))
-                            end if
-                        end if
+                        fallible_element = from_atom_fractions( &
+                                element_symbol, &
+                                fallible_element_components_t(fractions_array), &
+                                module_t(MODULE_NAME), &
+                                procedure_t(PROCEDURE_NAME))
                     class default
                         fallible_element%errors_ = error_list_t(fatal_t( &
                                 INVALID_ARGUMENT, &
                                 module_t(MODULE_NAME), &
                                 procedure_t(PROCEDURE_NAME), &
-                                "atom fractions must be an array"))
+                                "atom fractions must be an array, but was: " // fractions_array%to_compact_string()))
                     end select
                 end if
             class default
@@ -323,7 +298,39 @@ contains
                         INVALID_ARGUMENT, &
                         module_t(MODULE_NAME), &
                         procedure_t(PROCEDURE_NAME), &
-                        "element identifier must be a string"))
+                        "element identifier must be a string, but was: " // element_string%to_compact_string()))
+            end select
+        end if
+    end function
+
+    function extract_natural(json)  result(fallible_element)
+        type(json_object_t), intent(in) :: json
+        type(fallible_element_t) :: fallible_element
+
+        character(len=*), parameter :: PROCEDURE_NAME = "extract_natural"
+        type(fallible_json_value_t) :: maybe_natural
+
+        maybe_natural = json%get_element("natural")
+        if (maybe_natural%failed()) then
+            fallible_element%errors_ = error_list_t(fatal_t( &
+                    INVALID_ARGUMENT, &
+                    module_t(MODULE_NAME), &
+                    procedure_t(PROCEDURE_NAME), &
+                    "element composition must either have element and" &
+                    // " atom fractions or weight fractions, or be natural"))
+        else
+            select type (element_string => maybe_natural%value_())
+            type is (json_string_t)
+                fallible_element = fallible_element_t( &
+                        get_natural(element_string%get_value()), &
+                        module_t(MODULE_NAME), &
+                        procedure_t(PROCEDURE_NAME))
+            class default
+                fallible_element%errors_ = error_list_t(fatal_t( &
+                        INVALID_ARGUMENT, &
+                        module_t(MODULE_NAME), &
+                        procedure_t(PROCEDURE_NAME), &
+                        "natural must be a string, but was" // element_string%to_compact_string()))
             end select
         end if
     end function
