@@ -69,7 +69,7 @@ contains
 
         associate(failures => [maybe_isotope%failed(), maybe_fraction%failed()])
             if (any(failures)) then
-                associate(errors => (pack([maybe_isotope%errors(), maybe_fraction%errors()], failures)))
+                associate(errors => pack([maybe_isotope%errors(), maybe_fraction%errors()], failures))
                     fallible_element_component%errors_ = error_list_t( &
                             errors, module_, procedure_)
                 end associate
