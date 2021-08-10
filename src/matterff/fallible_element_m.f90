@@ -330,7 +330,7 @@ contains
                         INVALID_ARGUMENT, &
                         module_t(MODULE_NAME), &
                         procedure_t(PROCEDURE_NAME), &
-                        "natural must be a string, but was" // element_string%to_compact_string()))
+                        "natural must be a string, but was: " // element_string%to_compact_string()))
             end select
         end if
     end function

@@ -24,8 +24,6 @@ module matterff_fallible_chemical_m
             natural_xenon_gas
     use matterff_chemical_component_m, only: chemical_component_t
     use matterff_chemical_symbol_m, only: chemical_symbol_t
-    use matterff_fallible_chemical_component_m, only: &
-            fallible_chemical_component_t, from_json_value
     use matterff_fallible_chemical_components_m, only: &
             fallible_chemical_components_t
     use matterff_fallible_chemical_symbol_m, only: fallible_chemical_symbol_t
@@ -62,6 +60,7 @@ module matterff_fallible_chemical_m
 
     interface fallible_chemical_t
         module procedure from_components
+        module procedure from_fallible_components
         module procedure from_fallible_chemical
         module procedure from_json
     end interface
@@ -147,6 +146,33 @@ contains
         end if
     end function
 
+    function from_fallible_components(&
+            maybe_symbol, &
+            maybe_components, &
+            module_, &
+            procedure_) &
+            result(fallible_chemical)
+        type(fallible_chemical_symbol_t), intent(in) :: maybe_symbol
+        type(fallible_chemical_components_t), intent(in) :: maybe_components
+        type(module_t), intent(in) :: module_
+        type(procedure_t), intent(in) :: procedure_
+        type(fallible_chemical_t) :: fallible_chemical
+
+        associate(failures => [maybe_symbol%failed(), maybe_components%failed()])
+            if (any(failures)) then
+                fallible_chemical%errors_ = error_list_t( &
+                        pack([maybe_symbol%errors(), maybe_components%errors()], failures), &
+                        module_, &
+                        procedure_)
+            else
+                fallible_chemical = fallible_chemical_t( &
+                        fallible_chemical_t(maybe_symbol%chemical_symbol(), maybe_components%components()), &
+                        module_, &
+                        procedure_)
+            end if
+        end associate
+    end function
+
     function from_fallible_chemical( &
             fallible_chemical, module_, procedure_) result(new_fallible_chemical)
         type(fallible_chemical_t), intent(in) :: fallible_chemical
@@ -169,100 +195,51 @@ contains
         type(fallible_chemical_t) :: fallible_chemical
 
         character(len=*), parameter :: PROCEDURE_NAME = "from_json"
-        type(fallible_json_value_t), allocatable :: failed_elements(:)
-        integer :: i
         type(fallible_json_value_t) :: maybe_chemical
-        type(fallible_chemical_component_t), allocatable :: maybe_components(:)
-        type(fallible_json_value_t), allocatable :: maybe_elements(:)
-        type(fallible_json_value_t) :: maybe_elements_array
-        type(fallible_json_value_t) :: maybe_natural
-        type(fallible_chemical_symbol_t) :: maybe_symbol
-        integer :: num_elements
 
         maybe_chemical = json%get_element("chemical")
         if (maybe_chemical%failed()) then
-            maybe_natural = json%get_element("natural")
-            if (maybe_natural%failed()) then
+            fallible_chemical = fallible_chemical_t( &
+                    extract_natural(json), &
+                    module_t(MODULE_NAME), &
+                    procedure_t(PROCEDURE_NAME))
+        else
+            fallible_chemical = fallible_chemical_t( &
+                    fallible_chemical_symbol_t(maybe_chemical%value_()), &
+                    fallible_chemical_components_t(json), &
+                    module_t(MODULE_NAME), &
+                    procedure_t(PROCEDURE_NAME))
+        end if
+    end function
+
+    function extract_natural(json) result(fallible_chemical)
+        type(json_object_t), intent(in) :: json
+        type(fallible_chemical_t) :: fallible_chemical
+
+        character(len=*), parameter :: PROCEDURE_NAME = "extract_natural"
+        type(fallible_json_value_t) :: maybe_natural
+
+        maybe_natural = json%get_element("natural")
+        if (maybe_natural%failed()) then
+            fallible_chemical%errors_ = error_list_t(fatal_t( &
+                    INVALID_ARGUMENT, &
+                    module_t(MODULE_NAME), &
+                    procedure_t(PROCEDURE_NAME), &
+                    "chemical must have chemical and elements or natural"))
+        else
+            select type (chemical_string => maybe_natural%value_())
+            type is (json_string_t)
+                fallible_chemical = fallible_chemical_t( &
+                        get_natural(chemical_string%get_value()), &
+                        module_t(MODULE_NAME), &
+                        procedure_t(PROCEDURE_NAME))
+            class default
                 fallible_chemical%errors_ = error_list_t(fatal_t( &
                         INVALID_ARGUMENT, &
                         module_t(MODULE_NAME), &
                         procedure_t(PROCEDURE_NAME), &
-                        "chemical must have chemical and elements or natural"))
-            else
-                select type (chemical_string => maybe_natural%value_())
-                type is (json_string_t)
-                    fallible_chemical = fallible_chemical_t( &
-                            get_natural(chemical_string%get_value()), &
-                            module_t(MODULE_NAME), &
-                            procedure_t(PROCEDURE_NAME))
-                class default
-                    fallible_chemical%errors_ = error_list_t(fatal_t( &
-                            INVALID_ARGUMENT, &
-                            module_t(MODULE_NAME), &
-                            procedure_t(PROCEDURE_NAME), &
-                            "natural must be a string"))
-                end select
-            end if
-        else
-            maybe_symbol = fallible_chemical_symbol_t(maybe_chemical%value_())
-            if (maybe_symbol%failed()) then
-                fallible_chemical%errors_ = error_list_t( &
-                        maybe_symbol%errors(), &
-                        module_t(MODULE_NAME), &
-                        procedure_t(PROCEDURE_NAME))
-            else
-                maybe_elements_array = json%get_element("elements")
-                if (maybe_elements_array%failed()) then
-                    fallible_chemical%errors_ = error_list_t(fatal_t( &
-                            INVALID_ARGUMENT, &
-                            module_t(MODULE_NAME), &
-                            procedure_t(PROCEDURE_NAME), &
-                            "chemical must contain list of element compositions"))
-                else
-                    select type (elements_array => maybe_elements_array%value_())
-                    type is (json_array_t)
-                        num_elements = elements_array%length()
-                        maybe_elements = [(elements_array%get_element(i), i = 1, num_elements)]
-                        if (any([(maybe_elements(i)%failed(), i = 1, num_elements)])) then
-                            failed_elements = pack(maybe_elements, [(maybe_elements(i)%failed(), i = 1, num_elements)])
-                            fallible_chemical%errors_ = error_list_t( &
-                                    [(failed_elements(i)%errors(), i = 1, size(failed_elements))], &
-                                    module_t(MODULE_NAME), &
-                                    procedure_t(PROCEDURE_NAME))
-                        else
-                            allocate(maybe_components, source = &
-                                    [(fallible_chemical_component_t(maybe_elements(i)%value_()), i = 1, num_elements)])
-                            if (any(maybe_components%failed())) then
-                                fallible_chemical%errors_ = error_list_t( &
-                                        pack(maybe_components%errors(), maybe_components%failed()), &
-                                        module_t(MODULE_NAME), &
-                                        procedure_t(PROCEDURE_NAME))
-                                fallible_chemical%messages_ = message_list_t( &
-                                        maybe_components%messages(), &
-                                        module_t(MODULE_NAME), &
-                                        procedure_t(PROCEDURE_NAME))
-                            else
-                                fallible_chemical = fallible_chemical_t( &
-                                        fallible_chemical_t( &
-                                                maybe_symbol%chemical_symbol(), &
-                                                maybe_components%chemical_component()), &
-                                        module_t(MODULE_NAME), &
-                                        procedure_t(PROCEDURE_NAME))
-                                fallible_chemical%messages_ = message_list_t( &
-                                        maybe_components%messages(), &
-                                        module_t(MODULE_NAME), &
-                                        procedure_t(PROCEDURE_NAME))
-                            end if
-                        end if
-                    class default
-                        fallible_chemical%errors_ = error_list_t(fatal_t( &
-                                INVALID_ARGUMENT, &
-                                module_t(MODULE_NAME), &
-                                procedure_t(PROCEDURE_NAME), &
-                                "elements must be an array"))
-                    end select
-                end if
-            end if
+                        "natural must be a string, but was: " // chemical_string%to_compact_string()))
+            end select
         end if
     end function
 
