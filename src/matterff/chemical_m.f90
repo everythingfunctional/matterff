@@ -1,6 +1,13 @@
-module chemical_m
-    use chemical_component_m, only: chemical_component_t, combine_duplicates
-    use chemical_symbol_m, only: &
+module matterff_chemical_m
+    use jsonff, only: &
+            json_array_t, &
+            json_element_t, &
+            json_number_t, &
+            json_object_t, &
+            json_member_unsafe
+    use matterff_chemical_component_m, only: &
+            chemical_component_t, combine_duplicates
+    use matterff_chemical_symbol_m, only: &
             chemical_symbol_t, &
             argon_gas_symbol, &
             helium_gas_symbol, &
@@ -10,7 +17,7 @@ module chemical_m
             oxygen_gas_symbol, &
             water_symbol, &
             xenon_gas_symbol
-    use element_m, only: &
+    use matterff_element_m, only: &
             find, &
             natural_hydrogen, &
             natural_helium, &
@@ -19,15 +26,9 @@ module chemical_m
             natural_argon, &
             natural_krypton, &
             natural_xenon
-    use element_symbol_m, only: element_symbol_t
-    use isotope_m, only: isotope_t
-    use isotope_symbol_m, only: isotope_symbol_t
-    use jsonff, only: &
-            json_array_t, &
-            json_element_t, &
-            json_number_t, &
-            json_object_t, &
-            json_member_unsafe
+    use matterff_element_symbol_m, only: element_symbol_t
+    use matterff_isotope_m, only: isotope_t
+    use matterff_isotope_symbol_m, only: isotope_symbol_t
     use quaff, only: &
             amount_t, &
             mass_t, &

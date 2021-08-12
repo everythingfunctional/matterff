@@ -1,5 +1,6 @@
-module material_component_m
-    use chemical_m, only: chemical_t, combine_by_atom_factors_unsafe, find
+module matterff_material_component_m
+    use matterff_chemical_m, only: &
+            chemical_t, combine_by_atom_factors_unsafe, find
 
     implicit none
     private

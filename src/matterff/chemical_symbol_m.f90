@@ -1,8 +1,8 @@
-module chemical_symbol_m
-    use chemical_symbol_component_m, only: chemical_symbol_component_t
-    use element_symbol_m, only: element_symbol_t, Ar, H, He, Kr, N, O, Xe
+module matterff_chemical_symbol_m
     use iso_varying_string, only: varying_string
     use jsonff, only: json_array_t, json_element_t
+    use matterff_chemical_symbol_component_m, only: chemical_symbol_component_t
+    use matterff_element_symbol_m, only: element_symbol_t, Ar, H, He, Kr, N, O, Xe
     use strff, only: join
 
     implicit none

@@ -30,7 +30,7 @@ contains
 // '    "chemical" : [' // NEWLINE &
 // '        {' // NEWLINE &
 // '            "element" : "H",' // NEWLINE &
-// '            "multiple" : 2.0' // NEWLINE &
+// '            "multiple" : 2' // NEWLINE &
 // '        }' // NEWLINE &
 // '    ],' // NEWLINE &
 // '    "elements" : [' // NEWLINE &
@@ -69,7 +69,7 @@ contains
 // '    "chemical" : [' // NEWLINE &
 // '        {' // NEWLINE &
 // '            "element" : "H",' // NEWLINE &
-// '            "multiple" : 2.0' // NEWLINE &
+// '            "multiple" : 2' // NEWLINE &
 // '        }' // NEWLINE &
 // '    ],' // NEWLINE &
 // '    "elements" : [' // NEWLINE &

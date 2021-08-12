@@ -1,7 +1,8 @@
-module fallible_isotope_m
+module matterff_fallible_isotope_m
     use erloff, only: error_list_t, fatal_t, module_t, procedure_t, UNKNOWN_TYPE
     use iso_varying_string, only: varying_string, operator(//), char
-    use isotope_m, only: &
+    use jsonff, only: fallible_json_value_t, json_object_t, json_string_t
+    use matterff_isotope_m, only: &
             isotope_t, &
             H_1, &
             H_2, &
@@ -39,7 +40,6 @@ module fallible_isotope_m
             Xe_132, &
             Xe_134, &
             Xe_136
-    use jsonff, only: fallible_json_value_t, json_object_t, json_string_t
     use matterff_utilities_m, only: INVALID_ARGUMENT
     use strff, only: to_string
 
@@ -57,7 +57,7 @@ module fallible_isotope_m
         procedure, public :: isotope
         procedure, public :: errors
     end type
-    
+
     interface fallible_isotope_t
         module procedure from_json
         module procedure from_string
@@ -65,13 +65,13 @@ module fallible_isotope_m
         module procedure from_element_symbol_and_mass_number
         module procedure from_fallible_isotope
     end interface
-    
-    character(len=*), parameter :: MODULE_NAME = "fallible_isotope_m"
+
+    character(len=*), parameter :: MODULE_NAME = "matterff_fallible_isotope_m"
 contains
     function from_json(json) result(new_fallible_isotope)
         type(json_object_t), intent(in) :: json
         type(fallible_isotope_t) :: new_fallible_isotope
-        
+
         character(len=*), parameter :: PROCEDURE_NAME = "from_json"
         type(fallible_json_value_t) :: maybe_isotope_string
 
@@ -93,7 +93,7 @@ contains
                         UNKNOWN_TYPE, &
                         module_t(MODULE_NAME), &
                         procedure_t(PROCEDURE_NAME), &
-                        "Expected to get a json_string_t but got" // isotope_string%to_compact_string()))
+                        "isotope must be a string, but was: " // isotope_string%to_compact_string()))
             end select
         end if
     end function
@@ -111,7 +111,7 @@ contains
     function from_character(string) result(new_fallible_isotope)
         character(len=*), intent(in) :: string
         type(fallible_isotope_t) :: new_fallible_isotope
-        
+
         character(len=*), parameter :: PROCEDURE_NAME = "from_character"
         character(len=2) :: element_symbol
         integer :: hyphen_position

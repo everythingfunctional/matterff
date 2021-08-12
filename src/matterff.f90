@@ -1,5 +1,5 @@
 module matterff
-    use chemical_m, only: &
+    use matterff_chemical_m, only: &
             chemical_t, &
             chemical_unsafe, &
             combine_by_atom_factors_unsafe, &
@@ -13,8 +13,9 @@ module matterff
             natural_oxygen_gas, &
             natural_water, &
             natural_xenon_gas
-    use chemical_component_m, only: chemical_component_t, combine_duplicates
-    use chemical_symbol_m, only: &
+    use matterff_chemical_component_m, only: &
+            chemical_component_t, combine_duplicates
+    use matterff_chemical_symbol_m, only: &
             chemical_symbol_t, &
             argon_gas_symbol, &
             helium_gas_symbol, &
@@ -24,8 +25,8 @@ module matterff
             oxygen_gas_symbol, &
             water_symbol, &
             xenon_gas_symbol
-    use chemical_symbol_component_m, only: chemical_symbol_component_t
-    use element_m, only: &
+    use matterff_chemical_symbol_component_m, only: chemical_symbol_component_t
+    use matterff_element_m, only: &
             element_t, &
             combine_by_atom_factors_unsafe, &
             combine_by_weight_factors_unsafe, &
@@ -43,8 +44,9 @@ module matterff
             natural_argon, &
             natural_krypton, &
             natural_xenon
-    use element_component_m, only: element_component_t, combine_duplicates
-    use element_symbol_m, only: &
+    use matterff_element_component_m, only: &
+            element_component_t, combine_duplicates
+    use matterff_element_symbol_m, only: &
             element_symbol_t, &
             H, &
             He, &
@@ -57,34 +59,40 @@ module matterff
             Ar, &
             Kr, &
             Xe
-    use fallible_chemical_m, only: &
+    use matterff_fallible_chemical_m, only: &
             fallible_chemical_t, &
             combine_by_atom_factors, &
             combine_by_weight_factors
-    use fallible_chemical_component_m, only: fallible_chemical_component_t
-    use fallible_chemical_components_m, only: fallible_chemical_components_t
-    use fallible_chemical_symbol_m, only: fallible_chemical_symbol_t
-    use fallbile_chemical_symbol_component_m, only: &
+    use matterff_fallible_chemical_component_m, only: &
+            fallible_chemical_component_t
+    use matterff_fallible_chemical_components_m, only: &
+            fallible_chemical_components_t
+    use matterff_fallible_chemical_symbol_m, only: fallible_chemical_symbol_t
+    use matterff_fallbile_chemical_symbol_component_m, only: &
             fallible_chemical_symbol_component_t
-    use fallible_element_m, only: &
+    use matterff_fallible_element_m, only: &
             fallible_element_t, &
             combine_by_atom_factors, &
             combine_by_weight_factors, &
             from_atom_fractions, &
             from_weight_fractions
-    use fallible_element_component_m, only: fallible_element_component_t
-    use fallible_element_components_m, only: fallible_element_components_t
-    use fallible_isotope_m, only: fallible_isotope_t
-    use fallible_material_m, only: &
+    use matterff_fallible_element_component_m, only: &
+            fallible_element_component_t
+    use matterff_fallible_element_components_m, only: &
+            fallible_element_components_t
+    use matterff_fallible_isotope_m, only: fallible_isotope_t
+    use matterff_fallible_material_m, only: &
             fallible_material_t, &
             combine_by_atom_factors, &
             combine_by_weight_factors, &
             from_atom_fractions, &
             from_weight_fractions
-    use fallible_material_component_m, only: fallible_material_component_t
-    use fallible_material_components_m, only: fallible_material_components_t
-    use fallible_matter_m, only: fallible_matter_t
-    use isotope_m, only: &
+    use matterff_fallible_material_component_m, only: &
+            fallible_material_component_t
+    use matterff_fallible_material_components_m, only: &
+            fallible_material_components_t
+    use matterff_fallible_matter_m, only: fallible_matter_t
+    use matterff_isotope_m, only: &
             isotope_t, &
             find, &
             H_1, &
@@ -123,7 +131,7 @@ module matterff
             Xe_132, &
             Xe_134, &
             Xe_136
-    use isotope_symbol_m, only: &
+    use matterff_isotope_symbol_m, only: &
             isotope_symbol_t, &
             H_1_SYM, &
             H_2_SYM, &
@@ -161,7 +169,7 @@ module matterff
             Xe_132_SYM, &
             Xe_134_SYM, &
             Xe_136_SYM
-    use material_m, only: &
+    use matterff_material_m, only: &
             material_t, &
             combine_by_atom_factors_unsafe, &
             combine_by_weight_factors_unsafe, &
@@ -175,6 +183,11 @@ module matterff
             pure_natural_oxygen_gas, &
             pure_natural_water, &
             pure_natural_xenon_gas
-    use material_component_m, only: material_component_t, combine_duplicates
-    use matter_m, only: matter_t, matter_unsafe
+    use matterff_material_component_m, only: &
+            material_component_t, combine_duplicates
+    use matterff_matter_m, only: matter_t, matter_unsafe
+    use matterff_utilities_m, only: &
+            INVALID_ARGUMENT, &
+            MISMATCH, &
+            NORMALIZED_FRACTIONS
 end module

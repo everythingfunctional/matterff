@@ -24,8 +24,9 @@ module material_test
             natural_water, &
             water_symbol, &
             H, &
-            H_1
-    use matterff_utilities_m, only: INVALID_ARGUMENT, NORMALIZED_FRACTIONS
+            H_1, &
+            INVALID_ARGUMENT, &
+            NORMALIZED_FRACTIONS
     use quaff_asserts_m, only: assert_equals
     use vegetables, only: &
             result_t, test_item_t, assert_equals, assert_that, describe, fail, it

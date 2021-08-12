@@ -1,6 +1,14 @@
-module element_m
-    use element_component_m, only: element_component_t, combine_duplicates
-    use element_symbol_m, only: &
+module matterff_element_m
+    use jsonff, only: &
+            json_array_t, &
+            json_element_t, &
+            json_number_t, &
+            json_object_t, &
+            json_member_unsafe, &
+            json_string_unsafe
+    use matterff_element_component_m, only: &
+            element_component_t, combine_duplicates
+    use matterff_element_symbol_m, only: &
             element_symbol_t, &
             H, &
             He, &
@@ -13,7 +21,7 @@ module element_m
             Ar, &
             Kr, &
             Xe
-    use isotope_m, only: &
+    use matterff_isotope_m, only: &
             isotope_t, &
             find, &
             H_1, &
@@ -50,14 +58,7 @@ module element_m
             Xe_132, &
             Xe_134, &
             Xe_136
-    use jsonff, only: &
-            json_array_t, &
-            json_element_t, &
-            json_number_t, &
-            json_object_t, &
-            json_member_unsafe, &
-            json_string_unsafe
-    use isotope_symbol_m, only: isotope_symbol_t
+    use matterff_isotope_symbol_m, only: isotope_symbol_t
     use quaff, only: mass_t, molar_mass_t, operator(/), sum
 
     implicit none

@@ -1,16 +1,18 @@
-module fallible_material_m
+module matterff_fallible_material_m
     use erloff, only: &
             error_list_t, fatal_t, message_list_t, module_t, procedure_t
-    use fallible_material_component_m, only: fallible_material_component_t
-    use fallible_material_components_m, only: fallible_material_components_t
-    use iso_varying_string, only: varying_string, char
+    use iso_varying_string, only: varying_string, operator(//), char
     use jsonff, only: &
             fallible_json_value_t, json_array_t, json_object_t, json_string_t
-    use material_m, only: &
+    use matterff_fallible_material_component_m, only: &
+            fallible_material_component_t
+    use matterff_fallible_material_components_m, only: &
+            fallible_material_components_t
+    use matterff_material_m, only: &
             material_t, &
             from_atom_fractions_unsafe, &
             from_weight_fractions_unsafe
-    use material_component_m, only: material_component_t
+    use matterff_material_component_m, only: material_component_t
     use matterff_utilities_m, only: INVALID_ARGUMENT
 
     implicit none
@@ -44,19 +46,22 @@ module fallible_material_m
     end interface
 
     interface fallible_material_t
+        module procedure from_errors
         module procedure from_fallible_material
         module procedure from_json
     end interface
 
     interface from_atom_fractions
         module procedure material_from_atom_fractions
+        module procedure material_from_fallible_atom_fractions
     end interface
 
     interface from_weight_fractions
         module procedure material_from_weight_fractions
+        module procedure material_from_fallible_weight_fractions
     end interface
 
-    character(len=*), parameter :: MODULE_NAME = "fallible_material_m"
+    character(len=*), parameter :: MODULE_NAME = "matterff_fallible_material_m"
 contains
     function combine_materials_by_atom_factors( &
             material1, factor1, material2, factor2) result(combined)
@@ -152,6 +157,53 @@ contains
         end if
     end function
 
+    function material_from_fallible_atom_fractions( &
+            maybe_components, module_, procedure_) result(fallible_material)
+        type(fallible_material_components_t), intent(in) :: maybe_components
+        type(module_t), intent(in) :: module_
+        type(procedure_t), intent(in) :: procedure_
+        type(fallible_material_t) :: fallible_material
+
+        fallible_material%messages_ = message_list_t( &
+                maybe_components%messages(), module_, procedure_)
+        if (maybe_components%failed()) then
+            fallible_material%errors_ = error_list_t( &
+                    maybe_components%errors(), module_, procedure_)
+        else
+            fallible_material = fallible_material_t( &
+                    from_atom_fractions(maybe_components%components()), &
+                    module_, &
+                    procedure_)
+        end if
+    end function
+
+    function material_from_fallible_weight_fractions( &
+            maybe_components, module_, procedure_) result(fallible_material)
+        type(fallible_material_components_t), intent(in) :: maybe_components
+        type(module_t), intent(in) :: module_
+        type(procedure_t), intent(in) :: procedure_
+        type(fallible_material_t) :: fallible_material
+
+        fallible_material%messages_ = message_list_t( &
+                maybe_components%messages(), module_, procedure_)
+        if (maybe_components%failed()) then
+            fallible_material%errors_ = error_list_t( &
+                    maybe_components%errors(), module_, procedure_)
+        else
+            fallible_material = fallible_material_t( &
+                    from_weight_fractions(maybe_components%components()), &
+                    module_, &
+                    procedure_)
+        end if
+    end function
+
+    function from_errors(errors) result(fallible_material)
+        type(error_list_t), intent(in) :: errors
+        type(fallible_material_t) :: fallible_material
+
+        fallible_material%errors_ = errors
+    end function
+
     function from_fallible_material( &
             fallible_material, module_, procedure_) result(new_fallible_material)
         type(fallible_material_t), intent(in) :: fallible_material
@@ -174,13 +226,8 @@ contains
         type(fallible_material_t) :: fallible_material
 
         character(len=*), parameter :: PROCEDURE_NAME = "from_json"
-        type(fallible_json_value_t), allocatable :: failed_chemicals(:)
-        integer :: i
         type(fallible_json_value_t) :: maybe_atom_fractions
-        type(fallible_material_component_t), allocatable :: maybe_components(:)
-        type(fallible_json_value_t), allocatable :: maybe_chemicals(:)
         type(fallible_json_value_t) :: maybe_weight_fractions
-        integer :: num_chemicals
 
         maybe_atom_fractions = json%get_element("atom fractions")
         if (maybe_atom_fractions%failed()) then
@@ -195,87 +242,31 @@ contains
             else
                 select type (fractions_array => maybe_weight_fractions%value_())
                 type is (json_array_t)
-                    num_chemicals = fractions_array%length()
-                    maybe_chemicals = [(fractions_array%get_element(i), i = 1, num_chemicals)]
-                    if (any([(maybe_chemicals(i)%failed(), i = 1, num_chemicals)])) then
-                        failed_chemicals = pack(maybe_chemicals, [(maybe_chemicals(i)%failed(), i = 1, num_chemicals)])
-                        fallible_material%errors_ = error_list_t( &
-                                [(failed_chemicals(i)%errors(), i = 1, size(failed_chemicals))], &
-                                module_t(MODULE_NAME),&
-                                procedure_t(PROCEDURE_NAME))
-                    else
-                        allocate(maybe_components, source = &
-                                [(fallible_material_component_t(maybe_chemicals(i)%value_()), i = 1, num_chemicals)])
-                        if (any(maybe_components%failed())) then
-                            fallible_material%errors_ = error_list_t( &
-                                    pack(maybe_components%errors(), maybe_components%failed()), &
-                                    module_t(MODULE_NAME), &
-                                    procedure_t(PROCEDURE_NAME))
-                            fallible_material%messages_ = message_list_t( &
-                                    maybe_components%messages(), &
-                                    module_t(MODULE_NAME), &
-                                    procedure_t(PROCEDURE_NAME))
-                        else
-                            fallible_material = fallible_material_t( &
-                                    from_weight_fractions( &
-                                            maybe_components%material_component()), &
-                                    module_t(MODULE_NAME), &
-                                    procedure_t(PROCEDURE_NAME))
-                            fallible_material%messages_ = message_list_t( &
-                                    [maybe_components%messages(), fallible_material%messages_], &
-                                    module_t(MODULE_NAME), &
-                                    procedure_t(PROCEDURE_NAME))
-                        end if
-                    end if
+                    fallible_material = from_weight_fractions( &
+                            fallible_material_components_t(fractions_array), &
+                            module_t(MODULE_NAME), &
+                            procedure_t(PROCEDURE_NAME))
                 class default
                     fallible_material%errors_ = error_list_t(fatal_t( &
                             INVALID_ARGUMENT, &
                             module_t(MODULE_NAME), &
                             procedure_t(PROCEDURE_NAME), &
-                            "weight fractions must be an array"))
+                            "weight fractions must be an array, but was: " // fractions_array%to_compact_string()))
                 end select
             end if
         else
             select type (fractions_array => maybe_atom_fractions%value_())
             type is (json_array_t)
-                num_chemicals = fractions_array%length()
-                maybe_chemicals = [(fractions_array%get_element(i), i = 1, num_chemicals)]
-                if (any([(maybe_chemicals(i)%failed(), i = 1, num_chemicals)])) then
-                    failed_chemicals = pack(maybe_chemicals, [(maybe_chemicals(i)%failed(), i = 1, num_chemicals)])
-                    fallible_material%errors_ = error_list_t( &
-                            [(failed_chemicals(i)%errors(), i = 1, size(failed_chemicals))], &
-                            module_t(MODULE_NAME),&
-                            procedure_t(PROCEDURE_NAME))
-                else
-                    allocate(maybe_components, source = &
-                            [(fallible_material_component_t(maybe_chemicals(i)%value_()), i = 1, num_chemicals)])
-                    if (any(maybe_components%failed())) then
-                        fallible_material%errors_ = error_list_t( &
-                                pack(maybe_components%errors(), maybe_components%failed()), &
-                                module_t(MODULE_NAME), &
-                                procedure_t(PROCEDURE_NAME))
-                        fallible_material%messages_ = message_list_t( &
-                                maybe_components%messages(), &
-                                module_t(MODULE_NAME), &
-                                procedure_t(PROCEDURE_NAME))
-                    else
-                        fallible_material = fallible_material_t( &
-                                from_atom_fractions( &
-                                        maybe_components%material_component()), &
-                                module_t(MODULE_NAME), &
-                                procedure_t(PROCEDURE_NAME))
-                        fallible_material%messages_ = message_list_t( &
-                                [maybe_components%messages(), fallible_material%messages_], &
-                                module_t(MODULE_NAME), &
-                                procedure_t(PROCEDURE_NAME))
-                    end if
-                end if
+                fallible_material = from_atom_fractions( &
+                        fallible_material_components_t(fractions_array), &
+                        module_t(MODULE_NAME), &
+                        procedure_t(PROCEDURE_NAME))
             class default
                 fallible_material%errors_ = error_list_t(fatal_t( &
                         INVALID_ARGUMENT, &
                         module_t(MODULE_NAME), &
                         procedure_t(PROCEDURE_NAME), &
-                        "atom fractions must be an array"))
+                        "atom fractions must be an array, but was: " // fractions_array%to_compact_string()))
             end select
         end if
     end function

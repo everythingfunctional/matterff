@@ -1,7 +1,9 @@
-module isotope_m
-    use element_symbol_m, only: element_symbol_t
+module matterff_isotope_m
     use iso_varying_string, only: varying_string
-    use isotope_symbol_m, only: &
+    use jsonff, only: &
+            json_number_t, json_object_t, json_member_unsafe, json_string_unsafe
+    use matterff_element_symbol_m, only: element_symbol_t
+    use matterff_isotope_symbol_m, only: &
             isotope_symbol_t, &
             H_1_SYM, &
             H_2_SYM, &
@@ -39,8 +41,6 @@ module isotope_m
             Xe_132_SYM, &
             Xe_134_SYM, &
             Xe_136_SYM
-    use jsonff, only: &
-            json_number_t, json_object_t, json_member_unsafe, json_string_unsafe
     use quaff, only: molar_mass_t
     use strff, only: to_string
 

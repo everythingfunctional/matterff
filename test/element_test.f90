@@ -24,9 +24,10 @@ module element_test
             H, &
             H_1, &
             H_2, &
-            He_3
-    use matterff_utilities_m, only: &
-            INVALID_ARGUMENT, MISMATCH, NORMALIZED_FRACTIONS
+            He_3, &
+            INVALID_ARGUMENT, &
+            MISMATCH, &
+            NORMALIZED_FRACTIONS
     use quaff, only: operator(.unit.), GRAMS_PER_MOL
     use quaff_asserts_m, only: assert_equals_within_absolute
     use vegetables, only: &

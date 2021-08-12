@@ -1,7 +1,7 @@
 module isotope_from_string_test
     use erloff, only: error_list_t
-    use matterff, only: fallible_isotope_t, isotope_t, H_1, He_4
-    use matterff_utilities_m, only: INVALID_ARGUMENT
+    use matterff, only: &
+            fallible_isotope_t, isotope_t, H_1, He_4, INVALID_ARGUMENT
     use vegetables, only: &
             result_t, test_item_t, assert_equals, assert_that, describe, fail, it
 

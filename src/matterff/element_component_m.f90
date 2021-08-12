@@ -1,5 +1,5 @@
-module element_component_m
-    use isotope_m, only: isotope_t, find
+module matterff_element_component_m
+    use matterff_isotope_m, only: isotope_t, find
 
     implicit none
     private

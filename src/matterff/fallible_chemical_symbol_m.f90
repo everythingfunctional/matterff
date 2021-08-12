@@ -1,5 +1,9 @@
-module fallible_chemical_symbol_m
-    use chemical_symbol_m, only: &
+module matterff_fallible_chemical_symbol_m
+    use erloff, only: error_list_t, fatal_t, module_t, procedure_t
+    use iso_varying_string, only: varying_string, operator(//), char
+    use jsonff, only: &
+            fallible_json_value_t, json_array_t, json_string_t, json_value_t
+    use matterff_chemical_symbol_m, only: &
             chemical_symbol_t, &
             argon_gas_symbol, &
             helium_gas_symbol, &
@@ -9,12 +13,8 @@ module fallible_chemical_symbol_m
             oxygen_gas_symbol, &
             water_symbol, &
             xenon_gas_symbol
-    use fallbile_chemical_symbol_component_m, only: &
+    use matterff_fallbile_chemical_symbol_component_m, only: &
             fallible_chemical_symbol_component_t
-    use erloff, only: error_list_t, fatal_t, module_t, procedure_t
-    use iso_varying_string, only: varying_string, operator(//), char
-    use jsonff, only: &
-            fallible_json_value_t, json_array_t, json_string_t, json_value_t
     use matterff_utilities_m, only: INVALID_ARGUMENT
 
     implicit none
@@ -39,40 +39,23 @@ module fallible_chemical_symbol_m
         module procedure from_string
     end interface
 
-    character(len=*), parameter :: MODULE_NAME = "fallible_chemical_symbol_m"
+    character(len=*), parameter :: MODULE_NAME = "matterff_fallible_chemical_symbol_m"
 contains
     function from_json_array(json) result(fallible_chemical_symbol)
         type(json_array_t), intent(in) :: json
         type(fallible_chemical_symbol_t) :: fallible_chemical_symbol
 
-        character(len=*), parameter :: PROCEDURE_NAME = "from_json"
-        type(fallible_json_value_t), allocatable :: failed_objects(:)
-        integer :: i
-        type(fallible_chemical_symbol_component_t), allocatable :: maybe_components(:)
-        type(fallible_json_value_t), allocatable :: maybe_objects(:)
-        integer :: num_components
-
-        num_components = json%length()
-        allocate(maybe_objects, source = [(json%get_element(i), i = 1, num_components)])
-        if (any([(maybe_objects(i)%failed(), i = 1, num_components)])) then
-            failed_objects = pack(maybe_objects, [(maybe_objects(i)%failed(), i = 1, num_components)])
-            fallible_chemical_symbol%errors_ = error_list_t( &
-                    [(failed_objects(i)%errors(), i = 1, size(failed_objects))], &
-                    module_t(MODULE_NAME), &
-                    procedure_t(PROCEDURE_NAME))
-        else
-            allocate(maybe_components, source = &
-                    [(fallible_chemical_symbol_component_t(maybe_objects(i)%value_()), i = 1, num_components)])
+        associate(maybe_components => fallible_chemical_symbol_component_t(json%get_elements()))
             if (any(maybe_components%failed())) then
                 fallible_chemical_symbol%errors_ = error_list_t( &
-                        pack(maybe_components%errors(), maybe_components%failed()), &
+                        maybe_components%errors(), &
                         module_t(MODULE_NAME), &
-                        procedure_t(PROCEDURE_NAME))
+                        procedure_t("from_json_array"))
             else
                 fallible_chemical_symbol%chemical_symbol_ = chemical_symbol_t( &
                         maybe_components%chemical_symbol_component())
             end if
-        end if
+        end associate
     end function
 
     function from_json_value(json) result(fallible_chemical_symbol)
