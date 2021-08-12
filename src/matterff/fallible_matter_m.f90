@@ -6,6 +6,7 @@ module matterff_fallible_matter_m
             message_list_t, &
             module_t, &
             procedure_t
+    use iso_varying_string, only: operator(//)
     use jsonff, only: fallible_json_value_t, json_object_t, json_string_t
     use matterff_fallible_material_m, only: fallible_material_t
     use matterff_material_m, only: material_t
@@ -41,7 +42,9 @@ module matterff_fallible_matter_m
 
     interface fallible_matter_t
         module procedure with_amount
+        module procedure with_fallible_amount
         module procedure with_mass
+        module procedure with_fallible_mass
         module procedure from_fallible_matter
         module procedure from_json
     end interface
@@ -64,6 +67,28 @@ contains
         end if
     end function
 
+    function with_fallible_amount(maybe_amount, maybe_material, module_, procedure_)
+        type(fallible_amount_t), intent(in) :: maybe_amount
+        type(fallible_material_t), intent(in) :: maybe_material
+        type(module_t), intent(in) :: module_
+        type(procedure_t), intent(in) :: procedure_
+        type(fallible_matter_t) :: with_fallible_amount
+
+        associate(failures => [maybe_amount%failed(), maybe_material%failed()])
+            if (any(failures)) then
+                associate(errors => pack([maybe_amount%errors(), maybe_material%errors()], failures))
+                    with_fallible_amount%errors_ = error_list_t(&
+                            errors, module_, procedure_)
+                end associate
+            else
+                with_fallible_amount = fallible_matter_t( &
+                        fallible_matter_t(maybe_amount%amount(), maybe_material%material()), &
+                        module_, &
+                        procedure_)
+            end if
+        end associate
+    end function
+
     function with_mass(mass, material)
         type(mass_t), intent(in) :: mass
         type(material_t), intent(in) :: material
@@ -73,6 +98,28 @@ contains
                 fallible_matter_t(mass / material%molar_mass(), material), &
                 module_t(MODULE_NAME), &
                 procedure_t("with_mass"))
+    end function
+
+    function with_fallible_mass(maybe_mass, maybe_material, module_, procedure_)
+        type(fallible_mass_t), intent(in) :: maybe_mass
+        type(fallible_material_t), intent(in) :: maybe_material
+        type(module_t), intent(in) :: module_
+        type(procedure_t), intent(in) :: procedure_
+        type(fallible_matter_t) :: with_fallible_mass
+
+        associate(failures => [maybe_mass%failed(), maybe_material%failed()])
+            if (any(failures)) then
+                associate(errors => pack([maybe_mass%errors(), maybe_material%errors()], failures))
+                    with_fallible_mass%errors_ = error_list_t(&
+                            errors, module_, procedure_)
+                end associate
+            else
+                with_fallible_mass = fallible_matter_t( &
+                        fallible_matter_t(maybe_mass%mass(), maybe_material%material()), &
+                        module_, &
+                        procedure_)
+            end if
+        end associate
     end function
 
     function from_fallible_matter(fallible_matter, module_, procedure_) result(new_fallible_matter)
@@ -96,12 +143,8 @@ contains
         type(fallible_matter_t) :: from_json
 
         character(len=*), parameter :: PROCEDURE_NAME = "from_json"
-        type(fallible_amount_t) :: maybe_amount
         type(fallible_json_value_t) :: maybe_amount_string
-        type(fallible_mass_t) :: maybe_mass
         type(fallible_json_value_t) :: maybe_mass_string
-        type(fallible_json_value_t) :: maybe_material_object
-        type(fallible_material_t) :: maybe_material
 
         maybe_amount_string = json%get_element("amount")
         if (maybe_amount_string%failed()) then
@@ -115,117 +158,33 @@ contains
             else
                 select type (mass_string => maybe_mass_string%value_())
                 type is (json_string_t)
-                    maybe_mass = parse_mass(mass_string%get_value())
-                    if (maybe_mass%failed()) then
-                        from_json%errors_ = error_list_t( &
-                                maybe_mass%errors(), &
-                                module_t(MODULE_NAME), &
-                                procedure_t(PROCEDURE_NAME))
-                    else
-                        maybe_material_object = json%get_element("material")
-                        if (maybe_material_object%failed()) then
-                            from_json%errors_ = error_list_t( &
-                                    maybe_material_object%errors(), &
-                                    module_t(MODULE_NAME), &
-                                    procedure_t(PROCEDURE_NAME))
-                        else
-                            select type (material_object => maybe_material_object%value_())
-                            type is (json_object_t)
-                                maybe_material = fallible_material_t(material_object)
-                                if (maybe_material%failed()) then
-                                    from_json%errors_ = error_list_t( &
-                                            maybe_material%errors(), &
-                                            module_t(MODULE_NAME), &
-                                            procedure_t(PROCEDURE_NAME))
-                                    from_json%messages_ = message_list_t( &
-                                            maybe_material%messages(), &
-                                            module_t(MODULE_NAME), &
-                                            procedure_t(PROCEDURE_NAME))
-                                else
-                                    from_json = fallible_matter_t( &
-                                            fallible_matter_t( &
-                                                    maybe_mass%mass(), &
-                                                    maybe_material%material()), &
-                                            module_t(MODULE_NAME), &
-                                            procedure_t(PROCEDURE_NAME))
-                                    from_json%messages_ = message_list_t( &
-                                            [maybe_material%messages(), from_json%messages_], &
-                                            module_t(MODULE_NAME), &
-                                            procedure_t(PROCEDURE_NAME))
-                                end if
-                            class default
-                                from_json%errors_ = error_list_t(fatal_t( &
-                                        INVALID_ARGUMENT, &
-                                        module_t(MODULE_NAME), &
-                                        procedure_t(PROCEDURE_NAME), &
-                                        "material must be an object"))
-                            end select
-                        end if
-                    end if
+                    from_json = fallible_matter_t( &
+                            parse_mass(mass_string%get_value()), &
+                            extract_material(json), &
+                            module_t(MODULE_NAME), &
+                            procedure_t(PROCEDURE_NAME))
                 class default
                     from_json%errors_ = error_list_t(fatal_t( &
                             INVALID_ARGUMENT, &
                             module_t(MODULE_NAME), &
                             procedure_t(PROCEDURE_NAME), &
-                            "mass must be a string"))
+                            "mass must be a string, but was: " // mass_string%to_compact_string()))
                 end select
             end if
         else
             select type (amount_string => maybe_amount_string%value_())
             type is (json_string_t)
-                maybe_amount = parse_amount(amount_string%get_value())
-                if (maybe_amount%failed()) then
-                    from_json%errors_ = error_list_t( &
-                            maybe_amount%errors(), &
-                            module_t(MODULE_NAME), &
-                            procedure_t(PROCEDURE_NAME))
-                else
-                    maybe_material_object = json%get_element("material")
-                    if (maybe_material_object%failed()) then
-                        from_json%errors_ = error_list_t( &
-                                maybe_material_object%errors(), &
-                                module_t(MODULE_NAME), &
-                                procedure_t(PROCEDURE_NAME))
-                    else
-                        select type (material_object => maybe_material_object%value_())
-                        type is (json_object_t)
-                            maybe_material = fallible_material_t(material_object)
-                            if (maybe_material%failed()) then
-                                from_json%errors_ = error_list_t( &
-                                        maybe_material%errors(), &
-                                        module_t(MODULE_NAME), &
-                                        procedure_t(PROCEDURE_NAME))
-                                from_json%messages_ = message_list_t( &
-                                        maybe_material%messages(), &
-                                        module_t(MODULE_NAME), &
-                                        procedure_t(PROCEDURE_NAME))
-                            else
-                                from_json = fallible_matter_t( &
-                                        fallible_matter_t( &
-                                                maybe_amount%amount(), &
-                                                maybe_material%material()), &
-                                        module_t(MODULE_NAME), &
-                                        procedure_t(PROCEDURE_NAME))
-                                from_json%messages_ = message_list_t( &
-                                        [maybe_material%messages(), from_json%messages_], &
-                                        module_t(MODULE_NAME), &
-                                        procedure_t(PROCEDURE_NAME))
-                            end if
-                        class default
-                            from_json%errors_ = error_list_t(fatal_t( &
-                                    INVALID_ARGUMENT, &
-                                    module_t(MODULE_NAME), &
-                                    procedure_t(PROCEDURE_NAME), &
-                                    "material must be an object"))
-                        end select
-                    end if
-                end if
+                from_json = fallible_matter_t( &
+                        parse_amount(amount_string%get_value()), &
+                        extract_material(json), &
+                        module_t(MODULE_NAME), &
+                        procedure_t(PROCEDURE_NAME))
             class default
                 from_json%errors_ = error_list_t(fatal_t( &
                         INVALID_ARGUMENT, &
                         module_t(MODULE_NAME), &
                         procedure_t(PROCEDURE_NAME), &
-                        "amount must be a string"))
+                        "amount must be a string, but was: " // amount_string%to_compact_string()))
             end select
         end if
     end function
@@ -256,5 +215,35 @@ contains
         type(error_list_t) :: errors
 
         errors = self%errors_
+    end function
+
+    function extract_material(json) result(maybe_material)
+        type(json_object_t), intent(in) :: json
+        type(fallible_material_t) :: maybe_material
+
+        character(len=*), parameter :: PROCEDURE_NAME = "extract_material"
+        type(fallible_json_value_t) :: maybe_material_object
+
+        maybe_material_object = json%get_element("material")
+        if (maybe_material_object%failed()) then
+            maybe_material = fallible_material_t(error_list_t( &
+                    maybe_material_object%errors(), &
+                    module_t(MODULE_NAME), &
+                    procedure_t(PROCEDURE_NAME)))
+        else
+            select type (material_object => maybe_material_object%value_())
+            type is (json_object_t)
+                maybe_material = fallible_material_t( &
+                        fallible_material_t(material_object), &
+                        module_t(MODULE_NAME), &
+                        procedure_t(PROCEDURE_NAME))
+            class default
+                maybe_material = fallible_material_t(error_list_t(fatal_t( &
+                        INVALID_ARGUMENT, &
+                        module_t(MODULE_NAME), &
+                        procedure_t(PROCEDURE_NAME), &
+                        "material must be an object, but was: " // material_object%to_compact_string())))
+            end select
+        end if
     end function
 end module

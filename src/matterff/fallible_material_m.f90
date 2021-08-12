@@ -46,6 +46,7 @@ module matterff_fallible_material_m
     end interface
 
     interface fallible_material_t
+        module procedure from_errors
         module procedure from_fallible_material
         module procedure from_json
     end interface
@@ -190,6 +191,13 @@ contains
                     module_, &
                     procedure_)
         end if
+    end function
+
+    function from_errors(errors) result(fallible_material)
+        type(error_list_t), intent(in) :: errors
+        type(fallible_material_t) :: fallible_material
+
+        fallible_material%errors_ = errors
     end function
 
     function from_fallible_material( &
