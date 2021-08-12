@@ -93,7 +93,7 @@ contains
                         UNKNOWN_TYPE, &
                         module_t(MODULE_NAME), &
                         procedure_t(PROCEDURE_NAME), &
-                        "Expected to get a json_string_t but got" // isotope_string%to_compact_string()))
+                        "isotope must be a string, but was: " // isotope_string%to_compact_string()))
             end select
         end if
     end function

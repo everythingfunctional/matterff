@@ -132,14 +132,19 @@ contains
         type(chemical_component_t), intent(in) :: components(:)
         type(fallible_chemical_t) :: new_fallible_chemical
 
+        character(len=*), parameter :: PROCEDURE_NAME = "from_components"
         type(fallible_chemical_components_t) :: checked_components
 
         checked_components = fallible_chemical_components_t(symbol, components)
+        new_fallible_chemical%messages_ = message_list_t( &
+                checked_components%messages(), &
+                module_t(MODULE_NAME), &
+                procedure_t(PROCEDURE_NAME))
         if (checked_components%failed()) then
             new_fallible_chemical%errors_ = error_list_t( &
                     checked_components%errors(), &
                     module_t(MODULE_NAME), &
-                    procedure_t("from_components"))
+                    procedure_t(PROCEDURE_NAME))
         else
             new_fallible_chemical%chemical_ = chemical_unsafe( &
                     symbol, checked_components%components())
@@ -158,19 +163,19 @@ contains
         type(procedure_t), intent(in) :: procedure_
         type(fallible_chemical_t) :: fallible_chemical
 
-        associate(failures => [maybe_symbol%failed(), maybe_components%failed()])
-            if (any(failures)) then
-                fallible_chemical%errors_ = error_list_t( &
-                        pack([maybe_symbol%errors(), maybe_components%errors()], failures), &
-                        module_, &
-                        procedure_)
-            else
-                fallible_chemical = fallible_chemical_t( &
-                        fallible_chemical_t(maybe_symbol%chemical_symbol(), maybe_components%components()), &
-                        module_, &
-                        procedure_)
-            end if
-        end associate
+        fallible_chemical%messages_ = message_list_t( &
+                maybe_components%messages(), module_, procedure_)
+        if (any([maybe_symbol%failed(), maybe_components%failed()])) then
+            fallible_chemical%errors_ = error_list_t( &
+                    [maybe_symbol%errors(), maybe_components%errors()], &
+                    module_, &
+                    procedure_)
+        else
+            fallible_chemical = fallible_chemical_t( &
+                    fallible_chemical_t(maybe_symbol%chemical_symbol(), maybe_components%components()), &
+                    module_, &
+                    procedure_)
+        end if
     end function
 
     function from_fallible_chemical( &

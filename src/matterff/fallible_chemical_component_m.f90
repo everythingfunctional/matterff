@@ -56,7 +56,8 @@ contains
             new_fallible_chemical_component%errors_ = error_list_t(&
                     fallible_chemical_component%errors_, module_, procedure_)
         else
-            new_fallible_chemical_component%chemical_component_ = fallible_chemical_component%chemical_component_
+            new_fallible_chemical_component%chemical_component_ = &
+                    fallible_chemical_component%chemical_component_
         end if
     end function
 
@@ -72,17 +73,17 @@ contains
         type(procedure_t), intent(in) :: procedure_
         type(fallible_chemical_component_t) :: fallible_chemical_component
 
-        associate(failures => [maybe_element%failed(), maybe_multiplier%failed()])
-            if (any(failures)) then
-                associate(errors => pack([maybe_element%errors(), maybe_multiplier%errors()], failures))
-                    fallible_chemical_component%errors_ = error_list_t( &
-                            errors, module_, procedure_)
-                end associate
-            else
-                fallible_chemical_component%chemical_component_ = chemical_component_t( &
-                        maybe_element%element(), maybe_multiplier%value_())
-            end if
-        end associate
+        fallible_chemical_component%messages_ = message_list_t( &
+                maybe_element%messages(), module_, procedure_)
+        if (any([maybe_element%failed(), maybe_multiplier%failed()])) then
+                fallible_chemical_component%errors_ = error_list_t( &
+                        [maybe_element%errors(), maybe_multiplier%errors()], &
+                        module_, &
+                        procedure_)
+        else
+            fallible_chemical_component%chemical_component_ = chemical_component_t( &
+                    maybe_element%element(), maybe_multiplier%value_())
+        end if
     end function
 
     function from_json_object(json) result(fallible_chemical_component)

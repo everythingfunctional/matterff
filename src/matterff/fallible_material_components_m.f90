@@ -70,18 +70,22 @@ contains
         type(json_array_t), intent(in) :: json
         type(fallible_material_components_t) :: fallible_material_components
 
+        character(len=*), parameter :: PROCEDURE_NAME = "from_json"
+
         associate(maybe_components => fallible_material_component_t(json%get_elements()))
-            associate(failures => maybe_components%failed())
-                if (any(failures)) then
-                    fallible_material_components%errors_ = error_list_t( &
-                            pack(maybe_components%errors(), failures), &
-                            module_t(MODULE_NAME), &
-                            procedure_t("from_json"))
-                else
-                    allocate(fallible_material_components%components_, source = &
-                            maybe_components%material_component())
-                end if
-            end associate
+            fallible_material_components%messages_ = message_list_t( &
+                    maybe_components%messages(), &
+                    module_t(MODULE_NAME), &
+                    procedure_t(PROCEDURE_NAME))
+            if (any(maybe_components%failed())) then
+                fallible_material_components%errors_ = error_list_t( &
+                        maybe_components%errors(), &
+                        module_t(MODULE_NAME), &
+                        procedure_t(PROCEDURE_NAME))
+            else
+                allocate(fallible_material_components%components_, source = &
+                        maybe_components%material_component())
+            end if
         end associate
     end function
 

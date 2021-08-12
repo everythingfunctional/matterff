@@ -164,6 +164,8 @@ contains
         type(procedure_t), intent(in) :: procedure_
         type(fallible_material_t) :: fallible_material
 
+        fallible_material%messages_ = message_list_t( &
+                maybe_components%messages(), module_, procedure_)
         if (maybe_components%failed()) then
             fallible_material%errors_ = error_list_t( &
                     maybe_components%errors(), module_, procedure_)
@@ -182,6 +184,8 @@ contains
         type(procedure_t), intent(in) :: procedure_
         type(fallible_material_t) :: fallible_material
 
+        fallible_material%messages_ = message_list_t( &
+                maybe_components%messages(), module_, procedure_)
         if (maybe_components%failed()) then
             fallible_material%errors_ = error_list_t( &
                     maybe_components%errors(), module_, procedure_)

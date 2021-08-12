@@ -73,17 +73,17 @@ contains
         type(procedure_t), intent(in) :: procedure_
         type(fallible_material_component_t) :: fallible_material_component
 
-        associate(failures => [maybe_chemical%failed(), maybe_fraction%failed()])
-            if (any(failures)) then
-                associate(errors => pack([maybe_chemical%errors(), maybe_fraction%errors()], failures))
-                    fallible_material_component%errors_ = error_list_t( &
-                            errors, module_, procedure_)
-                end associate
-            else
-                fallible_material_component%material_component_ = material_component_t( &
-                        maybe_chemical%chemical(), maybe_fraction%value_())
-            end if
-        end associate
+        fallible_material_component%messages_ = message_list_t( &
+                maybe_chemical%messages(), module_, procedure_)
+        if (any([maybe_chemical%failed(), maybe_fraction%failed()])) then
+            fallible_material_component%errors_ = error_list_t( &
+                    [maybe_chemical%errors(), maybe_fraction%errors()], &
+                    module_, &
+                    procedure_)
+        else
+            fallible_material_component%material_component_ = material_component_t( &
+                    maybe_chemical%chemical(), maybe_fraction%value_())
+        end if
     end function
 
     function from_json_object(json) result(new_fallible_material_component)

@@ -1,5 +1,11 @@
 module matterff_fallible_chemical_components_m
-    use erloff, only: error_list_t, fatal_t, internal_t, module_t, procedure_t
+    use erloff, only: &
+            error_list_t, &
+            fatal_t, &
+            internal_t, &
+            message_list_t, &
+            module_t, &
+            procedure_t
     use iso_varying_string, only: operator(//)
     use jsonff, only: fallible_json_value_t, json_array_t, json_object_t
     use matterff_chemical_component_m, only: chemical_component_t
@@ -16,11 +22,13 @@ module matterff_fallible_chemical_components_m
     type :: fallible_chemical_components_t
         private
         type(chemical_component_t), allocatable :: components_(:)
+        type(message_list_t) :: messages_
         type(error_list_t) :: errors_
     contains
         private
         procedure, public :: failed
         procedure, public :: components
+        procedure, public :: messages
         procedure, public :: errors
     end type
 
@@ -75,6 +83,10 @@ contains
         type(procedure_t), intent(in) :: procedure_
         type(fallible_chemical_components_t) :: new_fallible_chemical_components
 
+        new_fallible_chemical_components%messages_ = message_list_t( &
+                fallible_chemical_components%messages(), &
+                module_, &
+                procedure_)
         if (fallible_chemical_components%failed()) then
             new_fallible_chemical_components%errors_ = error_list_t( &
                     fallible_chemical_components%errors(), module_, procedure_)
@@ -88,18 +100,22 @@ contains
         type(json_array_t), intent(in) :: json
         type(fallible_chemical_components_t) :: fallible_chemical_components
 
+        character(len=*), parameter :: PROCEDURE_NAME = "from_json_array"
+
         associate(maybe_components => fallible_chemical_component_t(json%get_elements()))
-            associate(failures => maybe_components%failed())
-                if (any(failures)) then
-                    fallible_chemical_components%errors_ = error_list_t( &
-                            pack(maybe_components%errors(), failures), &
-                            module_t(MODULE_NAME), &
-                            procedure_t("from_json_array"))
-                else
-                    allocate(fallible_chemical_components%components_, source = &
-                            maybe_components%chemical_component())
-                end if
-            end associate
+            fallible_chemical_components%messages_ = message_list_t( &
+                    maybe_components%messages(), &
+                    module_t(MODULE_NAME), &
+                    procedure_t(PROCEDURE_NAME))
+            if (any(maybe_components%failed())) then
+                fallible_chemical_components%errors_ = error_list_t( &
+                        maybe_components%errors(), &
+                        module_t(MODULE_NAME), &
+                        procedure_t("from_json_array"))
+            else
+                allocate(fallible_chemical_components%components_, source = &
+                        maybe_components%chemical_component())
+            end if
         end associate
     end function
 
@@ -146,6 +162,13 @@ contains
         type(chemical_component_t), allocatable :: components(:)
 
         components = self%components_
+    end function
+
+    function messages(self)
+        class(fallible_chemical_components_t), intent(in) :: self
+        type(message_list_t) :: messages
+
+        messages = self%messages_
     end function
 
     function errors(self)

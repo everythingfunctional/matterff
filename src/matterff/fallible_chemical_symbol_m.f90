@@ -46,17 +46,15 @@ contains
         type(fallible_chemical_symbol_t) :: fallible_chemical_symbol
 
         associate(maybe_components => fallible_chemical_symbol_component_t(json%get_elements()))
-            associate(failures => maybe_components%failed())
-                if (any(failures)) then
-                    fallible_chemical_symbol%errors_ = error_list_t( &
-                            pack(maybe_components%errors(), failures), &
-                            module_t(MODULE_NAME), &
-                            procedure_t("from_json_array"))
-                else
-                    fallible_chemical_symbol%chemical_symbol_ = chemical_symbol_t( &
-                            maybe_components%chemical_symbol_component())
-                end if
-            end associate
+            if (any(maybe_components%failed())) then
+                fallible_chemical_symbol%errors_ = error_list_t( &
+                        maybe_components%errors(), &
+                        module_t(MODULE_NAME), &
+                        procedure_t("from_json_array"))
+            else
+                fallible_chemical_symbol%chemical_symbol_ = chemical_symbol_t( &
+                        maybe_components%chemical_symbol_component())
+            end if
         end associate
     end function
 

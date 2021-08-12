@@ -74,19 +74,19 @@ contains
         type(procedure_t), intent(in) :: procedure_
         type(fallible_matter_t) :: with_fallible_amount
 
-        associate(failures => [maybe_amount%failed(), maybe_material%failed()])
-            if (any(failures)) then
-                associate(errors => pack([maybe_amount%errors(), maybe_material%errors()], failures))
-                    with_fallible_amount%errors_ = error_list_t(&
-                            errors, module_, procedure_)
-                end associate
-            else
-                with_fallible_amount = fallible_matter_t( &
-                        fallible_matter_t(maybe_amount%amount(), maybe_material%material()), &
+        with_fallible_amount%messages_ = message_list_t( &
+                maybe_material%messages(), module_, procedure_)
+        if (any([maybe_amount%failed(), maybe_material%failed()])) then
+                with_fallible_amount%errors_ = error_list_t(&
+                        [maybe_amount%errors(), maybe_material%errors()], &
                         module_, &
                         procedure_)
-            end if
-        end associate
+        else
+            with_fallible_amount = fallible_matter_t( &
+                    fallible_matter_t(maybe_amount%amount(), maybe_material%material()), &
+                    module_, &
+                    procedure_)
+        end if
     end function
 
     function with_mass(mass, material)
@@ -107,19 +107,19 @@ contains
         type(procedure_t), intent(in) :: procedure_
         type(fallible_matter_t) :: with_fallible_mass
 
-        associate(failures => [maybe_mass%failed(), maybe_material%failed()])
-            if (any(failures)) then
-                associate(errors => pack([maybe_mass%errors(), maybe_material%errors()], failures))
-                    with_fallible_mass%errors_ = error_list_t(&
-                            errors, module_, procedure_)
-                end associate
-            else
-                with_fallible_mass = fallible_matter_t( &
-                        fallible_matter_t(maybe_mass%mass(), maybe_material%material()), &
-                        module_, &
-                        procedure_)
-            end if
-        end associate
+        with_fallible_mass%messages_ = message_list_t( &
+                maybe_material%messages(), module_, procedure_)
+        if (any([maybe_mass%failed(), maybe_material%failed()])) then
+            with_fallible_mass%errors_ = error_list_t(&
+                    [maybe_mass%errors(), maybe_material%errors()], &
+                    module_, &
+                    procedure_)
+        else
+            with_fallible_mass = fallible_matter_t( &
+                    fallible_matter_t(maybe_mass%mass(), maybe_material%material()), &
+                    module_, &
+                    procedure_)
+        end if
     end function
 
     function from_fallible_matter(fallible_matter, module_, procedure_) result(new_fallible_matter)

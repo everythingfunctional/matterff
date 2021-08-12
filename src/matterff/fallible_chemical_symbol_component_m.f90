@@ -71,18 +71,16 @@ contains
         type(procedure_t), intent(in) :: procedure_
         type(fallible_chemical_symbol_component_t) :: fallible_chemical_symbol_component
 
-        associate(failures => [maybe_element_symbol%failed(), maybe_multiple%failed()])
-            if (any(failures)) then
-                associate(errors => pack([maybe_element_symbol%errors(), maybe_multiple%errors()], failures))
-                    fallible_chemical_symbol_component%errors_ = error_list_t( &
-                            errors, module_, procedure_)
-                end associate
-            else
-                fallible_chemical_symbol_component%chemical_symbol_component_ = &
-                        chemical_symbol_component_t( &
-                                maybe_element_symbol%symbol(), maybe_multiple%value_())
-            end if
-        end associate
+        if (any([maybe_element_symbol%failed(), maybe_multiple%failed()])) then
+            fallible_chemical_symbol_component%errors_ = error_list_t( &
+                    [maybe_element_symbol%errors(), maybe_multiple%errors()], &
+                    module_, &
+                    procedure_)
+        else
+            fallible_chemical_symbol_component%chemical_symbol_component_ = &
+                    chemical_symbol_component_t( &
+                            maybe_element_symbol%symbol(), maybe_multiple%value_())
+        end if
     end function
 
     function from_json_object(json) result(fallible_chemical_symbol_component)

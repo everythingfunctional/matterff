@@ -87,17 +87,15 @@ contains
         type(fallible_element_components_t) :: fallible_element_components
 
         associate(maybe_components => fallible_element_component_t(json%get_elements()))
-            associate(failures => maybe_components%failed())
-                if (any(failures)) then
-                    fallible_element_components%errors_ = error_list_t( &
-                            pack(maybe_components%errors(), failures), &
-                            module_t(MODULE_NAME), &
-                            procedure_t("from_json"))
-                else
-                    allocate(fallible_element_components%components_, source = &
-                            maybe_components%element_component())
-                end if
-            end associate
+            if (any(maybe_components%failed())) then
+                fallible_element_components%errors_ = error_list_t( &
+                        maybe_components%errors(), &
+                        module_t(MODULE_NAME), &
+                        procedure_t("from_json"))
+            else
+                allocate(fallible_element_components%components_, source = &
+                        maybe_components%element_component())
+            end if
         end associate
     end function
 
